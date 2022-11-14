@@ -121,7 +121,7 @@ public class IBOrder {
 		// IB BUG fix, fuck totalQuantity
 		if (orderState.status() == OrderStatus.Filled && order.totalQuantity().longValue() == 0) {
 			order.totalQuantity(order.filledQuantity());
-			warn("Fixing IB zero totalQuantity bug, fuck me -> " + order.totalQuantity());
+			warn("Fixing IB zero totalQuantity bug, fuck me -> " + order.totalQuantity().toString());
 		}
 	}
 	
@@ -227,11 +227,11 @@ public class IBOrder {
 		
 		// execute/total
 		if (statusFilled)
-			sb.append(StringUtils.leftPad("" + order.filledQuantity(), 8));
+			sb.append(StringUtils.leftPad("" + order.filledQuantity().toString(), 8));
 		else
 			sb.append(StringUtils.leftPad("??", 8));
 		sb.append('/');
-		sb.append(StringUtils.rightPad("" + order.totalQuantity(), 8));
+		sb.append(StringUtils.rightPad("" + order.totalQuantity().toString(), 8));
 		
 		if (extStatus != null)
 			sb.append(StringUtils.rightPad(extStatus, 16));
@@ -280,13 +280,13 @@ public class IBOrder {
 			j.put("T", "sell");
 		else
 			errWithTrace("Unknown order action " + order.action());
-		j.put("ttl_qty", order.totalQuantity());
+		j.put("ttl_qty", order.totalQuantity().longValue());
 		j.put("p", order.lmtPrice());
 		if (avgFillPrice == null)
 			j.put("avg_price", order.lmtPrice());
 		else
 			j.put("avg_price", avgFillPrice);
-		j.put("executed_qty", order.filledQuantity());
+		j.put("executed_qty", order.filledQuantity().longValue());
 		j.put("remained_qty", order.totalQuantity().longValue()-order.filledQuantity().longValue());
 		j.put("status", extStatus == null ? orderState.status().toString() : extStatus);
 		// created time missing, default 2000-01-01 00:00:00

@@ -66,7 +66,7 @@ public class AccountMVHandler implements IAccountHandler {
 		JSONObject j = new JSONObject();
 		j.put("type", "position");
 		j.put("contract", ibc.toJSON());
-		j.put("pos", position.position());
+		j.put("pos", position.position().longValue());
 		j.put("avgCost", position.averageCost());
 		if (_dataInit) {
 			_data.putIfAbsent(account, new ConcurrentHashMap<String, JSONObject>());
