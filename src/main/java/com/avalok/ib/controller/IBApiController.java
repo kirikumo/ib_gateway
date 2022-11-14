@@ -190,9 +190,18 @@ public class IBApiController {
 		recordOperationHistory("placeOrModifyOrder");
 		_api.placeOrModifyOrder(contract, order, handler);
 	}
-	public void cancelOrder(int orderId, String manualOrderCancelTime, IOrderCancelHandler orderCancelHandler) {
+	public void cancelOrder(int orderId, IOrderCancelHandler orderCancelHandler) {
 		twsAPIRateControl();
 		recordOperationHistory("cancelOrder " + orderId);
+
+		String manualOrderCancelTime = null;
+		int MIN_SERVER_VER_MANUAL_ORDER_TIME = 169;
+		if (_api.client().serverVersion()  >= MIN_SERVER_VER_MANUAL_ORDER_TIME) {
+			LocalDateTime myDateObj = LocalDateTime.now();
+			DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss");
+			manualOrderCancelTime = myDateObj.format(myFormatObj);
+		}
+
 		_api.cancelOrder(orderId, manualOrderCancelTime, orderCancelHandler);
 	}
 	public void cancelAllOrders() {
