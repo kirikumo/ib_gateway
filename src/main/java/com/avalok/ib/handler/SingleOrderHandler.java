@@ -13,7 +13,9 @@ import com.avalok.ib.GatewayController;
 import com.ib.client.Decimal;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
+import com.ib.controller.ApiController;
 import com.ib.controller.ApiController.IOrderHandler;
+import com.ib.controller.ApiController.IOrderCancelHandler;
 
 import com.alibaba.fastjson.JSONObject;
 
@@ -22,8 +24,8 @@ import com.alibaba.fastjson.JSONObject;
  * It does the same thing as AllOrderHandler.
  *
  */
-public class SingleOrderHandler implements IOrderHandler {
-	
+public class SingleOrderHandler implements IOrderHandler, IOrderCancelHandler {
+
 	private IBOrder _order;
 	private GatewayController _ibController;
 	private AllOrderHandler _orderCacheHandler;
@@ -64,6 +66,11 @@ public class SingleOrderHandler implements IOrderHandler {
 //				}
 //			}, 1000);
 //		}
+	}
+
+	@Override
+	public void orderStatus(String orderStatus) {
+		log("orderStatus:" + orderStatus);
 	}
 
 	@Override

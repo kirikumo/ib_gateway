@@ -257,7 +257,7 @@ public class GatewayController extends BaseIBController {
 		LocalDateTime myDateObj = LocalDateTime.now();
 		DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss");
 		String manualOrderCancelTime = myDateObj.format(myFormatObj);
-		_apiController.cancelOrder(order.orderId(), manualOrderCancelTime, new OrderCancelHandler());
+		_apiController.cancelOrder(order.orderId(), manualOrderCancelTime, new SingleOrderHandler(this, orderCacheHandler, order));
 		return _apiController.lastReqId();
 	}
 	protected int cancelAll() {
