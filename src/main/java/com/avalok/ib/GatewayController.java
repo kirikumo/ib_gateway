@@ -254,6 +254,8 @@ public class GatewayController extends BaseIBController {
 		}
 		log("Find order by oms id " + omsId + " cancel " + order.orderId() + "\n" + order.toString());
 
+//		SingleOrderHandler is implements IOrderCancelHandler
+// 		use SingleOrderHandler to cancelOrder
 		_apiController.cancelOrder(order.orderId(), new SingleOrderHandler(this, orderCacheHandler, order));
 		return _apiController.lastReqId();
 	}

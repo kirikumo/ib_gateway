@@ -70,7 +70,9 @@ public class SingleOrderHandler implements IOrderHandler, IOrderCancelHandler {
 
 	@Override
 	public void orderStatus(String orderStatus) {
-		log("orderStatus:" + orderStatus);
+//		Use it when cancel order
+//		Always log on line 49 orderStatus()
+//		String orderStatus => "Cancelled" or some cancel status
 	}
 
 	@Override

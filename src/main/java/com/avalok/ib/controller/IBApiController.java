@@ -194,6 +194,10 @@ public class IBApiController {
 		twsAPIRateControl();
 		recordOperationHistory("cancelOrder " + orderId);
 
+//		manualOrderCancelTime don't know what that mean
+//		manualOrderCancelTime format is "20220314-19:00:00"
+//		look EClient.cancelOrder and ref https://interactivebrokers.github.io/tws-api/basic_orders.html
+//		Guess this is useless feature for this moment(2022-11-14), so set it to null
 		_api.cancelOrder(orderId, null, orderCancelHandler);
 	}
 	public void cancelAllOrders() {
