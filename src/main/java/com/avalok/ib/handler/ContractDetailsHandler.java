@@ -130,7 +130,7 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("liquidHours", detail.liquidHours());
 		j.put("evRule", detail.evRule());
 		j.put("evMultiplier", detail.evMultiplier());
-		j.put("mdSizeMultiplier", detail.mdSizeMultiplier());
+//		j.put("mdSizeMultiplier", detail.mdSizeMultiplier());
 		j.put("aggGroup", detail.aggGroup());
 		j.put("underSymbol", detail.underSymbol());
 		j.put("underSecType", detail.underSecType());
@@ -152,6 +152,9 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("nextOptionType", detail.nextOptionType());
 		j.put("nextOptionPartial", detail.nextOptionPartial());
 		j.put("notes", detail.notes());
+		j.put("minSize", detail.minSize());
+		j.put("sizeIncrement", detail.sizeIncrement());
+		j.put("suggestedSizeIncrement", detail.suggestedSizeIncrement());
 		j.put("_timestamp", System.currentTimeMillis()); // Write generated timestamp to redis
 		log(">>> Redis " + key);
 		Redis.set(key, j);
@@ -179,7 +182,7 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("liquidHours", detail.liquidHours());
 		j.put("evRule", detail.evRule());
 		j.put("evMultiplier", detail.evMultiplier());
-		j.put("mdSizeMultiplier", detail.mdSizeMultiplier());
+//		j.put("mdSizeMultiplier", detail.mdSizeMultiplier());
 		j.put("aggGroup", detail.aggGroup());
 		j.put("underSymbol", detail.underSymbol());
 		j.put("underSecType", detail.underSecType());
@@ -201,6 +204,9 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("nextOptionType", detail.nextOptionType());
 		j.put("nextOptionPartial", detail.nextOptionPartial());
 		j.put("notes", detail.notes());
+		j.put("minSize", detail.minSize());
+		j.put("sizeIncrement", detail.sizeIncrement());
+		j.put("suggestedSizeIncrement", detail.suggestedSizeIncrement());
 		j.put("_timestamp", System.currentTimeMillis()); // Write generated timestamp to redis
 		return j;
 	}

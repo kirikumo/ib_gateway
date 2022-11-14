@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.IBContract;
 import com.bitex.util.Redis;
+import com.ib.client.Decimal;
 import com.ib.client.TickAttrib;
 import com.ib.client.TickType;
 import com.ib.controller.ApiController.IOptHandler;
@@ -178,12 +179,12 @@ public class OptionTopMktDataHandler implements IOptHandler{
     }
 
     @java.lang.Override
-    public void tickSize(TickType tickType, int size_in_lot) {
+    public void tickSize(TickType tickType, Decimal size_in_lot) {
         Double size;
         if (_contract.exchange().equals("SEHK") || _contract.exchange().equals("HKFE")){
-            size = size_in_lot * 1.0;
+            size = size_in_lot.longValue() * 1.0;
         } else {
-            size = size_in_lot * multiplier * marketDataSizeMultiplier;
+            size = size_in_lot.longValue() * multiplier * marketDataSizeMultiplier;
         }
         if (_debug)
             info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
@@ -296,7 +297,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
     }
 
     @java.lang.Override
-    public void tickOptionComputation(TickType tickType, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
+    public void tickOptionComputation(TickType tickType, int tickAttrib, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
         if (_debug)
             info(_contract.shownName() + " tickOptionComputation() tickType " + tickType +
                     " ImpliedVol: " + impliedVol + " Delta: "+ delta + " OptPrice: " + optPrice +

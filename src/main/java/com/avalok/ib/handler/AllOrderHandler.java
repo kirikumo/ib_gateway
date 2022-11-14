@@ -2,6 +2,7 @@ package com.avalok.ib.handler;
 
 import static com.bitex.util.DebugUtil.*;
 
+import com.ib.client.*;
 import redis.clients.jedis.Jedis;
 import com.bitex.util.Redis;
 
@@ -16,12 +17,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.IBContract;
 import com.avalok.ib.IBOrder;
 import com.avalok.ib.GatewayController;
-import com.ib.client.CommissionReport;
-import com.ib.client.Contract;
-import com.ib.client.Execution;
-import com.ib.client.Order;
-import com.ib.client.OrderState;
-import com.ib.client.OrderStatus;
 import com.ib.controller.ApiController.ICompletedOrdersHandler;
 import com.ib.controller.ApiController.ILiveOrderHandler;
 import com.ib.controller.ApiController.ITradeReportHandler;
@@ -199,8 +194,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 
 	@Override
 	public void orderStatus(
-			int orderId, OrderStatus status, double filled, 
-			double remaining, double avgFillPrice,
+			int orderId, OrderStatus status, Decimal filled,
+			Decimal remaining, double avgFillPrice,
 			int permId, int parentId, double lastFillPrice, 
 			int clientId, String whyHeld, double mktCapPrice) {
 		if (_processingOrderId != null &&_processingOrderId == orderId) {

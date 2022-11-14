@@ -10,6 +10,7 @@ import java.util.TimerTask;
 import com.avalok.ib.IBOrder;
 import com.avalok.ib.GatewayController;
 
+import com.ib.client.Decimal;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
 import com.ib.controller.ApiController.IOrderHandler;
@@ -44,8 +45,8 @@ public class SingleOrderHandler implements IOrderHandler {
 	
 	@Override
 	public void orderStatus(
-			OrderStatus status, double filled, 
-			double remaining, double avgFillPrice,
+			OrderStatus status, Decimal filled,
+			Decimal remaining, double avgFillPrice,
 			int permId, int parentId, double lastFillPrice, 
 			int clientId, String whyHeld, double mktCapPrice) {
 		log("<-- SingleOrder udpate orderStatus: filled " + filled + " remaining:" + remaining + " permId:" + permId);

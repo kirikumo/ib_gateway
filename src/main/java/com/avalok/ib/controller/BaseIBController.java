@@ -50,12 +50,12 @@ public abstract class BaseIBController implements IConnectionHandler {
 				}
 				BaseIBController.this.error(e);
 			}
-			public void message(int id, int errorCode, String errorMsg) {
+			public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 				if (this != _activeIBConnectionHandler) {
 					log("Ignore obsolete IBConnectionHandler event: message");
 					return;
 				}
-				BaseIBController.this.message(id, errorCode, errorMsg);
+				BaseIBController.this.message(id, errorCode, errorMsg, advancedOrderRejectJson);
 			}
 			public void show(String string) {
 				if (this != _activeIBConnectionHandler) {
@@ -274,72 +274,72 @@ public abstract class BaseIBController implements IConnectionHandler {
 	public String lastAckErrorMsg = "";
 	public boolean latestMsgIsOkay = false;
 	@Override
-	public void message(int id, int errorCode, String errorMsg) {
+	public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 		latestMsgIsOkay = false;
 		switch (errorCode) {
 			case 200: // No security definition has been found for the request
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				break;
 			case 502: // Couldn't connect to TWS. Confirm that API is enabled in TWS via the Configure>API menu command.
 				// TWS gateway might be down, retry in longer time.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				disconnected();
 				break;
 			case 504: // TWS not connected, retry in short time.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				disconnected();
 				break;
 			case 507: // Bad Message Length null
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				disconnected();
 				break;
 			case 510: // Request Market Data Sending Error - java.net.SocketException: Broken pipe
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				disconnected();
 				break;
 			case 1100: // Connectivity between IB and TWS has been lost.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				_twsConnected = false;
 				_markDisconnected();
 				break;
 			case 1101: // Connectivity between IB and TWS has been restored- data lost.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				_twsConnected = true;
 				_markTWSServerConnected(true);
 				break;
 			case 1102: // Connectivity between IB and TWS has been restored- data maintained.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				_twsConnected = true;
 				_markTWSServerConnected(false);
 				break;
 			case 1300: // Socket port has been reset and this connection is being dropped. Please reconnect on the new port -4002
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				// String[] segs = errorMsg.split("-");
 				// TWS_API_PORT = Integer.parseInt(segs[segs.length - 1]); // Should not be changed.
 				disconnected();
 				break;
 			case 2103: // Market data farm connection is broken
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				break;
 			case 2104: // Market data farm connection is OK
 				latestMsgIsOkay = true;
 				break;
 			case 2105: // HMDS data farm connection is broken
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				break;
 			case 2106: // HMDS data farm connection is OK
 				latestMsgIsOkay = true;
 				break;
 			case 2107: // HMDS data farm connection is inactive but should be available upon demand.hthmds
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				latestMsgIsOkay = true;
 				break;
 			case 2108: // Market data farm connection is inactive but should be available upon demand.usfarm
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				latestMsgIsOkay = true;
 				break;
 			case 2110: // Connectivity between Trader Workstation and server is broken. It will be restored automatically.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				_markDisconnected();
 				// twsDis_connect(); // Sometimes it wont be restored automatically. WTF!
 				break;

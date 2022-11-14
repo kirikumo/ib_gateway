@@ -2,6 +2,8 @@ package com.avalok.ib;
 
 import static com.bitex.util.DebugUtil.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -251,7 +253,11 @@ public class GatewayController extends BaseIBController {
 			return 0;
 		}
 		log("Find order by oms id " + omsId + " cancel " + order.orderId() + "\n" + order.toString());
-		_apiController.cancelOrder(order.orderId());
+
+		LocalDateTime myDateObj = LocalDateTime.now();
+		DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("yyyyMMdd-HH:mm:ss");
+		String manualOrderCancelTime = myDateObj.format(myFormatObj);
+		_apiController.cancelOrder(order.orderId(), manualOrderCancelTime, new OrderCancelHandler());
 		return _apiController.lastReqId();
 	}
 	protected int cancelAll() {
@@ -419,8 +425,8 @@ public class GatewayController extends BaseIBController {
 	// TWS Message processing
 	////////////////////////////////////////////////////////////////
 	@Override
-	public void message(int id, int errorCode, String errorMsg) {
-		log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+	public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+		log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 		JSONObject j = new JSONObject();
 		j.put("type", "msg");
 		j.put("ibApiId", id);
@@ -462,7 +468,7 @@ public class GatewayController extends BaseIBController {
 		case 2157: // msg:Sec-def data farm connection is broken:secdefhk
 			break;
 		default:
-			super.message(id, errorCode, errorMsg);
+			super.message(id, errorCode, errorMsg, advancedOrderRejectJson);
 			if (super.latestMsgIsOkay == false)
 				Redis.pub(ackChannel, j);
 			break;

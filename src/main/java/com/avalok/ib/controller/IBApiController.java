@@ -2,6 +2,8 @@ package com.avalok.ib.controller;
 
 import static com.bitex.util.DebugUtil.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.avalok.ib.IBContract;
@@ -23,6 +25,7 @@ import com.ib.controller.ApiController.IPositionHandler;
 import com.ib.controller.ApiController.IRealTimeBarHandler;
 import com.ib.controller.ApiController.ITopMktDataHandler;
 import com.ib.controller.ApiController.ITradeReportHandler;
+import com.ib.controller.ApiController.IOrderCancelHandler;
 
 /**
  * A warpper of ApiController for rate control and other proxy.
@@ -187,10 +190,10 @@ public class IBApiController {
 		recordOperationHistory("placeOrModifyOrder");
 		_api.placeOrModifyOrder(contract, order, handler);
 	}
-	public void cancelOrder(int orderId) {
+	public void cancelOrder(int orderId, String manualOrderCancelTime, IOrderCancelHandler orderCancelHandler) {
 		twsAPIRateControl();
 		recordOperationHistory("cancelOrder " + orderId);
-		_api.cancelOrder(orderId);
+		_api.cancelOrder(orderId, manualOrderCancelTime, orderCancelHandler);
 	}
 	public void cancelAllOrders() {
 		twsAPIRateControl();

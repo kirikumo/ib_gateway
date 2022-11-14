@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.ib.client.Decimal;
 import com.ib.controller.ApiController.IDeepMktDataHandler;
 
 import redis.clients.jedis.Jedis;
@@ -93,16 +94,16 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 	}
 
 	@Override
-	public void updateMktDepth(int pos, String mm, DeepType operation, DeepSide side, double price, int size_in_lot) {
+	public void updateMktDepth(int pos, String mm, DeepType operation, DeepSide side, double price, Decimal size_in_lot) {
 		if (pos >= max_depth) return;
 		if (_ct == 0)
 			log(">>> broadcast depth " + publishODBKChannel);
 		_ct += 1;
 		Double size;
 		if (_contract.exchange().equals("SEHK") || _contract.exchange().equals("HKFE")){
-			size = fixIbondSizeBug(size_in_lot);
+			size = fixIbondSizeBug(size_in_lot.longValue());
 		} else {
-			size = size_in_lot * multiplier * marketDataSizeMultiplier;
+			size = size_in_lot.longValue() * multiplier * marketDataSizeMultiplier;
 		}
 		JSONObject o = null;
 		if (operation == DeepType.INSERT) {

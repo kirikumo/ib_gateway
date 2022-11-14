@@ -63,7 +63,8 @@ public class EClientSocket extends EClient implements EClientMsgSink  {
 	    EReader reader = new EReader(this, m_signal);
 	
 	    if (!m_asyncEConnect) {
-	    	reader.putMessageToQueue();
+	    	if (!reader.putMessageToQueue())
+	    		return;
 
 	    	while (m_serverVersion == 0) {
 	    		m_signal.waitForSignal();
@@ -94,7 +95,6 @@ public class EClientSocket extends EClient implements EClientMsgSink  {
 	        return;
 	    }
 	    try{
-	    	System.out.println("\t\tNew Socket connect to " + m_host); // DEBUG reconnect failed
 	        Socket socket = new Socket( m_host, port);
 	        eConnect(socket);
 	    }
@@ -116,7 +116,7 @@ public class EClientSocket extends EClient implements EClientMsgSink  {
 	public synchronized void redirect(String newAddress) {
 	    if( m_useV100Plus ) {
 	    	if (!m_allowRedirect) {
-	    		m_eWrapper.error(EClientErrors.NO_VALID_ID, EClientErrors.CONNECT_FAIL.code(), EClientErrors.CONNECT_FAIL.msg());
+	    		m_eWrapper.error(EClientErrors.NO_VALID_ID, EClientErrors.CONNECT_FAIL.code(), EClientErrors.CONNECT_FAIL.msg(), null);
 	    		return;
 	    	}
 	    	
@@ -145,13 +145,13 @@ public class EClientSocket extends EClient implements EClientMsgSink  {
 		
 		if( m_useV100Plus && (m_serverVersion < MIN_VERSION || m_serverVersion > MAX_VERSION) ) {
 			eDisconnect();
-			m_eWrapper.error(EClientErrors.NO_VALID_ID, EClientErrors.UNSUPPORTED_VERSION.code(), EClientErrors.UNSUPPORTED_VERSION.msg());
+			m_eWrapper.error(EClientErrors.NO_VALID_ID, EClientErrors.UNSUPPORTED_VERSION.code(), EClientErrors.UNSUPPORTED_VERSION.msg(), null);
 			return;
 		}
 		
 	    if( m_serverVersion < MIN_SERVER_VER_SUPPORTED) {
 	    	eDisconnect();
-	        m_eWrapper.error( EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS.code(), EClientErrors.UPDATE_TWS.msg());
+	        m_eWrapper.error( EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS.code(), EClientErrors.UPDATE_TWS.msg(), null);
 	        return;
 	    }
 
@@ -224,6 +224,8 @@ public class EClientSocket extends EClient implements EClientMsgSink  {
 	        	dis.close();
 	    } catch (Exception ignored) {
 	    }
+	    // Notify client: connection closed
+	    m_eWrapper.connectionClosed();
 	}
 
 	public int read(byte[] buf, int off, int len) throws IOException {

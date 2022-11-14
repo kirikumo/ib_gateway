@@ -13,6 +13,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.IBContract;
 import com.bitex.util.Redis;
 import com.ib.client.Contract;
+import com.ib.client.Decimal;
 import com.ib.controller.ApiController.IPositionMultiHandler;
 
 import redis.clients.jedis.Jedis;
@@ -27,7 +28,7 @@ public class PositionHandler implements IPositionMultiHandler{
 	private Map<String, JSONArray> _tmpData = new ConcurrentHashMap<>();
 
 	@Override
-	public synchronized void positionMulti(String account, String modelCode, Contract contract, double pos, double avgCost) {
+	public synchronized void positionMulti(String account, String modelCode, Contract contract, Decimal pos, double avgCost) {
 		IBContract ibc = new IBContract(contract);
 		info("<-- Position " + account + " " + ibc.exchange() + "/" + ibc.shownName() + " pos:" + pos + " cost:" + avgCost);
 		// log(ibc.toJSON());

@@ -11,6 +11,7 @@ import com.ib.client.Order;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
 import com.ib.client.Types.Action;
+import com.ib.client.Decimal;
 
 public class IBOrder {
 	public IBContract contract;
@@ -86,14 +87,14 @@ public class IBOrder {
 		if (oj.getString("i") != null) // Only when modifying existed order.
 			order.permId(Integer.parseInt(oj.getString("i")));
 		order.action(oj.getString("T").toUpperCase()); // BUY SELL
-		order.totalQuantity(oj.getDoubleValue("s"));
+		order.totalQuantity(Decimal.get(oj.getDoubleValue("s")));
 		order.lmtPrice(oj.getDoubleValue("p"));
 		// Use whatIf=true to check trading rules and margin
 		// See https://interactivebrokers.github.io/tws-api/margin.html
 		if (oj.getBoolean("whatIf") != null)
 			order.whatIf(oj.getBoolean("whatIf"));
 		if (oj.containsKey("executed"))
-			order.filledQuantity(oj.getDoubleValue("executed"));
+			order.filledQuantity(Decimal.get(oj.getDoubleValue("executed")));
 		// Don't parse status, will get updates from IB after placing/modifying
 		if (oj.containsKey("orderType"))
 			order.orderType(oj.getString("orderType")); // Only place limit order
@@ -118,7 +119,7 @@ public class IBOrder {
 
 	private void fixIBBug01() {
 		// IB BUG fix, fuck totalQuantity
-		if (orderState.status() == OrderStatus.Filled && order.totalQuantity() == 0) {
+		if (orderState.status() == OrderStatus.Filled && order.totalQuantity().longValue() == 0) {
 			order.totalQuantity(order.filledQuantity());
 			warn("Fixing IB zero totalQuantity bug, fuck me -> " + order.totalQuantity());
 		}
@@ -134,8 +135,8 @@ public class IBOrder {
 	String whyHeld;
 	boolean statusFilled = false; // Basic status need to be filled before using this order.
 	public void setStatus(
-			int _orderId, OrderStatus _status, double _filled,
-			double _remaining, double _avgFillPrice,
+			int _orderId, OrderStatus _status, Decimal _filled,
+			Decimal _remaining, double _avgFillPrice,
 			int _permId, int _parentId, double _lastFillPrice,
 			int _clientId, String _whyHeld, double _mktCapPrice) {
 		if(_orderId != order.orderId())
@@ -143,18 +144,18 @@ public class IBOrder {
 		setStatus(_status, _filled, _remaining, _avgFillPrice, _permId, _parentId, _lastFillPrice, _clientId, _whyHeld, _mktCapPrice);
 	}
 	public void setStatus(
-			OrderStatus _status, double _filled,
-			double _remaining, double _avgFillPrice,
+			OrderStatus _status, Decimal _filled,
+			Decimal _remaining, double _avgFillPrice,
 			int _permId, int _parentId, double _lastFillPrice,
 			int _clientId, String _whyHeld, double _mktCapPrice) {
 		if(order.permId() != 0 && _permId != order.permId())
 			err("setStatus() permId not coinsistent " + _permId + "," + order.permId());
-		if (order.totalQuantity() != _filled + _remaining)
-			err("setStatus() size not coinsistent (" + _filled + "+" + _remaining + "), "+ order.totalQuantity());
+		if (order.totalQuantity().longValue() != _filled.longValue() + _remaining.longValue())
+			err("setStatus() size not coinsistent (" + _filled + "+" + _remaining + "), "+ order.totalQuantity().toString());
 		orderState.status(_status);
-		remaining = _remaining;
-		filled = _filled;
-		order.filledQuantity(_filled);
+		remaining = (double) _remaining.longValue();
+		filled = (double) _filled.longValue();
+		order.filledQuantity(Decimal.get(_filled.longValue()));
 		if (order.permId() == 0)
 			order.permId(_permId);
 		else if (order.permId() != _permId)
@@ -286,7 +287,7 @@ public class IBOrder {
 		else
 			j.put("avg_price", avgFillPrice);
 		j.put("executed_qty", order.filledQuantity());
-		j.put("remained_qty", order.totalQuantity()-order.filledQuantity());
+		j.put("remained_qty", order.totalQuantity().longValue()-order.filledQuantity().longValue());
 		j.put("status", extStatus == null ? orderState.status().toString() : extStatus);
 		// created time missing, default 2000-01-01 00:00:00
 		// suggest using orderRef to store client_oid+timestamp when created.
