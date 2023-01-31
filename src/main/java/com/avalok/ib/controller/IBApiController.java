@@ -26,6 +26,7 @@ import com.ib.controller.ApiController.IRealTimeBarHandler;
 import com.ib.controller.ApiController.ITopMktDataHandler;
 import com.ib.controller.ApiController.ITradeReportHandler;
 import com.ib.controller.ApiController.IOrderCancelHandler;
+import com.ib.controller.ApiController.IPnLHandler;
 
 /**
  * A warpper of ApiController for rate control and other proxy.
@@ -214,5 +215,15 @@ public class IBApiController {
 		twsAPIRateControl();
 		recordOperationHistory("reqContractDetailsToRedis");
 		_api.reqContractDetailsToRedis(contract, processor, id);
+	}
+	public void reqAccountSummary(String group, AccountSummaryTag[] tags, ApiController.IAccountSummaryHandler handler) {
+		twsAPIRateControl();
+		recordOperationHistory("reqAccountSummary:");
+		_api.reqAccountSummary(group, tags, handler);
+	}
+	public void cancelAccountSummary(ApiController.IAccountSummaryHandler handler) {
+		twsAPIRateControl();
+		recordOperationHistory("cancelAccountSummary:");
+		_api.cancelAccountSummary(handler);
 	}
 }
