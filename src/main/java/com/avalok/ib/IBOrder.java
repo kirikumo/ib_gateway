@@ -131,7 +131,7 @@ public class IBOrder {
 	public String account() { return order.account(); }
 	
 	// Updated from AllOrderHandler.orderStatus();
-	Double filled, remaining, avgFillPrice, lastFillPrice, mktCapPrice;
+	Double filled = 0.0, remaining = 0.0, avgFillPrice = 0.0, lastFillPrice = 0.0, mktCapPrice = 0.0;
 	String whyHeld;
 	boolean statusFilled = false; // Basic status need to be filled before using this order.
 	public void setStatus(
@@ -153,8 +153,10 @@ public class IBOrder {
 		if (order.totalQuantity().longValue() != _filled.longValue() + _remaining.longValue())
 			err("setStatus() size not coinsistent (" + _filled + "+" + _remaining + "), "+ order.totalQuantity().toString());
 		orderState.status(_status);
-		remaining = (double) _remaining.longValue();
-		filled = (double) _filled.longValue();
+		if (Math.abs(remaining) < Math.abs(_remaining.longValue()))
+			remaining = (double) _remaining.longValue();
+		if (Math.abs(filled) < Math.abs(_filled.longValue()))
+			filled = (double) _filled.longValue();
 		order.filledQuantity(Decimal.get(_filled.longValue()));
 		if (order.permId() == 0)
 			order.permId(_permId);
@@ -164,9 +166,12 @@ public class IBOrder {
 			order.parentId(_parentId);
 		else if (order.parentId() != _parentId)
 			systemAbort("Inconsistent _parentId " + order.parentId() + " - " + _parentId);
-		avgFillPrice = _avgFillPrice;
-		lastFillPrice = _lastFillPrice;
-		mktCapPrice = _mktCapPrice;
+		if (Math.abs(avgFillPrice) < Math.abs(_avgFillPrice))
+			avgFillPrice = _avgFillPrice;
+		if (Math.abs(lastFillPrice) < Math.abs(_lastFillPrice))
+			lastFillPrice = _lastFillPrice;
+		if (Math.abs(mktCapPrice) < Math.abs(_mktCapPrice))
+			mktCapPrice = _mktCapPrice;
 		whyHeld = _whyHeld;
 		statusFilled = true;
 		fixIBBug01();

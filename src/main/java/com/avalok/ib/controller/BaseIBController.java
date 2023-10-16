@@ -129,9 +129,12 @@ public abstract class BaseIBController implements IConnectionHandler {
 		} else if (waitingConnect) {
 			log("waitingConnect");
 			return;
-		} else if (_initConnTS >= System.currentTimeMillis()) {
+
+		}
+		waitingConnect = true;
+		if (_initConnTS >= System.currentTimeMillis()) {
+			// The first call _connect() will set new initConnTs
 			log("Sleep " + (_initConnTS - System.currentTimeMillis()) + "ms before _connect()");
-			waitingConnect = true;
 			sleep(_initConnTS - System.currentTimeMillis());
 		}
 		new Thread(new Runnable() {
@@ -139,18 +142,23 @@ public abstract class BaseIBController implements IConnectionHandler {
 				int retry_ct = 0;
 				log("Connect thread started.");
 				while (true) {
-					waitingConnect = true;
+//					waitingConnect = true;
 					try {
 						log("Connecting gateway " + TWS_API_ADDR + " ID " + _apiClientID);
 						// TODO this step might hang.
 						IBApiController newController = new IBApiController(_assignNewIConnectionHandler(), new NullIBLogger(), new NullIBLogger());
 						// make initial connection to local host, port 7496, client id 0, no connection options
+						if (_apiController != null) {
+							log("_apiController != null");
+							_postDisconnected();
+							_apiController.disconnect();
+						}
 						newController.connect(TWS_API_ADDR, TWS_API_PORT, _apiClientID, null);
 						_apiController = newController;  // Only assign after _connect()
 						_connectedTS = System.currentTimeMillis();
 						log("Gateway connected with client ID " + _apiClientID);
-						_markTWSServerConnected(false);
-						waitingConnect = false;
+//						_markTWSServerConnected(false);
+//						waitingConnect = false;
 						break;
 					} catch (StackOverflowError e) {
 						log("StackOverflowError in connecting gateway with ID " + _apiClientID + " retry_ct:" + retry_ct);
@@ -163,6 +171,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 					}
 				}
 				log("Connect thread finished.");
+				waitingConnect = false;
 			}
 		}).start();
 	}
@@ -234,7 +243,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 
 	@Override
 	public void disconnected() {
-		if (waitingConnect) return;
+//		if (_initConnTS >= System.currentTimeMillis()) return;
 
 		recordMessage(0, 0, "IB API disconnected");
 		log("disconnected()");

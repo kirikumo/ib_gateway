@@ -4,10 +4,7 @@ import static com.bitex.util.DebugUtil.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -228,7 +225,7 @@ public class GatewayController extends BaseIBController {
 		if (!isConnected()) {
 			return 0;
 		}
-		AccountSummaryTag[] a = AccountSummaryTag.values();
+//		AccountSummaryTag[] a = AccountSummaryTag.values();
 		_apiController.cancelAccountSummary(accountSummaryHandler);
 		_apiController.reqAccountSummary("All", AccountSummaryTag.values(), accountSummaryHandler);
 		return _apiController.lastReqId();
@@ -307,6 +304,20 @@ public class GatewayController extends BaseIBController {
 		_apiController.reqContractDetailsToRedis(ibc, ContractDetailsHandler.instance, id);
 		return _apiController.lastReqId();
 	}
+
+	////////////////////////////////////////////////////////////////
+	// History data
+	////////////////////////////////////////////////////////////////
+	protected int queryHistoryDataToRedis(JSONObject j, Long id) {
+		String endDateTime = j.getString("endDateTime");
+		Integer duration = j.getInteger("duration");
+		IBContract contract = new IBContract(j.getJSONObject("contract"));
+
+		HistoricalDataHandler handler = new HistoricalDataHandler(id);
+		_apiController.reqHistoricalData(contract, endDateTime, duration, DurationUnit.DAY, BarSize._1_day, WhatToShow.TRADES, false, false, handler);
+		return _apiController.lastReqId();
+	}
+
 	////////////////////////////////////////////////////////////////
 	// Life cycle and command processing
 	////////////////////////////////////////////////////////////////
@@ -360,6 +371,9 @@ public class GatewayController extends BaseIBController {
 				err("Failed to parse command " + e.getMessage());
 				return;
 			}
+			log("test: _twsConnected: "+ _twsConnected + ", _apiConnected: "+ _apiConnected);
+			if (_twsConnected && !_apiConnected) _connect();
+
 			final Long id = j.getLong("id");
 			info("<<< CMD " + id + " " + j.getString("cmd"));
 			String errorMsg = null;
@@ -403,6 +417,21 @@ public class GatewayController extends BaseIBController {
 				case "FIND_ACCOUNT_SUMMARY":
 					apiReqId = queryAccountSummary();
 					break;
+				case "FIND_HISTORY":
+					apiReqId = queryHistoryDataToRedis(j, id);
+					break;
+//				case "UPDATE_OPT_GREEKS":
+//					info("Double.MAX_VALUE: " + Double.MAX_VALUE);
+//					for (IBContract c : accountMVHandler.ibc_cache.values()) {
+//						if (c.secType() != SecType.OPT) {
+//							OptionTopMktDataHandler optHandler = new OptionTopMktDataHandler(c, false, false);
+//							_apiController.reqOptionMktData(c, "", true , false, optHandler);
+//						} else {
+//							TopMktDataHandler handler = new TopMktDataHandler(c, false, false);
+//							_apiController.reqTopMktData(c, "", true , false, handler);
+//						}
+////						break;
+//					}
 				default:
 					errorMsg = "Unknown cmd " + j.getString("cmd");
 					err(errorMsg);

@@ -161,11 +161,11 @@ public class IBApiController {
 		recordOperationHistory("removeLiveOrderHandler");
 		_api.removeLiveOrderHandler(handler);
 	}
-//	public void reqHistoricalData(NewContract contract, String endDateTime, int duration, DurationUnit durationUnit, BarSize barSize, WhatToShow whatToShow, boolean rthOnly, IHistoricalDataHandler handler) {
-//		twsAPIRateControl();
-//		recordOperationHistory("reqHistoricalData:" + JSON.toJSONString(contract));
-//		_api.reqHistoricalData(contract, endDateTime, duration, durationUnit, barSize, whatToShow, rthOnly, handler);
-//	}
+	public void reqHistoricalData(Contract contract, String endDateTime, int duration, Types.DurationUnit durationUnit, Types.BarSize barSize, Types.WhatToShow whatToShow, boolean rthOnly, boolean keepUpToDate, IHistoricalDataHandler handler) {
+		twsAPIRateControl();
+		recordOperationHistory("reqHistoricalData");
+		_api.reqHistoricalData(contract, endDateTime, duration, durationUnit, barSize, whatToShow, rthOnly, keepUpToDate, handler);
+	}
 	public void cancelHistoricalData(IHistoricalDataHandler handler) {
 		twsAPIRateControl();
 		recordOperationHistory("cancelHistoricalData");
@@ -225,5 +225,11 @@ public class IBApiController {
 		twsAPIRateControl();
 		recordOperationHistory("cancelAccountSummary:");
 		_api.cancelAccountSummary(handler);
+	}
+
+	public  void reqOptionVolatility(Contract c, double optPrice, double underPrice, IOptHandler handler) {
+		twsAPIRateControl();
+		recordOperationHistory("reqOptionVolatility");
+		_api.reqOptionVolatility(c, optPrice, underPrice, handler);
 	}
 }

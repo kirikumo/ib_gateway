@@ -5,6 +5,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.IBContract;
 import com.bitex.util.Redis;
+import com.ib.client.Contract;
 import com.ib.client.Decimal;
 import com.ib.client.TickAttrib;
 import com.ib.client.TickType;
@@ -36,7 +37,13 @@ public class OptionTopMktDataHandler implements IOptHandler{
     protected boolean tickDataInited = true;
 
     private Consumer<Jedis> broadcastTopLambda;
-    private Consumer<Jedis> broadcastTickLambda;
+    private Consumer<Jedis> broadcastTickLambda;;
+    
+    public Double lastGamma;
+    public Double lastVega;
+    public Double lastTheta;
+    public Double lastDeltaDollars;
+    public boolean isLive;
 
     public OptionTopMktDataHandler(IBContract contract, boolean broadcastTop, boolean broadcastTick) {
         _contract = contract;
@@ -46,14 +53,28 @@ public class OptionTopMktDataHandler implements IOptHandler{
             multiplier = 1;
         else
             multiplier = Double.parseDouble(contract.multiplier());
+        Long t0 = System.currentTimeMillis();
         while (true) {
             JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
             if (contractDetail != null) {
                 marketDataSizeMultiplier = contractDetail.getIntValue("mdSizeMultiplier");
                 break;
             }
+
+            if (t0 < System.currentTimeMillis() - 2000) {
+                Contract c = contract;
+                c.exchange("SMART");
+                IBContract smartIbc = new IBContract(c);
+                JSONObject smartContractDetail = ContractDetailsHandler.findDetails(smartIbc);
+                if (smartContractDetail != null) {
+                    info("WARNING!! FIX _contract.exchange FROM"+ _contract.exchange() + " to SMART");
+                    _contract = smartIbc;
+                    marketDataSizeMultiplier = smartContractDetail.getIntValue("mdSizeMultiplier");
+                    break;
+                }
+            }
             log("wait for contract details " + publishODBKChannel);
-            sleep(1);
+            sleep(200);
         }
         // Pre-build snapshot
         topDataSnapshot.add(topBids);
@@ -312,6 +333,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
         j.put("vega",vega);
         j.put("theta",theta);
         j.put("undPrice",undPrice);
+        j.put("updateTime", System.currentTimeMillis());
         switch (tickType) {
             case BID_OPTION:
                 writeComputation("IBGateway:BidComputation:" + _contract.shownName(), j);
@@ -321,6 +343,11 @@ public class OptionTopMktDataHandler implements IOptHandler{
                 break;
             case LAST_OPTION:
                 writeComputation("IBGateway:LastComputation:" + _contract.shownName(), j);
+                lastGamma = gamma;
+                lastVega = vega;
+                lastTheta = theta;
+                lastDeltaDollars = delta * undPrice;
+                isLive = true;
                 break;
             case MODEL_OPTION:
                 writeComputation("IBGateway:ModelComputation:" + _contract.shownName(), j);
@@ -333,6 +360,11 @@ public class OptionTopMktDataHandler implements IOptHandler{
                 break;
             case DELAYED_LAST_OPTION:
                 writeComputation("IBGateway:LastComputation:" + _contract.shownName(), j);
+                lastGamma = gamma;
+                lastVega = vega;
+                lastTheta = theta;
+                lastDeltaDollars = delta * undPrice;
+                isLive = false;
                 break;
             case DELAYED_MODEL_OPTION:
                 writeComputation("IBGateway:ModelComputation:" + _contract.shownName(), j);
