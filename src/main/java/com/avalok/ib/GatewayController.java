@@ -414,6 +414,9 @@ public class GatewayController extends BaseIBController {
 				case "ACCOUNT_LIST":
 					response = JSON.toJSONString(accList);
 					break;
+				case "UPDATE_ACCOUNT_MV":
+					subscribeAccountMV();
+					break;
 				case "FIND_ACCOUNT_SUMMARY":
 					apiReqId = queryAccountSummary();
 					break;
