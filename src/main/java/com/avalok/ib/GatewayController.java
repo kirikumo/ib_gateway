@@ -2,8 +2,6 @@ package com.avalok.ib;
 
 import static com.bitex.util.DebugUtil.*;
 
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.text.SimpleDateFormat;
@@ -25,6 +23,8 @@ import com.ib.controller.ApiController.ITopMktDataHandler;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
+
+import java.util.ArrayList;
 
 public class GatewayController extends BaseIBController {
 	public static void main(String[] args) throws Exception {
@@ -126,7 +126,7 @@ public class GatewayController extends BaseIBController {
 			String genericTickList = "";
 
 			// Request snapshot, then updates
-			boolean snapshot = true, regulatorySnapshot = true;
+			boolean snapshot = true, regulatorySnapshot = false;
 			_apiController.reqOptionMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
 			snapshot = false; regulatorySnapshot = false;
 			_apiController.reqOptionMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
@@ -139,7 +139,7 @@ public class GatewayController extends BaseIBController {
 			String genericTickList = "";
 
 			// Request snapshot, then updates
-			boolean snapshot = true, regulatorySnapshot = true;
+			boolean snapshot = true, regulatorySnapshot = false;
 			_apiController.reqTopMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
 			snapshot = false; regulatorySnapshot = false;
 			_apiController.reqTopMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
@@ -346,7 +346,7 @@ public class GatewayController extends BaseIBController {
 		_apiController.reqHistoricalData(contract, endDateTime, duration, DurationUnit.DAY, BarSize._1_day, WhatToShow.TRADES, false, false, handler);
 		return _apiController.lastReqId();
 	}
-	
+
 	////////////////////////////////////////////////////////////////
 	// Life cycle and command processing
 	////////////////////////////////////////////////////////////////
@@ -465,6 +465,15 @@ public class GatewayController extends BaseIBController {
 //					_apiController.reqHistoricalData(contract, endDateTime, 3, DurationUnit.DAY, BarSize._1_day, WhatToShow.TRADES, false, false, ss);
 					apiReqId = queryHistoryDataToRedis(j, id);
 					break;
+				case "REQ_EXECUTIONS":
+					_apiController.reqExecutions(new ExecutionFilter(), new TradeReportHandler());
+					break;
+				case "FIND_ORDER_PICK_CONTRACT":
+					IBOrder _ibOrder = new IBOrder(j.getJSONObject("contract"));
+//					log(new IBOrder(j.getJSONObject("data")).cloneWithRealExchange());
+					response = JSON.toJSONString(_ibOrder.cloneWithRealExchange().contract.toJSON());
+					break;
+
 //				case "UPDATE_OPT_GREEKS":
 ////					_apiController.reqAccountUpdates(true, "All", accountMVHandler);
 //					for (IBContract c : accountMVHandler.ibc_cache.values()) {
@@ -575,6 +584,12 @@ public class GatewayController extends BaseIBController {
 			_postConnected();
 			break;
 		case 2157: // msg:Sec-def data farm connection is broken:secdefhk
+			break;
+		case 162:
+			j.put("type", "error");
+			j.put("msg", errorMsg);
+			Redis.pub(ackChannel, j);
+			warn("Unhandled Message: id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
 			break;
 		default:
 			super.message(id, errorCode, errorMsg);

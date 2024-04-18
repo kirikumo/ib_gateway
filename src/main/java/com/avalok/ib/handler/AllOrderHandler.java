@@ -3,6 +3,7 @@ package com.avalok.ib.handler;
 import static com.bitex.util.DebugUtil.*;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
 import com.bitex.util.Redis;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -145,6 +146,34 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	////////////////////////////////////////////////////////////////
 	public void tradeReport(String tradeKey, Contract contract, Execution execution) {
 		IBContract ibc = new IBContract(contract);
+		Redis.exec(new Consumer<Jedis>() {
+			@Override
+			public void accept(Jedis t) {
+//				String key = "TradeReport:"+ibc.exchange()+":"+execution.acctNumber()+":O:"+ibc.pair();
+				String key = "TradeReport:"+execution.acctNumber();
+				JSONObject j = new JSONObject();
+				j.put("orderId", execution.orderId());
+				j.put("clientId", execution.clientId());
+				j.put("execId", execution.execId());
+				j.put("time", execution.time());
+				j.put("acctNumber", execution.acctNumber());
+				j.put("exchange", execution.exchange());
+				j.put("side", execution.side());
+				j.put("shares", execution.shares());
+				j.put("price", execution.price());
+				j.put("permId", execution.permId());
+				j.put("liquidation", execution.liquidation());
+				j.put("cumQty", execution.cumQty());
+				j.put("avgPrice", execution.avgPrice());
+				j.put("orderRef", execution.orderRef());
+				j.put("evRule", execution.evRule());
+				j.put("evMultiplier", execution.evMultiplier());
+				j.put("modelCode", execution.modelCode());
+				j.put("lastLiquidity", execution.lastLiquidityStr());
+
+				t.hset(key, tradeKey, j.toJSONString());
+			}
+		});
 		log("<-- tradeReport() " + tradeKey + " " + ibc.shownName() + execution.cumQty() + "@" + execution.price());
 	}
 	public void tradeReportEnd() {

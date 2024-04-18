@@ -14,6 +14,7 @@ import com.ib.client.Types.Action;
 
 public class IBOrder {
 	public IBContract contract;
+	public JSONObject contractDetails;
 	public Order order;
 	// https://interactivebrokers.github.io/tws-api/order_submission.html#order_status
 	protected OrderState orderState;
@@ -24,6 +25,7 @@ public class IBOrder {
 	 */
 	public IBOrder(IBOrder ibo) {
 		contract = ibo.contract;
+		contractDetails = ibo.contractDetails;
 		order = ibo.order;
 		orderState = ibo.orderState;
 		toBePlaced = ibo.toBePlaced;
@@ -47,8 +49,10 @@ public class IBOrder {
 		IBContract ibc = o.contract;
 		if (ibc.exchange().equals("SMART")) {
 			IBContract ibcWithRealExchange = new IBContract(ibc);
+			ibcWithRealExchange.shownName();
 			ibcWithRealExchange.exchange(null);
-			if (ContractDetailsHandler.fillIBContract(ibcWithRealExchange)) {
+			Integer aggGroup = contractDetails.getInteger("aggGroup");
+			if (ContractDetailsHandler.fillSmartIBContract(ibcWithRealExchange, aggGroup)) {
 				String realExchange = ibcWithRealExchange.exchange();
 				// Clone an IBOrder with real exchange.
 				ibc = ibcWithRealExchange;
@@ -68,7 +72,7 @@ public class IBOrder {
 	 */
 	public IBOrder(Contract _contract, Order _order) {
 		contract = new IBContract(_contract);
-		ContractDetailsHandler.findDetails(contract);
+		contractDetails = ContractDetailsHandler.findDetails(contract);
 		order = _order;
 		toBePlaced = true;
 	}
@@ -79,7 +83,7 @@ public class IBOrder {
 	 */
 	public IBOrder(JSONObject j) {
 		contract = new IBContract(j.getJSONObject("contract"));
-		ContractDetailsHandler.findDetails(contract);
+		contractDetails = ContractDetailsHandler.findDetails(contract);
 		JSONObject oj = j.getJSONObject("order");
 		order = new Order();
 		order.account(oj.getString("account"));
@@ -110,7 +114,7 @@ public class IBOrder {
 	 */
 	public IBOrder(Contract _contract, Order _order, OrderState _orderState) {
 		contract = new IBContract(_contract);
-		ContractDetailsHandler.findDetails(contract);
+		contractDetails = ContractDetailsHandler.findDetails(contract);
 		order = _order;
 		orderState = _orderState;
 		fixIBBug01();
@@ -290,7 +294,7 @@ public class IBOrder {
 			errWithTrace("Unknown order action " + order.action());
 		j.put("ttl_qty", order.totalQuantity());
 		j.put("p", order.lmtPrice());
-		if (avgFillPrice == null)
+		if (avgFillPrice == 0)
 			j.put("avg_price", order.lmtPrice());
 		else
 			j.put("avg_price", avgFillPrice);

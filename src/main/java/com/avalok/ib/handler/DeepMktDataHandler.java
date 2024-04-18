@@ -32,6 +32,11 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 	protected List<JSONObject> asks = new ArrayList<>();
 	protected List<JSONObject> bids = new ArrayList<>();
 	protected final JSONArray odbkSnapshot = new JSONArray();
+	protected int maxBidPos = 0;
+	protected int maxAskPos = 0;
+
+	protected boolean bidDepthInited = true;
+	protected boolean askDepthInited = true;
 
 	private Consumer<Jedis> broadcastLambda;
 	public DeepMktDataHandler(IBContract contract, boolean broadcast) {
@@ -104,36 +109,70 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 		} else {
 			size = size_in_lot * multiplier * marketDataSizeMultiplier;
 		}
+//		log("START ==========================================================================");
+//		log("DeepType " + pos + " " + side + " " + operation + " " + price + " " + size);
 		JSONObject o = null;
 		if (operation == DeepType.INSERT) {
-			depthInited = false;
+			depthInited = true;
 			o = new JSONObject();
 			o.put("p", price);
 			o.put("s", size);
 			if (side == DeepSide.BUY) {
-				if (bids.size() >= pos)
+				if (bids.size() >= pos) {
 					bids.add(pos, o);
-				else
+//					if (pos > maxBidPos) maxBidPos = pos;
+				}
+				else {
+//					log("INSERT -> bids.size(): " + bids.size() + " < pos:" + pos);
 					return;
+				}
 			} else {
-				if (asks.size() >= pos)
+				if (asks.size() >= pos) {
 					asks.add(pos, o);
-				else
+//					if (pos > maxAskPos) maxAskPos = pos;
+				}
+				else {
+//					log("INSERT -> asks.size(): " + asks.size() + " < pos:" + pos);
 					return;
+				}
 			}
 		} else if (operation == DeepType.UPDATE) {
 			// Reuse o from asks/bids
 			depthInited = true;
+			bidDepthInited = true;
+			askDepthInited = true;
 			if (side == DeepSide.BUY) {
-				if (bids.size() > pos)
+				if (bids.size() > pos) {
 					o = bids.get(pos);
-				else
+					double p = o.getDouble("p");
+					if (p != price) {
+						maxBidPos = bids.size() - 1;
+						bidDepthInited = false;
+					}
+					if (pos == maxBidPos) {
+						bidDepthInited = true;
+					}
+				}
+				else {
+//					log("UPDATE -> bids.size(): " + bids.size() + " < pos:" + pos);
 					return;
+				}
 			} else {
-				if (asks.size() > pos)
+				if (asks.size() > pos)  {
 					o = asks.get(pos);
-				else
+					double p = o.getDouble("p");
+					if (p != price) {
+						maxAskPos = asks.size() - 1;
+						askDepthInited = false;
+					}
+					if (pos == maxAskPos) {
+						askDepthInited = true;
+					}
+				}
+				else {
+//					log("UPDATE -> asks.size(): " + asks.size() + " < pos:" + pos);
 					return;
+				}
 			}
 			o.put("p", price);
 			o.put("s", size);
@@ -150,6 +189,13 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 			log("Error DeepType " + pos + " " + side + " " + operation + " " + price + " " + size);
 			return;
 		}
+//		log("bids: " + bids.toString());
+//		log("asks: " + asks.toString());
+//		log("testbiddepthInited: " + testbiddepthInited + " testaskdepthInited: " + testaskdepthInited);
+//		log("send msg?: " + (testaskdepthInited && testbiddepthInited));
+//		log("END ==========================================================================");
+		Boolean updateFinish = askDepthInited && bidDepthInited;
+
 		// Debug
 //		if (pos < 3 && depthInited) {
 //			log(_contract.shownName() + "------------------------------------------" + bids.size());
@@ -159,7 +205,7 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 //							+ bids.get(i).getDoubleValue("p") + " --- " + asks.get(i).getDoubleValue("p") + " "
 //							+ asks.get(i).getIntValue("s"));
 //		}
-		if (depthInited && broadcastLambda != null) {
+		if (depthInited && broadcastLambda != null && updateFinish) {
 			odbkSnapshot.set(2, System.currentTimeMillis());
 			Redis.exec(broadcastLambda);
 		}

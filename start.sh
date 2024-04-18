@@ -3,11 +3,11 @@ SOURCE="${BASH_SOURCE[0]}"
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 export TWS_API_ADDR=127.0.0.1
-export TWS_API_PORT=4001
+export TWS_API_PORT=7496
 export TWS_API_CLIENTID=0 # Only the default client (i.e 0) can auto bind orders
-export TWS_GATEWAY_NAME=zwyang
+export TWS_GATEWAY_NAME=mkdata_gateway
 
-source $DIR/../uranus/conf/env2.sh
+source $DIR/conf/env2.sh
 
 cd $DIR
 [ -z $1 ] && echo "Need args" && exit 1
@@ -18,3 +18,4 @@ else
 	echo "Unknown args $@"
 	exit 1
 fi
+

@@ -1053,6 +1053,17 @@ public class ApiController implements EWrapper {
     	m_client.reqHistoricalData(reqId, contract, endDateTime, durationStr, barSize.toString(), whatToShow.toString(), rthOnly ? 1 : 0, 2, keepUpToDate, Collections.emptyList());
 		sendEOM();
     }
+//    public void reqHistoricalDataDrictly( int reqId, Contract contract, String endDateTime,
+//    		String durationStr, String barSizeSetting, String whatToShow, int useRTH, int formatDate, boolean keepUpToDate, IHistoricalDataHandler handler) {
+//
+//		if (!checkConnection())
+//			return;
+//
+//    	int reqId = m_reqId++;
+//    	m_historicalDataMap.put( reqId, handler);
+//    	m_client.reqHistoricalData(reqId, contract, endDateTime, durationStr, barSizeSetting, whatToShow.toString(), rthOnly ? 1 : 0, 2, keepUpToDate, Collections.emptyList());
+//		sendEOM();
+//    }
 
     public void cancelHistoricalData( IHistoricalDataHandler handler) {
 		if (!checkConnection())
