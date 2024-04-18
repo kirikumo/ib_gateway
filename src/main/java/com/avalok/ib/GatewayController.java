@@ -2,14 +2,11 @@ package com.avalok.ib;
 
 import static com.bitex.util.DebugUtil.*;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.controller.BaseIBController;
 import com.avalok.ib.handler.*;
@@ -19,7 +16,6 @@ import com.ib.client.*;
 import com.ib.client.Types.*;
 
 import com.ib.controller.AccountSummaryTag;
-import com.ib.controller.ApiController;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPubSub;
 
@@ -37,6 +33,7 @@ public class GatewayController extends BaseIBController {
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			public void run() {
 				orderCacheHandler.teardownOMS("Shutting down");
+//				teardownListenOrder();
 			}
 		});
 		// Keep updating working status '[true, timestamp]' in 
@@ -319,8 +316,138 @@ public class GatewayController extends BaseIBController {
 	}
 
 	////////////////////////////////////////////////////////////////
+	// Redis control place/cancel order
+	////////////////////////////////////////////////////////////////
+//	private static Thread listenPlaceOrderQueueThread = new Thread();
+//	private static Thread listenCancelOrderQueueThread = new Thread();
+//	private final boolean TEST_REDIS_TRADE = false;
+//	private List<String> placeOidCache = new ArrayList<>();
+//
+//	private void teardownListenOrder() {
+//		if (listenPlaceOrderQueueThread.isAlive()) {
+//			listenPlaceOrderQueueThread.interrupt();
+//			err("Tear down listenPlaceOrderQueueThread");
+//		}
+//		if (listenCancelOrderQueueThread.isAlive()) {
+//			listenCancelOrderQueueThread.interrupt();
+//			err("Tear down listenCancelOrderQueueThread");
+//		}
+//	}
+//
+//	private void listenRedis() {
+//		String placeOrderQueue = "test_place_order_queue";
+//		String orderDataPool = "test_order_data_pool";
+//		String placeOrderPassQueue = "test_place_order_pass_queue";
+//
+//		if (listenPlaceOrderQueueThread.isAlive()) {
+//			listenPlaceOrderQueueThread.interrupt();
+//		}
+//		listenPlaceOrderQueueThread = new Thread(new Runnable() {
+//			public void run() {
+//				while (true) {
+//					try {
+//						if (Redis.connectivityTest() == false) {
+//							sleep(1000);
+//							continue;
+//						}
+//						Redis.exec(new Consumer<Jedis>() {
+//							@Override
+//							public void accept(Jedis r) {
+////								log("place r.info(): " + r.info());
+//								List<String> topDataList = r.brpop(60, placeOrderQueue);
+//								if (topDataList == null || topDataList.size() == 0) {
+//
+//								} else {
+//									String oid = topDataList.get(1);
+//									IBOrder order = orderCacheHandler.orderByOMSId(oid);
+//									if (order != null) {
+//										err("orderId '" + oid + "' already exists");
+//									} else {
+//										String orderData = r.hget(orderDataPool, oid);
+//										JSONObject j = null;
+//										try {
+//											j = JSON.parseObject(orderData);
+//											JSONObject orderJson = j.getJSONObject("iborder");
+//											IBOrder ibo = new IBOrder(orderJson);
+//											Long orderTs = orderJson.getLongValue("timestamp");
+//
+//											if (System.currentTimeMillis() - 2000 > orderTs) {
+//												log("test: order is oldest -> " + oid);
+//												r.lpush(placeOrderPassQueue, oid);
+//											} else {
+//												placeOrder(ibo);
+//												placeOidCache.add(oid);
+//												log("test: place order -> " + oid);
+//											}
+//										} catch (Exception e) {
+//											e.printStackTrace();
+//											err("<<< CMD " + orderData);
+//											err("Failed to parse command " + e.getMessage());
+//										}
+//									}
+//								}
+//							}
+//						});
+//					} catch (Exception e) {
+//						err("Failed to listenPlaceOrderQueueThread " + e.getMessage());
+//						return;
+//					}
+//
+//				}
+//			}
+//		});
+//		listenPlaceOrderQueueThread.start();
+//
+//		if (listenCancelOrderQueueThread.isAlive()) {
+//			listenCancelOrderQueueThread.interrupt();
+//		}
+//		String cancelOrderQueue = "test_cancel_order_queue";
+//		listenCancelOrderQueueThread = new Thread(new Runnable() {
+//			public void run() {
+//				while (true) {
+//					try {
+//						if (Redis.connectivityTest() == false) {
+//							sleep(1000);
+//							continue;
+//						}
+//						Redis.exec(new Consumer<Jedis>() {
+//							@Override
+//							public void accept(Jedis r) {
+////								log("cancel r.info(): " + r.info());
+//								List<String> topDataList = r.brpop(60, cancelOrderQueue);
+//
+//								if (topDataList == null || topDataList.size() == 0) {}
+//								else {
+//									String cancelId = topDataList.get(1);
+//									//							Push back to the queue and delete again after successful cancellation
+//									r.rpush(cancelOrderQueue, cancelId);
+//
+//									int apiReqId = cancelOrder(cancelId);
+//									if (apiReqId == 0 && placeOidCache.contains(cancelId)) {
+//										log("oid -> " + cancelId + " not submit to place order");
+//									} else {
+//										r.lrem(cancelOrderQueue, 60, cancelId);
+//										log("test: call cancel -> " + cancelId + " apiReqId: " + apiReqId);
+//									}
+//								}
+//							}
+//						});
+//					} catch (Exception e) {
+//						err("Failed to listenCancelOrderQueueThread " + e.getMessage());
+//						return;
+//					}
+//				}
+//			}
+//		});
+//		listenCancelOrderQueueThread.start();
+//	}
+	////////////////////////////////////////////////////////////////
 	// Life cycle and command processing
 	////////////////////////////////////////////////////////////////
+
+//	private  static Timer connectTimer = new Timer("GatewayControllerDelayTask _postConnected()");
+	private static TimerTask connectTimerTask;
+	private static int connectMark = 0;
 	@Override
 	protected void _postConnected() {
 		log("_postConnected");
@@ -329,21 +456,33 @@ public class GatewayController extends BaseIBController {
 		orderCacheHandler.resetStatus();
 		
 		// Then subscribe market data.
+//		if (_apiController == null) _connect();
 		subscribeTradeReport();
 		restartMarketData();
 
 		log("_postConnected delay 3 seconds to subscribe MV and refresh orders");
-		// To have enough contract data to replace 'SMART' exchange
-		// Delay to subscribe order snapshot
-		new Timer("GatewayControllerDelayTask _postConnected()").schedule(new TimerTask() {
+
+		if (connectTimerTask != null) {
+			connectTimerTask.cancel();
+			connectTimerTask = null;
+		}
+		connectMark = connectMark < 1000 ? connectMark + 1: 0;
+		connectTimerTask = new TimerTask() {
 			@Override
 			public void run() {
+				final int cacheMark = connectMark;
 				while (true) {
+					// Make sure only one connectTimerTask
+					if (cacheMark != connectMark) {
+						break;
+					}
 					if (isConnected() && accList != null) {
 						subscribeAccountMV();
 						log("_postConnected : refresh alive and completed orders");
 						refreshLiveOrders();
 						refreshCompletedOrders();
+//						if (TEST_REDIS_TRADE) listenRedis();
+						connectTimerTask = null;
 						break;
 					} else {
 						log("_postConnected : isConnected " + isConnected() + " accList null? " + (accList != null));
@@ -351,7 +490,12 @@ public class GatewayController extends BaseIBController {
 					}
 				}
 			}
-		}, 3000);
+		};
+
+		// To have enough contract data to replace 'SMART' exchange
+		// Delay to subscribe order snapshot
+		Timer connectTimer = new Timer("GatewayControllerDelayTask _postConnected()");
+		connectTimer.schedule(connectTimerTask, 3000);
 	}
 
 	@Override
@@ -359,6 +503,7 @@ public class GatewayController extends BaseIBController {
 		log("_postDisconnected");
 		orderCacheHandler.teardownOMS("_postDisconnected()");
 		orderCacheHandler.resetStatus();
+//		teardownListenOrder();
 	}
 
 	private JedisPubSub commandProcessJedisPubSub = new JedisPubSub() {
@@ -372,8 +517,11 @@ public class GatewayController extends BaseIBController {
 				return;
 			}
 			log("test: _twsConnected: "+ _twsConnected + ", _apiConnected: "+ _apiConnected);
-			if (_twsConnected && !_apiConnected) _connect();
-
+			try {
+				if (!_twsConnected || !_apiConnected) _connect();
+			} catch (Exception e) {
+				err("Failed to connect " + e.getMessage());
+			}
 			final Long id = j.getLong("id");
 			info("<<< CMD " + id + " " + j.getString("cmd"));
 			String errorMsg = null;
@@ -423,6 +571,16 @@ public class GatewayController extends BaseIBController {
 				case "FIND_HISTORY":
 					apiReqId = queryHistoryDataToRedis(j, id);
 					break;
+				case "FIND_ORDER_PICK_CONTRACT":
+//					response = JSON.toJSONString((new IBOrder(j.getJSONObject("contract"))).cloneWithRealExchange().toOMSJSON());
+					IBOrder _ibOrder = new IBOrder(j.getJSONObject("contract"));
+					response = JSON.toJSONString(_ibOrder.cloneWithRealExchange().contract.toJSON());
+					break;
+				case "REQ_EXECUTIONS":
+					_apiController.reqExecutions(new ExecutionFilter(), new TradeReportHandler());
+					break;
+//				case "TEST_PNL":
+//					_apiController.reqExecutions();
 //				case "UPDATE_OPT_GREEKS":
 //					info("Double.MAX_VALUE: " + Double.MAX_VALUE);
 //					for (IBContract c : accountMVHandler.ibc_cache.values()) {

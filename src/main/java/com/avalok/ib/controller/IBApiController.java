@@ -26,7 +26,6 @@ import com.ib.controller.ApiController.IRealTimeBarHandler;
 import com.ib.controller.ApiController.ITopMktDataHandler;
 import com.ib.controller.ApiController.ITradeReportHandler;
 import com.ib.controller.ApiController.IOrderCancelHandler;
-import com.ib.controller.ApiController.IPnLHandler;
 
 /**
  * A warpper of ApiController for rate control and other proxy.

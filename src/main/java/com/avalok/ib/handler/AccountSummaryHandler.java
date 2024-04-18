@@ -15,6 +15,7 @@ import static com.ib.controller.AccountSummaryTag.AccountType;
 public class AccountSummaryHandler implements IAccountSummaryHandler{
     Map<String, Map<String, String>> m_map = new HashMap<>();
 
+//    https://ibkrcampus.com/ibkr-api-page/trader-workstation-api/#account-value-keys
     @Override
     public void accountSummary(String account, AccountSummaryTag tag, String value, String currency) {
         Map<String, String> summary = m_map.get(account);
@@ -93,6 +94,31 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
                 summary.put("Leverage", value);
 //                m_map.get(account).put("Leverage", value);
                 break;
+            case AvailableFunds:
+                summary.put("AvailableFunds", value);
+                break;
+//            case FullAvailableFunds:
+//                summary.put("FullAvailableFunds", value);
+//                break;
+//            case FullExcessLiquidity:
+//                summary.put("FullAvailableFunds", value);
+//                break;
+//            case FullInitMarginReq:
+//                summary.put("FullInitMarginReq", value);
+//                break;
+//            case FullMaintMarginReq:
+//                summary.put("FullMaintMarginReq", value);
+//                break;
+            case GrossPositionValue:
+                summary.put("GrossPositionValue", value);
+                break;
+            case PreviousDayEquityWithLoanValue:
+                summary.put("PreviousDayEquityWithLoanValue", value);
+                break;
+            case HighestSeverity:
+                summary.put("HighestSeverity", value);
+                break;
+
         }
         m_map.put(account, summary);
 //        log("account: "+account+" tag: "+tag + " value: " + value + " currency: "+currency);

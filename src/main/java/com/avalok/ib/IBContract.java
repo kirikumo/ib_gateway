@@ -73,6 +73,7 @@ public class IBContract extends Contract {
 					// use "s = symbol()" before get contract
 					s = symbol();
 				}
+			} else if (secType() == SecType.CASH) {
 			} else {
 				info("Unknown secType: " + secType());
 				if (lastTradeDateOrContractMonth() == null || lastTradeDateOrContractMonth().length() == 0)
