@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2023 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package samples.testbed.contracts;
@@ -38,7 +38,7 @@ public class ContractSamples {
 	public static Contract Bond() {
 		//! [bond]
 		Contract contract = new Contract();
-		contract.conid(107179906);
+		contract.conid(456467716);
 		contract.exchange("SMART");
 		//! [bond]
 		return contract;
@@ -661,5 +661,15 @@ public class ContractSamples {
 		return contract;
 	}
 	
+	public static Contract Fund() {
+		//! [Fund]
+		Contract contract = new Contract();
+		contract.symbol("I406801954");
+		contract.secType("FUND");
+		contract.currency("USD");
+		contract.exchange("ALLFUNDS");
+		//! [Fund]
+		return contract;
+	}
 	
 }

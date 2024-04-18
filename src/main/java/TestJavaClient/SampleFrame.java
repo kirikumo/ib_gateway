@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package TestJavaClient;
@@ -61,7 +61,6 @@ class SampleFrame extends JFrame implements EWrapper {
     private List<TagValue> m_newsArticleOptions = new ArrayList<>();
     
     private String faGroupXML ;
-    private String faProfilesXML ;
     private String faAliasesXML ;
     String m_FAAcctCodes;
     boolean m_bIsFAAccount = false;
@@ -829,7 +828,8 @@ class SampleFrame extends JFrame implements EWrapper {
         // cancel order
         m_client.exerciseOptions( m_orderDlg.id(), m_orderDlg.contract(),
                                   m_orderDlg.m_exerciseAction, m_orderDlg.m_exerciseQuantity,
-                                  m_orderDlg.m_order.account(), m_orderDlg.m_override);
+                                  m_orderDlg.m_order.account(), m_orderDlg.m_override,
+                                  m_extOrdDlg.manualOrderTime(), m_extOrdDlg.customerAccount());
     }
 
     private void onCancelOrder() {
@@ -873,11 +873,10 @@ class SampleFrame extends JFrame implements EWrapper {
     }
 
     private void onFinancialAdvisor() {
-      faGroupXML = faProfilesXML = faAliasesXML = null ;
+      faGroupXML = faAliasesXML = null ;
       faError = false ;
-      m_client.requestFA(EClientSocket.GROUPS) ;
-      m_client.requestFA(EClientSocket.PROFILES) ;
-      m_client.requestFA(EClientSocket.ALIASES) ;
+      m_client.requestFA(Types.FADataType.GROUPS) ;
+      m_client.requestFA(Types.FADataType.ALIASES) ;
     }
 
     private void onServerLogging() {
@@ -1439,16 +1438,14 @@ class SampleFrame extends JFrame implements EWrapper {
         m_TWS.addText(xml);
     }
 
-    public void receiveFA(int faDataType, String xml) {
-        displayXML(EWrapperMsgGenerator.FINANCIAL_ADVISOR + " " + EClientSocket.faMsgTypeName(faDataType), xml);
+    public void receiveFA(int faDataTypeInt, String xml) {
+        displayXML(EWrapperMsgGenerator.FINANCIAL_ADVISOR + " " + Types.FADataType.getById(faDataTypeInt), xml);
+        Types.FADataType faDataType = Types.FADataType.getById(faDataTypeInt);
         switch (faDataType) {
-            case EClientSocket.GROUPS:
+            case GROUPS:
                 faGroupXML = xml;
                 break;
-            case EClientSocket.PROFILES:
-                faProfilesXML = xml;
-                break;
-            case EClientSocket.ALIASES:
+            case ALIASES:
                 faAliasesXML = xml;
                 break;
             default:
@@ -1456,18 +1453,17 @@ class SampleFrame extends JFrame implements EWrapper {
       }
 
       if (!faError &&
-          !(faGroupXML == null || faProfilesXML == null || faAliasesXML == null)) {
+          !(faGroupXML == null || faAliasesXML == null)) {
           FinancialAdvisorDlg dlg = new FinancialAdvisorDlg(this);
-          dlg.receiveInitialXML(faGroupXML, faProfilesXML, faAliasesXML);
+          dlg.receiveInitialXML(faGroupXML, faAliasesXML);
           dlg.setVisible(true);
 
           if (!dlg.m_rc) {
             return;
           }
 
-          m_client.replaceFA( 0, EClientSocket.GROUPS, dlg.groupsXML );
-          m_client.replaceFA( 1, EClientSocket.PROFILES, dlg.profilesXML );
-          m_client.replaceFA( 2, EClientSocket.ALIASES, dlg.aliasesXML );
+          m_client.replaceFA( 0, Types.FADataType.GROUPS, dlg.groupsXML );
+          m_client.replaceFA( 1, Types.FADataType.ALIASES, dlg.aliasesXML );
 
       }
     }
@@ -1572,6 +1568,7 @@ class SampleFrame extends JFrame implements EWrapper {
         destOrder.competeAgainstBestOffset(srcOrder.competeAgainstBestOffset());
         destOrder.midOffsetAtWhole(srcOrder.midOffsetAtWhole());
         destOrder.midOffsetAtHalf(srcOrder.midOffsetAtHalf());
+        destOrder.customerAccount(srcOrder.customerAccount());
     }
 
     public void position(String account, Contract contract, Decimal pos, double avgCost) {

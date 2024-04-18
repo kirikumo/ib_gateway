@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package TestJavaClient;
@@ -119,6 +119,7 @@ public class ExtOrdDlg extends JDialog {
     private JCheckBox   m_competeAgainstBestOffsetUpToMid = new JCheckBox("Compete Against Best Offset Up To Mid", false);
     private JTextField  m_midOffsetAtWhole = new JTextField();
     private JTextField  m_midOffsetAtHalf = new JTextField();
+    private JTextField  m_customerAccount = new JTextField();
 
     ExtOrdDlg( OrderDlg owner) {
         super( owner, true);
@@ -297,8 +298,8 @@ public class ExtOrdDlg extends JDialog {
         extOrderDetailsPanel.add(m_manualOrderTime);
         extOrderDetailsPanel.add(new JLabel("Manual Order Cancel Time"));
         extOrderDetailsPanel.add(m_manualOrderCancelTime);
-        extOrderDetailsPanel.add( new JLabel(""));
-        extOrderDetailsPanel.add( new JLabel(""));
+        extOrderDetailsPanel.add(new JLabel("Customer Account"));
+        extOrderDetailsPanel.add(m_customerAccount);
         extOrderDetailsPanel.add(new JLabel("Min Trade Qty"));
         extOrderDetailsPanel.add(m_minTradeQty);
         extOrderDetailsPanel.add(new JLabel("Min Compete Size"));
@@ -438,6 +439,7 @@ public class ExtOrdDlg extends JDialog {
                     Order.COMPETE_AGAINST_BEST_OFFSET_UP_TO_MID : parseMaxDouble(m_competeAgainstBestOffset)); 
             m_order.midOffsetAtWhole(parseMaxDouble(m_midOffsetAtWhole));
             m_order.midOffsetAtHalf(parseMaxDouble(m_midOffsetAtHalf));
+            m_order.customerAccount(m_customerAccount.getText());
         }
         catch( Exception e) {
             Main.inform( this, "Error - " + e);
@@ -484,8 +486,17 @@ public class ExtOrdDlg extends JDialog {
         m_rc = false;
         setVisible( false);
     }
+
+    public String manualOrderTime() {
+        return m_manualOrderTime.getText();
+    }
     
     public String manualOrderCancelTime() {
         return m_manualOrderCancelTime.getText();
     }
+    
+    public String customerAccount() {
+        return m_customerAccount.getText();
+    }
+    
 }

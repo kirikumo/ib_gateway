@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package apidemo;
@@ -60,7 +60,7 @@ public class CompletedOrdersPanel extends JPanel implements ICompletedOrdersHand
         }
 
         @Override public int getColumnCount() {
-            return 12;
+            return 13;
         }
 
         @Override public String getColumnName(int col) {
@@ -75,9 +75,10 @@ public class CompletedOrdersPanel extends JPanel implements ICompletedOrdersHand
                 case 7: return "Lmt Price";
                 case 8: return "Aux Price";
                 case 9: return "Contract";
-                case 10: return "Status";
-                case 11: return "Completed Time";
-                case 12: return "Completed Status";
+                case 10: return "Cust Acct";
+                case 11: return "Status";
+                case 12: return "Completed Time";
+                case 13: return "Completed Status";
 
                 default: return null;
             }
@@ -97,9 +98,10 @@ public class CompletedOrdersPanel extends JPanel implements ICompletedOrdersHand
                 case 7: return Util.DoubleMaxString(completedOrder.m_order.lmtPrice());
                 case 8: return Util.DoubleMaxString(completedOrder.m_order.auxPrice());
                 case 9: return completedOrder.m_contract.textDescription();
-                case 10: return completedOrder.m_orderState.status();
-                case 11: return completedOrder.m_orderState.completedTime();
-                case 12: return completedOrder.m_orderState.completedStatus();
+                case 10: return completedOrder.m_order.customerAccount();
+                case 11: return completedOrder.m_orderState.status();
+                case 12: return completedOrder.m_orderState.completedTime();
+                case 13: return completedOrder.m_orderState.completedStatus();
                 default: return null;
             }
         }

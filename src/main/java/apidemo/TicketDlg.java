@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package apidemo;
@@ -306,6 +306,7 @@ class TicketDlg extends JDialog {
         final JTextField m_advancedErrorOverride = new JTextField();
         final JTextField m_manualOrderTime = new JTextField();
         final JTextField m_manualOrderCancelTime = new JTextField();
+        final JTextField m_customerAccount = new JTextField();
 
 		OrderPanel() {
 			m_orderType.removeItemAt( 0); // remove None
@@ -328,6 +329,7 @@ class TicketDlg extends JDialog {
 			m_mifid2ExecutionTrader.setText(m_order.mifid2ExecutionTrader());
 			m_mifid2ExecutionAlgo.setText(m_order.mifid2ExecutionAlgo());
 			m_usePriceMgmtAlgo.setSelectedIndex(m_order.usePriceMgmtAlgo() == null ? 0 : m_order.usePriceMgmtAlgo() ? 2 : 1);
+			m_customerAccount.setText(m_order.customerAccount());
 			
 			add("Account", m_account);
 			
@@ -357,6 +359,7 @@ class TicketDlg extends JDialog {
             add("Advanced Error Override", m_advancedErrorOverride);
             add("Manual Order Time", m_manualOrderTime);
             add("Manual Order Cancel Time", m_manualOrderCancelTime);
+            add("Customer Account", m_customerAccount);
 		}
 		
 		private void onOK() {
@@ -379,6 +382,7 @@ class TicketDlg extends JDialog {
 			m_order.usePriceMgmtAlgo(m_usePriceMgmtAlgo.getSelectedItem().toBoolean());
 			m_order.advancedErrorOverride(m_advancedErrorOverride.getText());
             m_order.manualOrderTime(m_manualOrderTime.getText());
+            m_order.customerAccount(m_customerAccount.getText());
 			
 			if (m_contract.isCombo() ) {
 				TagValue tv = new TagValue( ComboParam.NonGuaranteed.toString(), m_nonGuaranteed.isSelected() ? "1" : "0");
@@ -388,31 +392,24 @@ class TicketDlg extends JDialog {
 	}
 	
 	class AdvisorTicketPanel extends VerticalPanel {
-		final UpperField m_faGroup = new UpperField();
+		final JTextField m_faGroup = new JTextField();
 		final TCombo<Method> m_faMethod = new TCombo<>( Method.values() );
 		final UpperField m_faPercentage = new UpperField();
-		final UpperField m_faProfile = new UpperField();
 		
 		AdvisorTicketPanel() {
 			m_faGroup.setText( m_order.faGroup() );
 			m_faMethod.setSelectedItem( m_order.faMethod() );
 			m_faPercentage.setText( m_order.faPercentage() );
-			m_faProfile.setText( m_order.faProfile() );
 			
 			add( "Group", m_faGroup);
 			add( "Method", m_faMethod);
 			add( "Percentage", m_faPercentage);
-			add( Box.createVerticalStrut(10));
-			add( "--or--");
-			add( Box.createVerticalStrut(10));
-			add( "Profile", m_faProfile);
 		}
 		
 		void onOK() {
 			m_order.faGroup( m_faGroup.getText() );
 			m_order.faMethod( m_faMethod.getSelectedItem() );
 			m_order.faPercentage( m_faPercentage.getText() );
-			m_order.faProfile( m_faProfile.getText() );
 		}
 	}
 	

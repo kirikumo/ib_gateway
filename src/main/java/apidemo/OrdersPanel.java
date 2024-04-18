@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package apidemo;
@@ -226,7 +226,7 @@ public class OrdersPanel extends JPanel {
 		}
 		
 		@Override public int getColumnCount() {
-			return 10;
+			return 11;
 		}
 		
 		@Override public String getColumnName(int col) {
@@ -240,7 +240,8 @@ public class OrdersPanel extends JPanel {
 				case 6: return "Quantity";
 				case 7: return "Cash Qty";
 				case 8: return "Contract";
-				case 9: return "Status";
+				case 9: return "Cust Acct";
+				case 10: return "Status";
 				default: return null;
 			}
 		}
@@ -258,7 +259,8 @@ public class OrdersPanel extends JPanel {
 				case 6: return order.totalQuantity();
 				case 7: return Util.DoubleMaxString(order.cashQty());
 				case 8: return fullOrder.m_contract.textDescription();
-				case 9: return fullOrder.m_state.status();
+				case 9: return order.customerAccount();
+				case 10: return fullOrder.m_state.status();
 				default: return null;
 			}
 		}
