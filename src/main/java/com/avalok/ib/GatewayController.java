@@ -4,6 +4,7 @@ import static com.bitex.util.DebugUtil.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import com.alibaba.fastjson.JSON;
@@ -448,9 +449,16 @@ public class GatewayController extends BaseIBController {
 //	private  static Timer connectTimer = new Timer("GatewayControllerDelayTask _postConnected()");
 	private static TimerTask connectTimerTask;
 	private static int connectMark = 0;
+	private ReentrantLock lock = new ReentrantLock();
+
 	@Override
 	protected void _postConnected() {
+		if (lock.isLocked()) {
+			log("_postConnected locked");
+			return;
+		}
 		log("_postConnected");
+		lock.lock();
 		// Reset every cache status.
 		// Contract detail cache does not need to be reset, always not changed.
 		orderCacheHandler.resetStatus();
@@ -466,16 +474,16 @@ public class GatewayController extends BaseIBController {
 			connectTimerTask.cancel();
 			connectTimerTask = null;
 		}
-		connectMark = connectMark < 1000 ? connectMark + 1: 0;
+//		connectMark = connectMark < 1000 ? connectMark + 1: 0;
 		connectTimerTask = new TimerTask() {
 			@Override
 			public void run() {
-				final int cacheMark = connectMark;
+//				final int cacheMark = connectMark;
 				while (true) {
 					// Make sure only one connectTimerTask
-					if (cacheMark != connectMark) {
-						break;
-					}
+//					if (cacheMark != connectMark) {
+//						break;
+//					}
 					if (isConnected() && accList != null) {
 						subscribeAccountMV();
 						log("_postConnected : refresh alive and completed orders");
@@ -483,6 +491,7 @@ public class GatewayController extends BaseIBController {
 						refreshCompletedOrders();
 //						if (TEST_REDIS_TRADE) listenRedis();
 						connectTimerTask = null;
+						lock.unlock();
 						break;
 					} else {
 						log("_postConnected : isConnected " + isConnected() + " accList null? " + (accList != null));

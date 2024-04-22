@@ -69,7 +69,7 @@ public class AccountMVHandler implements IAccountHandler {
 			ibc_cache.put(ibc.pair(), ibc);
 		}
 
-		JSONObject contractDetails = ContractDetailsHandler.findDetails(ibc); // Auto query details for instruments in portfolio
+		ContractDetailsHandler.findDetails(ibc); // Auto query details for instruments in portfolio
 		String account = position.account();
 		info("<-- " + account + " Pos " + ibc.exchange() + "/" +
 				ibc.shownName() + " pos:" + position.position().longValue() +
@@ -86,9 +86,8 @@ public class AccountMVHandler implements IAccountHandler {
 		j.put("unrealPnl", position.unrealPnl());
 		j.put("marketPrice", position.marketPrice());
 		j.put("marketValue", position.marketValue());
-		if (contractDetails != null) {
-			j.put("contractDetails", contractDetails);
-		}
+		j.put("shortName", ibc.shownName());
+
 		if (_dataInit) {
 			_data.putIfAbsent(account, new ConcurrentHashMap<String, JSONObject>());
 			_data.get(account).put(ibc.shownName(), j);
