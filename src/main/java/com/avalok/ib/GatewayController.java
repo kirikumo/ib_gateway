@@ -448,17 +448,11 @@ public class GatewayController extends BaseIBController {
 
 //	private  static Timer connectTimer = new Timer("GatewayControllerDelayTask _postConnected()");
 	private static TimerTask connectTimerTask;
-	private static int connectMark = 0;
-	private ReentrantLock lock = new ReentrantLock();
+//	private static int connectMark = 0;
 
 	@Override
 	protected void _postConnected() {
-		if (lock.isLocked()) {
-			log("_postConnected locked");
-			return;
-		}
 		log("_postConnected");
-		lock.lock();
 		// Reset every cache status.
 		// Contract detail cache does not need to be reset, always not changed.
 		orderCacheHandler.resetStatus();
@@ -491,7 +485,6 @@ public class GatewayController extends BaseIBController {
 						refreshCompletedOrders();
 //						if (TEST_REDIS_TRADE) listenRedis();
 						connectTimerTask = null;
-						lock.unlock();
 						break;
 					} else {
 						log("_postConnected : isConnected " + isConnected() + " accList null? " + (accList != null));
