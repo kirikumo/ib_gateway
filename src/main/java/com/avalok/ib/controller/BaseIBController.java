@@ -117,7 +117,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 	public final static int TWS_API_PORT = Integer.parseInt(System.getenv("TWS_API_PORT"));
 	public final static String TWS_NAME = TWS_API_ADDR + "_" + TWS_API_PORT;
 	protected int _apiClientID = Integer.parseInt(System.getenv("TWS_API_CLIENTID")); // Only the default client (i.e 0) can auto bind orders
-	protected boolean waitingConnect = false;
+//	protected boolean waitingConnect = false;
 
 	private static Thread connectThread = new Thread();
 	protected synchronized void _connect() {
@@ -128,37 +128,38 @@ public abstract class BaseIBController implements IConnectionHandler {
 		} else if (_initConnTS <= 0) {
 			log("_initConnTS <= 0, abort _connect()");
 			return;
-		} else if (waitingConnect) {
-			log("waitingConnect");
-			return;
 		}
+//		else if (waitingConnect) {
+//			log("waitingConnect connectThread:" + connectThread.isAlive());
+//			return;
+//		}
 		if (_initConnTS >= System.currentTimeMillis()) {
 			// The first call _connect() will set new initConnTs
 			log("Sleep " + (_initConnTS - System.currentTimeMillis()) + "ms before _connect()");
 			sleep(_initConnTS - System.currentTimeMillis());
 		}
 
-		if (connectThread.isAlive()) {
-			connectThread.interrupt();
-		}
+//		if (connectThread.isAlive()) {
+//			connectThread.interrupt();
+//		}
 
-		waitingConnect = true;
+//		waitingConnect = true;
 		connectThread = new Thread(new Runnable() {
 			public void run() {
 				int retry_ct = 0;
 				log("Connect thread started.");
 				while (true) {
-					if (isConnected()) break;
+//					if (isConnected()) break;
 					try {
 						log("Connecting gateway " + TWS_API_ADDR + " ID " + _apiClientID);
 						// TODO this step might hang.
 						IBApiController newController = new IBApiController(_assignNewIConnectionHandler(), new NullIBLogger(), new NullIBLogger());
 						// make sure _apiController not exist
-						if (_apiController != null) {
-							log("_apiController != null");
-							_postDisconnected();
-							_apiController.disconnect();
-						}
+//						if (_apiController != null) {
+//							log("_apiController != null");
+////							_postDisconnected();
+//							_apiController.disconnect();
+//						}
 						// make initial connection to local host, port 7496, client id 0, no connection options
 						newController.connect(TWS_API_ADDR, TWS_API_PORT, _apiClientID, null);
 						_apiController = newController;  // Only assign after _connect()
@@ -177,7 +178,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 					}
 				}
 				log("Connect thread finished.");
-				waitingConnect = false;
+//				waitingConnect = false;
 			}
 		});
 		connectThread.start();

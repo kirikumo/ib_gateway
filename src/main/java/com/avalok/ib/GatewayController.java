@@ -448,7 +448,7 @@ public class GatewayController extends BaseIBController {
 
 //	private  static Timer connectTimer = new Timer("GatewayControllerDelayTask _postConnected()");
 	private static TimerTask connectTimerTask;
-//	private static int connectMark = 0;
+	private static int connectMark = 0;
 
 	@Override
 	protected void _postConnected() {
@@ -468,16 +468,16 @@ public class GatewayController extends BaseIBController {
 			connectTimerTask.cancel();
 			connectTimerTask = null;
 		}
-//		connectMark = connectMark < 1000 ? connectMark + 1: 0;
+		connectMark = connectMark < 1000 ? connectMark + 1: 0;
 		connectTimerTask = new TimerTask() {
 			@Override
 			public void run() {
-//				final int cacheMark = connectMark;
+				final int cacheMark = connectMark;
 				while (true) {
 					// Make sure only one connectTimerTask
-//					if (cacheMark != connectMark) {
-//						break;
-//					}
+					if (cacheMark != connectMark) {
+						break;
+					}
 					if (isConnected() && accList != null) {
 						subscribeAccountMV();
 						log("_postConnected : refresh alive and completed orders");
