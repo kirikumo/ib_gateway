@@ -155,17 +155,17 @@ public abstract class BaseIBController implements IConnectionHandler {
 						// TODO this step might hang.
 						IBApiController newController = new IBApiController(_assignNewIConnectionHandler(), new NullIBLogger(), new NullIBLogger());
 						// make sure _apiController not exist
-//						if (_apiController != null) {
-//							log("_apiController != null");
-////							_postDisconnected();
-//							_apiController.disconnect();
-//						}
+						if (_apiController != null) {
+							log("_apiController != null");
+							_postDisconnected();
+							_apiController.disconnect();
+						}
 						// make initial connection to local host, port 7496, client id 0, no connection options
 						newController.connect(TWS_API_ADDR, TWS_API_PORT, _apiClientID, null);
 						_apiController = newController;  // Only assign after _connect()
 						_connectedTS = System.currentTimeMillis();
 						log("Gateway connected with client ID " + _apiClientID);
-//						_markTWSServerConnected(false);
+						_markTWSServerConnected(false);
 						break;
 					} catch (StackOverflowError e) {
 						log("StackOverflowError in connecting gateway with ID " + _apiClientID + " retry_ct:" + retry_ct);
