@@ -135,7 +135,5 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
             Redis.set(key, j.toJSONString());
             log("Redis -> " + key);
         });
-
-
     }
 }

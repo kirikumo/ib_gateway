@@ -8,6 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.controller.BaseIBController;
 import com.avalok.ib.handler.*;
@@ -204,15 +205,29 @@ public class GatewayController extends BaseIBController {
 		boolean subscribe = true;
 		log("--> Req account mv default");
 		if (accList != null) {
+			long delay = 3000L;
 			for (String account : accList) {
 				log("--> Req account mv " + account);
 				_apiController.reqAccountUpdates(subscribe, account, accountMVHandler);
+				sleep(delay);
 			}
 		} else {
 			log("--> Req account mv default");
 			_apiController.reqAccountUpdates(subscribe, "", accountMVHandler);
 		}
 	}
+
+	public void reqAccountUpdates(JSONArray updateAcList) {
+		long delay = 3000L;
+		new Thread(() -> {
+			for (Object account : updateAcList) {
+				log("--> Req account mv " + account);
+				_apiController.reqAccountUpdates(true, (String) account, accountMVHandler);
+				sleep(delay);
+			}
+		}).start();
+	}
+
 
 	////////////////////////////////////////////////////////////////
 	// Account Summary
@@ -449,6 +464,7 @@ public class GatewayController extends BaseIBController {
 //	private  static Timer connectTimer = new Timer("GatewayControllerDelayTask _postConnected()");
 	private static TimerTask connectTimerTask;
 	private static int connectMark = 0;
+	private int retryConnectCount = 0;
 
 	@Override
 	protected void _postConnected() {
@@ -485,10 +501,18 @@ public class GatewayController extends BaseIBController {
 						refreshCompletedOrders();
 //						if (TEST_REDIS_TRADE) listenRedis();
 						connectTimerTask = null;
+						retryConnectCount = 0;
 						break;
 					} else {
 						log("_postConnected : isConnected " + isConnected() + " accList null? " + (accList != null));
-						sleep(1000);
+						if (retryConnectCount >= 60) {
+							log("retryConnectCount >= 60, call _connect");
+							_connect();
+							retryConnectCount = 0;
+						} else {
+							retryConnectCount++;
+							sleep(1000);
+						}
 					}
 				}
 			}
@@ -565,7 +589,8 @@ public class GatewayController extends BaseIBController {
 					response = JSON.toJSONString(accList);
 					break;
 				case "UPDATE_ACCOUNT_MV":
-					subscribeAccountMV();
+//					subscribeAccountMV();
+					reqAccountUpdates(j.getJSONArray("updateAcList"));
 					break;
 				case "FIND_ACCOUNT_SUMMARY":
 					apiReqId = queryAccountSummary();
@@ -580,6 +605,9 @@ public class GatewayController extends BaseIBController {
 					break;
 				case "REQ_EXECUTIONS":
 					_apiController.reqExecutions(new ExecutionFilter(), new TradeReportHandler());
+					break;
+				case "TEST_DISCONNECT":
+					disconnected();
 					break;
 //				case "TEST_PNL":
 //					_apiController.reqExecutions();

@@ -45,7 +45,7 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 		while (true) {
 			JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
 			if (contractDetail != null) {
-				marketDataSizeMultiplier = contractDetail.getIntValue("mdSizeMultiplier");
+				marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
 				break;
 			}
 			log("wait for contract details " + publishODBKChannel);

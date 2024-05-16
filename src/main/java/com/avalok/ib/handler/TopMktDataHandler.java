@@ -54,7 +54,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		while (true) {
 			JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
 			if (contractDetail != null) {
-				marketDataSizeMultiplier = contractDetail.getIntValue("mdSizeMultiplier");
+				marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
 				break;
 			}
 
@@ -66,7 +66,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 				if (smartContractDetail != null) {
 					info("WARNING!! FIX _contract.exchange FROM"+ _contract.exchange() + " to SMART");
 					_contract = smartIbc;
-					marketDataSizeMultiplier = smartContractDetail.getIntValue("mdSizeMultiplier");
+					marketDataSizeMultiplier = smartContractDetail.getIntValue("suggestedSizeIncrement");
 					break;
 				}
 			}

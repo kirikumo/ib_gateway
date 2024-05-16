@@ -47,24 +47,24 @@ public class IBOrder {
 	 */
 	public IBOrder cloneWithRealExchange() {
 		IBOrder o = new IBOrder(this);
-		IBContract ibc = o.contract;
-		if (ibc.exchange().equals("SMART")) {
-			IBContract ibcWithRealExchange = new IBContract(ibc);
-			ibcWithRealExchange.exchange(null);
-			Integer aggGroup = contractDetails.getInteger("aggGroup");
-
-			if (ContractDetailsHandler.fillSmartIBContract(ibcWithRealExchange, aggGroup)) {
-				String realExchange = ibcWithRealExchange.exchange();
-				// Clone an IBOrder with real exchange.
-				ibc = ibcWithRealExchange;
-				o = new IBOrder(o);
-				o.contract = ibc;
-				log("Auto replace exchange SMART with " + realExchange + "\n" + o);
-			} else {
-				err("Could not find real exchange for\n" + this);
-				return null;
-			}
-		}
+//		IBContract ibc = o.contract;
+//		if (ibc.exchange().equals("SMART")) {
+//			IBContract ibcWithRealExchange = new IBContract(ibc);
+//			ibcWithRealExchange.exchange(null);
+//			Integer aggGroup = contractDetails.getInteger("aggGroup");
+//
+//			if (ContractDetailsHandler.fillSmartIBContract(ibcWithRealExchange, aggGroup)) {
+//				String realExchange = ibcWithRealExchange.exchange();
+//				// Clone an IBOrder with real exchange.
+//				ibc = ibcWithRealExchange;
+//				o = new IBOrder(o);
+//				o.contract = ibc;
+//				log("Auto replace exchange SMART with " + realExchange + "\n" + o);
+//			} else {
+//				err("Could not find real exchange for\n" + this);
+//				return null;
+//			}
+//		}
 		return o;
 	}
 	

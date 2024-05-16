@@ -52,33 +52,37 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		return false;
 	}
 
-	public static boolean fillSmartIBContract(IBContract ibc, int aggGroup) {
-		// Aggregated group Indicates the smart-routing group to which a contract belongs.
-		// contracts which cannot be smart-routed have aggGroup = -1.
-		if (aggGroup == -1) return fillIBContract(ibc);
-
-		Collection<IBContract> contracts = KNOWN_CONTRACTS.values();
-		IBContract result = null;
-		for (IBContract _ibc : contracts) {
-			Integer _knowAggGroup = (int) KNOWN_CONTRACT_DETAILS.get(_ibc.shownName()).get("aggGroup");
-			// Don't fill with those SMART exchange contract
-			if ( _knowAggGroup == aggGroup && _ibc.exchange().equals("SMART") == false && ibc.matchFullDetails(_ibc)) {
-				if (result == null)
-					result = _ibc;
-				else if (ibc.shownName() == null)
-					warn("Multiple results matches:" + ibc.shownName());
-				else
-					warn("Multiple results matches:" + ibc);
-
-				if (result.exchange().equals("NYSE")) break;
-			}
-		}
-		if (result != null) {
-			ibc.copyFrom(result);
-			return true;
-		}
-		return false;
-	}
+//	public static boolean fillSmartIBContract(IBContract ibc, int aggGroup) {
+//		// Aggregated group Indicates the smart-routing group to which a contract belongs.
+//		// contracts which cannot be smart-routed have aggGroup = -1.
+//		if (aggGroup == -1) return fillIBContract(ibc);
+//
+//		Collection<IBContract> contracts = KNOWN_CONTRACTS.values();
+//		IBContract result = null;
+//		for (IBContract _ibc : contracts) {
+//			Integer _knowAggGroup = (int) KNOWN_CONTRACT_DETAILS.get(_ibc.shownName()).get("aggGroup");
+//			// Don't fill with those SMART exchange contract
+//			if ( _knowAggGroup == aggGroup && _ibc.exchange().equals("SMART") == false && ibc.matchFullDetails(_ibc)) {
+////			if ( _ibc.exchange().equals("SMART") == false && ibc.matchFullDetails(_ibc)) {
+//				if (result == null)
+//					result = _ibc;
+//				else if (ibc.shownName() == null)
+//					warn("Multiple results matches:" + ibc.shownName());
+//				else
+//					warn("Multiple results matches:" + ibc);
+//
+//				if (_ibc.exchange().equals("CBOE")) {
+//					result = _ibc;
+//					break;
+//				}
+//			}
+//		}
+//		if (result != null) {
+//			ibc.copyFrom(result);
+//			return true;
+//		}
+//		return false;
+//	}
 
 	public static JSONObject findDetails(IBContract ibc) {
 		if (GW_CONTROLLER != null) queryDetails(ibc);
@@ -142,7 +146,6 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 					MarketRuleHandler.getMarketRule(i);
 				}
 			}
-			log("set ->> IBGateway:Contract:"+shortName);
 			JSONObject json = writeDetail("IBGateway:Contract:"+shortName, detail);
 			KNOWN_CONTRACTS.put(shortName, ibc);
 			KNOWN_CONTRACT_DETAILS.put(shortName, json);

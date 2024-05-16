@@ -71,7 +71,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 
 	protected String _name = System.getenv("TWS_GATEWAY_NAME");
 	public String name(){ return _name; }
-	
+
 	//////////////////////////////////////////////////////
 	// Cache historical messages.
 	//////////////////////////////////////////////////////
@@ -117,6 +117,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 	public final static int TWS_API_PORT = Integer.parseInt(System.getenv("TWS_API_PORT"));
 	public final static String TWS_NAME = TWS_API_ADDR + "_" + TWS_API_PORT;
 	protected int _apiClientID = Integer.parseInt(System.getenv("TWS_API_CLIENTID")); // Only the default client (i.e 0) can auto bind orders
+	protected Long callConnectTS = 0L;
 //	protected boolean waitingConnect = false;
 
 	private static Thread connectThread = new Thread();
@@ -127,6 +128,9 @@ public abstract class BaseIBController implements IConnectionHandler {
 			return;
 		} else if (_initConnTS <= 0) {
 			log("_initConnTS <= 0, abort _connect()");
+			return;
+		} else if (callConnectTS + 1000 > System.currentTimeMillis()) {
+			log("call _connect() too fast");
 			return;
 		}
 //		else if (waitingConnect) {
@@ -142,8 +146,10 @@ public abstract class BaseIBController implements IConnectionHandler {
 //		if (connectThread.isAlive()) {
 //			connectThread.interrupt();
 //		}
+		connectThread.interrupt();
 
 //		waitingConnect = true;
+		callConnectTS = System.currentTimeMillis();
 		connectThread = new Thread(new Runnable() {
 			public void run() {
 				int retry_ct = 0;
@@ -255,12 +261,19 @@ public abstract class BaseIBController implements IConnectionHandler {
 //		if (_initConnTS >= System.currentTimeMillis()) return;
 
 		recordMessage(0, 0, "IB API disconnected");
+
+		if (!isConnected()) {
+			log("call disconnected() but but not connected, dont _markDisconnected() just call _connect()");
+			_connect();
+			return;
+		}
+
 		log("disconnected()");
 		_markDisconnected();
 		// Reconnect automatically.
 		_connect();
 	}
-	
+
 	protected final List<String> accList = new ArrayList<>();
 	public List<String> accountList() {
 		List<String> ret = new ArrayList<>();
@@ -384,7 +397,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 		log("IB show: " + string);
 		recordMessage(0, 0, "IB message received:" + string);
 	}
-	
+
 	//////////////////////////////////////////////////////
 	// Internal utilities
 	//////////////////////////////////////////////////////	

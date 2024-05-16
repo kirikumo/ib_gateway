@@ -415,6 +415,7 @@ public class ApiController implements EWrapper {
 			}
 			@Override public void contractDetailsEnd() {
 				processor.setexDetailList(list, id);
+				processor.contractDetails( list);
 			}
 		});
 		sendEOM();
