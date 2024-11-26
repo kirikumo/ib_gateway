@@ -11,6 +11,7 @@ import com.ib.client.Order;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
 import com.ib.client.Types.Action;
+import com.ib.client.Decimal;
 
 public class IBOrder {
 	public IBContract contract;
@@ -46,24 +47,24 @@ public class IBOrder {
 	 */
 	public IBOrder cloneWithRealExchange() {
 		IBOrder o = new IBOrder(this);
-		IBContract ibc = o.contract;
-		if (ibc.exchange().equals("SMART")) {
-			IBContract ibcWithRealExchange = new IBContract(ibc);
-			ibcWithRealExchange.shownName();
-			ibcWithRealExchange.exchange(null);
-			Integer aggGroup = contractDetails.getInteger("aggGroup");
-			if (ContractDetailsHandler.fillSmartIBContract(ibcWithRealExchange, aggGroup)) {
-				String realExchange = ibcWithRealExchange.exchange();
-				// Clone an IBOrder with real exchange.
-				ibc = ibcWithRealExchange;
-				o = new IBOrder(o);
-				o.contract = ibc;
-				log("Auto replace exchange SMART with " + realExchange + "\n" + o);
-			} else {
-				err("Could not find real exchange for\n" + this);
-				return null;
-			}
-		}
+//		IBContract ibc = o.contract;
+//		if (ibc.exchange().equals("SMART")) {
+//			IBContract ibcWithRealExchange = new IBContract(ibc);
+//			ibcWithRealExchange.exchange(null);
+//			Integer aggGroup = contractDetails.getInteger("aggGroup");
+//
+//			if (ContractDetailsHandler.fillSmartIBContract(ibcWithRealExchange, aggGroup)) {
+//				String realExchange = ibcWithRealExchange.exchange();
+//				// Clone an IBOrder with real exchange.
+//				ibc = ibcWithRealExchange;
+//				o = new IBOrder(o);
+//				o.contract = ibc;
+//				log("Auto replace exchange SMART with " + realExchange + "\n" + o);
+//			} else {
+//				err("Could not find real exchange for\n" + this);
+//				return null;
+//			}
+//		}
 		return o;
 	}
 	
@@ -90,14 +91,14 @@ public class IBOrder {
 		if (oj.getString("i") != null) // Only when modifying existed order.
 			order.permId(Integer.parseInt(oj.getString("i")));
 		order.action(oj.getString("T").toUpperCase()); // BUY SELL
-		order.totalQuantity(oj.getDoubleValue("s"));
+		order.totalQuantity(Decimal.get(oj.getDoubleValue("s")));
 		order.lmtPrice(oj.getDoubleValue("p"));
 		// Use whatIf=true to check trading rules and margin
 		// See https://interactivebrokers.github.io/tws-api/margin.html
 		if (oj.getBoolean("whatIf") != null)
 			order.whatIf(oj.getBoolean("whatIf"));
 		if (oj.containsKey("executed"))
-			order.filledQuantity(oj.getDoubleValue("executed"));
+			order.filledQuantity(Decimal.get(oj.getDoubleValue("executed")));
 		// Don't parse status, will get updates from IB after placing/modifying
 		if (oj.containsKey("orderType"))
 			order.orderType(oj.getString("orderType")); // Only place limit order
@@ -122,9 +123,9 @@ public class IBOrder {
 
 	private void fixIBBug01() {
 		// IB BUG fix, fuck totalQuantity
-		if (orderState.status() == OrderStatus.Filled && order.totalQuantity() == 0) {
+		if (orderState.status() == OrderStatus.Filled && order.totalQuantity().longValue() == 0) {
 			order.totalQuantity(order.filledQuantity());
-			warn("Fixing IB zero totalQuantity bug, fuck me -> " + order.totalQuantity());
+			warn("Fixing IB zero totalQuantity bug, fuck me -> " + order.totalQuantity().toString());
 		}
 	}
 	
@@ -134,14 +135,12 @@ public class IBOrder {
 	public String account() { return order.account(); }
 	
 	// Updated from AllOrderHandler.orderStatus();
-//	Double filled, remaining, avgFillPrice, lastFillPrice, mktCapPrice;
 	Double filled = 0.0, remaining = 0.0, avgFillPrice = 0.0, lastFillPrice = 0.0, mktCapPrice = 0.0;
-
 	String whyHeld;
 	boolean statusFilled = false; // Basic status need to be filled before using this order.
 	public void setStatus(
-			int _orderId, OrderStatus _status, double _filled,
-			double _remaining, double _avgFillPrice,
+			int _orderId, OrderStatus _status, Decimal _filled,
+			Decimal _remaining, double _avgFillPrice,
 			int _permId, int _parentId, double _lastFillPrice,
 			int _clientId, String _whyHeld, double _mktCapPrice) {
 		if(_orderId != order.orderId())
@@ -149,22 +148,20 @@ public class IBOrder {
 		setStatus(_status, _filled, _remaining, _avgFillPrice, _permId, _parentId, _lastFillPrice, _clientId, _whyHeld, _mktCapPrice);
 	}
 	public void setStatus(
-			OrderStatus _status, double _filled,
-			double _remaining, double _avgFillPrice,
+			OrderStatus _status, Decimal _filled,
+			Decimal _remaining, double _avgFillPrice,
 			int _permId, int _parentId, double _lastFillPrice,
 			int _clientId, String _whyHeld, double _mktCapPrice) {
 		if(order.permId() != 0 && _permId != order.permId())
 			err("setStatus() permId not coinsistent " + _permId + "," + order.permId());
-		if (order.totalQuantity() != _filled + _remaining)
-			err("setStatus() size not coinsistent (" + _filled + "+" + _remaining + "), "+ order.totalQuantity());
+		if (order.totalQuantity().longValue() != _filled.longValue() + _remaining.longValue())
+			err("setStatus() size not coinsistent (" + _filled + "+" + _remaining + "), "+ order.totalQuantity().toString());
 		orderState.status(_status);
-		if (Math.abs(remaining) < Math.abs(_remaining))
-			remaining = (double) _remaining;
-		if (Math.abs(filled) < Math.abs(_filled))
-			filled = (double) _filled;
-		remaining = _remaining;
-		filled = _filled;
-		order.filledQuantity(_filled);
+		if (Math.abs(remaining) < Math.abs(_remaining.longValue()))
+			remaining = (double) _remaining.longValue();
+		if (Math.abs(filled) < Math.abs(_filled.longValue()))
+			filled = (double) _filled.longValue();
+		order.filledQuantity(Decimal.get(_filled.longValue()));
 		if (order.permId() == 0)
 			order.permId(_permId);
 		else if (order.permId() != _permId)
@@ -236,14 +233,14 @@ public class IBOrder {
 		// BUY Price
 		sb.append(StringUtils.rightPad(order.action().toString(), 5));
 		sb.append(StringUtils.rightPad(""+order.lmtPrice(), 8));
-		
+
 		// execute/total
 		if (statusFilled)
-			sb.append(StringUtils.leftPad("" + order.filledQuantity(), 8));
+			sb.append(StringUtils.leftPad("" + order.filledQuantity().toString(), 8));
 		else
 			sb.append(StringUtils.leftPad("??", 8));
 		sb.append('/');
-		sb.append(StringUtils.rightPad("" + order.totalQuantity(), 8));
+		sb.append(StringUtils.rightPad("" + order.totalQuantity().toString(), 8));
 		
 		if (extStatus != null)
 			sb.append(StringUtils.rightPad(extStatus, 16));
@@ -292,14 +289,14 @@ public class IBOrder {
 			j.put("T", "sell");
 		else
 			errWithTrace("Unknown order action " + order.action());
-		j.put("ttl_qty", order.totalQuantity());
+		j.put("ttl_qty", order.totalQuantity().longValue());
 		j.put("p", order.lmtPrice());
 		if (avgFillPrice == 0)
 			j.put("avg_price", order.lmtPrice());
 		else
 			j.put("avg_price", avgFillPrice);
-		j.put("executed_qty", order.filledQuantity());
-		j.put("remained_qty", order.totalQuantity()-order.filledQuantity());
+		j.put("executed_qty", order.filledQuantity().longValue());
+		j.put("remained_qty", order.totalQuantity().longValue()-order.filledQuantity().longValue());
 		j.put("status", extStatus == null ? orderState.status().toString() : extStatus);
 		// created time missing, default 2000-01-01 00:00:00
 		// suggest using orderRef to store client_oid+timestamp when created.
@@ -307,8 +304,8 @@ public class IBOrder {
 		j.put("updateTime", System.currentTimeMillis());
 		j.put("market", contract.exchange());
 		j.put("orderType", order.orderType()); // LMT
-		j.put("tif", order.tif()); // LMT
-		j.put("whatIf", order.whatIf()); // LMT
+		j.put("tif", order.tif());
+		j.put("whatIf", order.whatIf());
 		j.put("secType", contract.secType());
 		if (orderState.commission() == Double.MAX_VALUE) {
 			j.put("commission", 0);

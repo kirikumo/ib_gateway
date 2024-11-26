@@ -50,12 +50,12 @@ public abstract class BaseIBController implements IConnectionHandler {
 				}
 				BaseIBController.this.error(e);
 			}
-			public void message(int id, int errorCode, String errorMsg) {
+			public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 				if (this != _activeIBConnectionHandler) {
 					log("Ignore obsolete IBConnectionHandler event: message");
 					return;
 				}
-				BaseIBController.this.message(id, errorCode, errorMsg);
+				BaseIBController.this.message(id, errorCode, errorMsg, advancedOrderRejectJson);
 			}
 			public void show(String string) {
 				if (this != _activeIBConnectionHandler) {
@@ -71,7 +71,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 
 	protected String _name = System.getenv("TWS_GATEWAY_NAME");
 	public String name(){ return _name; }
-	
+
 	//////////////////////////////////////////////////////
 	// Cache historical messages.
 	//////////////////////////////////////////////////////
@@ -117,6 +117,9 @@ public abstract class BaseIBController implements IConnectionHandler {
 	public final static int TWS_API_PORT = Integer.parseInt(System.getenv("TWS_API_PORT"));
 	public final static String TWS_NAME = TWS_API_ADDR + "_" + TWS_API_PORT;
 	protected int _apiClientID = Integer.parseInt(System.getenv("TWS_API_CLIENTID")); // Only the default client (i.e 0) can auto bind orders
+	protected Long callConnectTS = 0L;
+
+	private static Thread connectThread = new Thread();
 	protected synchronized void _connect() {
 		// DebugUtil.printStackInfo();
 		if (isConnected()) {
@@ -125,24 +128,45 @@ public abstract class BaseIBController implements IConnectionHandler {
 		} else if (_initConnTS <= 0) {
 			log("_initConnTS <= 0, abort _connect()");
 			return;
-		} else if (_initConnTS >= System.currentTimeMillis()) {
+		} else if (callConnectTS + 1000 > System.currentTimeMillis()) {
+			log("call _connect() too fast");
+			return;
+		}
+
+		if (_initConnTS >= System.currentTimeMillis()) {
+			// The first call _connect() will set new initConnTs
 			log("Sleep " + (_initConnTS - System.currentTimeMillis()) + "ms before _connect()");
 			sleep(_initConnTS - System.currentTimeMillis());
 		}
-		new Thread(new Runnable() {
+
+//		if (connectThread.isAlive()) {
+//			connectThread.interrupt();
+//		}
+		connectThread.interrupt();
+
+		callConnectTS = System.currentTimeMillis();
+		connectThread = new Thread(new Runnable() {
 			public void run() {
 				int retry_ct = 0;
 				log("Connect thread started.");
 				while (true) {
+//					if (isConnected()) break;
 					try {
 						log("Connecting gateway " + TWS_API_ADDR + " ID " + _apiClientID);
 						// TODO this step might hang.
 						IBApiController newController = new IBApiController(_assignNewIConnectionHandler(), new NullIBLogger(), new NullIBLogger());
+						// make sure _apiController not exist
+						if (_apiController != null) {
+							log("_apiController != null");
+							_postDisconnected();
+							_apiController.disconnect();
+						}
 						// make initial connection to local host, port 7496, client id 0, no connection options
 						newController.connect(TWS_API_ADDR, TWS_API_PORT, _apiClientID, null);
 						_apiController = newController;  // Only assign after _connect()
 						_connectedTS = System.currentTimeMillis();
 						log("Gateway connected with client ID " + _apiClientID);
+//						_markTWSServerConnected(false);
 						break;
 					} catch (StackOverflowError e) {
 						log("StackOverflowError in connecting gateway with ID " + _apiClientID + " retry_ct:" + retry_ct);
@@ -154,15 +178,24 @@ public abstract class BaseIBController implements IConnectionHandler {
 						sleep(50);
 					}
 				}
-				log("Connect thread finished.");
+				log("sleep 10s for waiting connection");
+				sleep(10000);
+				if (isRealConnected()) {
+					log("Connect thread finished.");
+				} else {
+					log("Connect thread failed, try again _connect");
+					_connect();
+				}
 			}
-		}).start();
+		});
+		connectThread.start();
 	}
 
 	//////////////////////////////////////////////////////
 	// Connectivity & Status Set/Get functions
 	//////////////////////////////////////////////////////
 	protected boolean _apiConnected = false, _twsConnected = false;
+	protected Boolean realConnectedFlag = false;
 
 	protected void _markTWSServerDisconnected() {
 		_twsConnected = false;
@@ -181,6 +214,10 @@ public abstract class BaseIBController implements IConnectionHandler {
 	////////////////////////////////////////////////////////////////
 	public boolean isConnected() {
 		return _apiConnected && _twsConnected;
+	}
+
+	public boolean isRealConnected() {
+		return realConnectedFlag;
 	}
 
 	protected static final long RECONNECT_DELAY = 20_000;
@@ -205,6 +242,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 			_postDisconnected();
 			old_controller.disconnect(); // Dispose resource at last
 		} catch (Exception e1) {
+			log(e1.getMessage());
 		}
 	}
 
@@ -215,6 +253,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 	public void connected() {
 		_apiConnected = true;
 		_twsConnected = true;
+		realConnectedFlag = true;
 		recordMessage(0, 0, "IB APIController connected");
 		log("connected() _apiConnected:" + _apiConnected + " _twsConnected:" + _twsConnected);
 		// DebugUtil.printStackInfo();
@@ -226,15 +265,22 @@ public abstract class BaseIBController implements IConnectionHandler {
 
 	@Override
 	public void disconnected() {
+//		if (_initConnTS >= System.currentTimeMillis()) return;
+
 		recordMessage(0, 0, "IB API disconnected");
+		realConnectedFlag = false;
+		if (!isConnected()) {
+			log("call disconnected() but not connected, dont _markDisconnected() just call _connect()");
+			_connect();
+			return;
+		}
+
 		log("disconnected()");
-		// Set controller NULL then mark flags as disconnected.
-		_apiController = null;
 		_markDisconnected();
 		// Reconnect automatically.
 		_connect();
 	}
-	
+
 	protected final List<String> accList = new ArrayList<>();
 	public List<String> accountList() {
 		List<String> ret = new ArrayList<>();
@@ -274,72 +320,72 @@ public abstract class BaseIBController implements IConnectionHandler {
 	public String lastAckErrorMsg = "";
 	public boolean latestMsgIsOkay = false;
 	@Override
-	public void message(int id, int errorCode, String errorMsg) {
+	public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 		latestMsgIsOkay = false;
 		switch (errorCode) {
 			case 200: // No security definition has been found for the request
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				break;
 			case 502: // Couldn't connect to TWS. Confirm that API is enabled in TWS via the Configure>API menu command.
 				// TWS gateway might be down, retry in longer time.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				disconnected();
 				break;
 			case 504: // TWS not connected, retry in short time.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				disconnected();
 				break;
 			case 507: // Bad Message Length null
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				disconnected();
 				break;
 			case 510: // Request Market Data Sending Error - java.net.SocketException: Broken pipe
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				disconnected();
 				break;
 			case 1100: // Connectivity between IB and TWS has been lost.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				_twsConnected = false;
 				_markDisconnected();
 				break;
 			case 1101: // Connectivity between IB and TWS has been restored- data lost.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				_twsConnected = true;
 				_markTWSServerConnected(true);
 				break;
 			case 1102: // Connectivity between IB and TWS has been restored- data maintained.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				_twsConnected = true;
 				_markTWSServerConnected(false);
 				break;
 			case 1300: // Socket port has been reset and this connection is being dropped. Please reconnect on the new port -4002
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				// String[] segs = errorMsg.split("-");
 				// TWS_API_PORT = Integer.parseInt(segs[segs.length - 1]); // Should not be changed.
 				disconnected();
 				break;
 			case 2103: // Market data farm connection is broken
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				break;
 			case 2104: // Market data farm connection is OK
 				latestMsgIsOkay = true;
 				break;
 			case 2105: // HMDS data farm connection is broken
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				break;
 			case 2106: // HMDS data farm connection is OK
 				latestMsgIsOkay = true;
 				break;
 			case 2107: // HMDS data farm connection is inactive but should be available upon demand.hthmds
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				latestMsgIsOkay = true;
 				break;
 			case 2108: // Market data farm connection is inactive but should be available upon demand.usfarm
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				latestMsgIsOkay = true;
 				break;
 			case 2110: // Connectivity between Trader Workstation and server is broken. It will be restored automatically.
-				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				_markDisconnected();
 				// twsDis_connect(); // Sometimes it wont be restored automatically. WTF!
 				break;
@@ -358,7 +404,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 		log("IB show: " + string);
 		recordMessage(0, 0, "IB message received:" + string);
 	}
-	
+
 	//////////////////////////////////////////////////////
 	// Internal utilities
 	//////////////////////////////////////////////////////	

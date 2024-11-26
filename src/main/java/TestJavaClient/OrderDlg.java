@@ -20,6 +20,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 
 import com.ib.client.Contract;
+import com.ib.client.Decimal;
 import com.ib.client.DeltaNeutralContract;
 import com.ib.client.MarketDataType;
 import com.ib.client.Order;
@@ -33,7 +34,7 @@ import apidemo.PegBenchPanel;
 import apidemo.util.TCombo;
 
 public class OrderDlg extends JDialog {
-    private static final String ALL_GENERIC_TICK_TAGS = "100,101,104,105,106,107,165,221,225,233,236,258,293,294,295,318";
+    private static final String ALL_GENERIC_TICK_TAGS = "100,101,104,106,165,221,232,236,258,293,294,295,318,411,460,619";
     private static final int OPERATION_INSERT = 0;
     private static final int OPERATION_UPDATE = 1;
     private static final int OPERATION_DELETE = 2;
@@ -56,20 +57,21 @@ public class OrderDlg extends JDialog {
 
     private JTextField	m_Id = new JTextField( "0");
     private JTextField 	m_conId = new JTextField();
-    private JTextField 	m_symbol = new JTextField( "QQQQ");
+    private JTextField 	m_symbol = new JTextField( "SPY");
     private JTextField 	m_secType = new JTextField( "STK");
     private JTextField 	m_lastTradeDateOrContractMonth = new JTextField();
     private JTextField 	m_strike = new JTextField( "0");
     private JTextField 	m_right = new JTextField();
     private JTextField 	m_multiplier = new JTextField("");
     private JTextField 	m_exchange = new JTextField( "SMART");
-    private JTextField 	m_primaryExch = new JTextField( "ISLAND" );
+    private JTextField 	m_primaryExch = new JTextField( "ARCA" );
     private JTextField 	m_currency = new JTextField("USD");
     private JTextField 	m_localSymbol = new JTextField();
     private JTextField 	m_tradingClass = new JTextField();
     private JTextField 	m_includeExpired = new JTextField("0");
     private JTextField 	m_secIdType = new JTextField();
     private JTextField 	m_secId = new JTextField();
+    private JTextField 	m_issuerId = new JTextField();
     private JTextField 	m_action = new JTextField( "BUY");
     private JTextField 	m_totalQuantity = new JTextField( "10");
     private JTextField 	m_orderType = new JTextField( "LMT");
@@ -172,6 +174,8 @@ public class OrderDlg extends JDialog {
         pContractDetails.addGBComponent(m_secIdType, gbc, COL2_WIDTH, GridBagConstraints.REMAINDER);
         pContractDetails.addGBComponent(new JLabel( "Sec Id"), gbc, COL1_WIDTH, GridBagConstraints.RELATIVE );
         pContractDetails.addGBComponent(m_secId, gbc, COL2_WIDTH, GridBagConstraints.REMAINDER);
+        pContractDetails.addGBComponent(new JLabel( "Issuer Id"), gbc, COL1_WIDTH, GridBagConstraints.RELATIVE );
+        pContractDetails.addGBComponent(m_issuerId, gbc, COL2_WIDTH, GridBagConstraints.REMAINDER);
 
         // create order panel
         IBGridBagPanel pOrderDetails = new IBGridBagPanel();
@@ -390,6 +394,8 @@ public class OrderDlg extends JDialog {
 
         // show smart combo routing params dialog
         smartComboRoutingParamsDlg.setVisible( true);
+
+        m_order.smartComboRoutingParams(smartComboRoutingParamsDlg.smartComboRoutingParams());
     }
 
     void onBtnOptions() {
@@ -430,10 +436,11 @@ public class OrderDlg extends JDialog {
             }
             m_contract.secIdType(m_secIdType.getText());
             m_contract.secId(m_secId.getText());
+            m_contract.issuerId(m_issuerId.getText());
 
             // set order fields
             m_order.action(m_action.getText());
-            m_order.totalQuantity(Double.parseDouble( m_totalQuantity.getText() ));
+            m_order.totalQuantity(Decimal.parse( m_totalQuantity.getText().trim() ));
             m_order.orderType(m_orderType.getText());
             m_order.lmtPrice(parseStringToMaxDouble( m_lmtPrice.getText()));
             m_order.auxPrice(parseStringToMaxDouble( m_auxPrice.getText()));

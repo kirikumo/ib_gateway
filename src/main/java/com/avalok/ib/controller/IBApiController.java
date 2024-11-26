@@ -2,6 +2,8 @@ package com.avalok.ib.controller;
 
 import static com.bitex.util.DebugUtil.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import com.avalok.ib.IBContract;
@@ -27,6 +29,7 @@ import com.ib.controller.ApiController.IPositionHandler;
 import com.ib.controller.ApiController.IRealTimeBarHandler;
 import com.ib.controller.ApiController.ITopMktDataHandler;
 import com.ib.controller.ApiController.ITradeReportHandler;
+import com.ib.controller.ApiController.IOrderCancelHandler;
 
 /**
  * A warpper of ApiController for rate control and other proxy.
@@ -164,8 +167,7 @@ public class IBApiController {
 		recordOperationHistory("removeLiveOrderHandler");
 		_api.removeLiveOrderHandler(handler);
 	}
-	public void reqHistoricalData(Contract contract, String endDateTime, int duration, DurationUnit durationUnit, BarSize barSize, WhatToShow whatToShow, boolean rthOnly, boolean keepUpToDate, IHistoricalDataHandler handler) {
-//				client.reqHistoricalData(4001, ContractSamples.EurGbpFx(), formatted, "1 M", "1 day", "MIDPOINT", 1, 1, false, null);
+	public void reqHistoricalData(Contract contract, String endDateTime, int duration, Types.DurationUnit durationUnit, Types.BarSize barSize, Types.WhatToShow whatToShow, boolean rthOnly, boolean keepUpToDate, IHistoricalDataHandler handler) {
 		twsAPIRateControl();
 		recordOperationHistory("reqHistoricalData");
 		_api.reqHistoricalData(contract, endDateTime, duration, durationUnit, barSize, whatToShow, rthOnly, keepUpToDate, handler);
@@ -195,10 +197,15 @@ public class IBApiController {
 		recordOperationHistory("placeOrModifyOrder");
 		_api.placeOrModifyOrder(contract, order, handler);
 	}
-	public void cancelOrder(int orderId) {
+	public void cancelOrder(int orderId, IOrderCancelHandler orderCancelHandler) {
 		twsAPIRateControl();
 		recordOperationHistory("cancelOrder " + orderId);
-		_api.cancelOrder(orderId);
+
+//		manualOrderCancelTime don't know what that mean
+//		manualOrderCancelTime format is "20220314-19:00:00"
+//		look EClient.cancelOrder and ref https://interactivebrokers.github.io/tws-api/basic_orders.html
+//		Guess this is useless feature for this moment(2022-11-14), so set it to null
+		_api.cancelOrder(orderId, null, orderCancelHandler);
 	}
 	public void cancelAllOrders() {
 		twsAPIRateControl();
@@ -229,10 +236,5 @@ public class IBApiController {
 		twsAPIRateControl();
 		recordOperationHistory("reqOptionVolatility");
 		_api.reqOptionVolatility(c, optPrice, underPrice, handler);
-	}
-	public  void reqOptionComputation(Contract c, double vol, double underPrice, IOptHandler handler) {
-		twsAPIRateControl();
-		recordOperationHistory("reqOptionComputation");
-		_api.reqOptionComputation(c, vol, underPrice, handler);
 	}
 }

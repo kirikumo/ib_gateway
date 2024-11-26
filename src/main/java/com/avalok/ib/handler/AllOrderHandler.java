@@ -2,6 +2,7 @@ package com.avalok.ib.handler;
 
 import static com.bitex.util.DebugUtil.*;
 
+import com.ib.client.*;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
 import com.bitex.util.Redis;
@@ -17,12 +18,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.IBContract;
 import com.avalok.ib.IBOrder;
 import com.avalok.ib.GatewayController;
-import com.ib.client.CommissionReport;
-import com.ib.client.Contract;
-import com.ib.client.Execution;
-import com.ib.client.Order;
-import com.ib.client.OrderState;
-import com.ib.client.OrderStatus;
 import com.ib.controller.ApiController.ICompletedOrdersHandler;
 import com.ib.controller.ApiController.ILiveOrderHandler;
 import com.ib.controller.ApiController.ITradeReportHandler;
@@ -59,7 +54,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		_ibController = ibController;
 		_twsName = ibController.name();
 	}
-	
+
 	////////////////////////////////////////////////////////////////
 	// Cache utilities
 	////////////////////////////////////////////////////////////////
@@ -111,6 +106,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		JSONObject pubJ = new JSONObject();
 		String hmap = "URANUS:"+ibc.exchange()+":"+o.account()+":O:"+ibc.pair();
 		String pubChannel = "URANUS:"+ibc.exchange()+":"+o.account()+":O_channel";
+		String pubAccountChannel = "URANUS:"+o.account()+":O_channel";
 		String hmapShort = "URANUS:"+ibc.exchange()+":"+o.account()+":O:";
 		t.hdel(hmap, "0"); // Clear historical remained trash, could delete this after stable version released.
 		if (o.omsClientOID() != null) {
@@ -126,6 +122,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		}
 		t.hset(hmap, "t", timeStr); // Mark latest updated timestamp.
 		t.publish(pubChannel, JSON.toJSONString(pubJ));
+		t.publish(pubAccountChannel, jstr);
 	}
 
 	public void teardownOMS(String reason) {
@@ -146,11 +143,13 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	////////////////////////////////////////////////////////////////
 	public void tradeReport(String tradeKey, Contract contract, Execution execution) {
 		IBContract ibc = new IBContract(contract);
+//		log(execution.acctNumber());
 		Redis.exec(new Consumer<Jedis>() {
 			@Override
 			public void accept(Jedis t) {
 //				String key = "TradeReport:"+ibc.exchange()+":"+execution.acctNumber()+":O:"+ibc.pair();
 				String key = "TradeReport:"+execution.acctNumber();
+				String pubAccountChannel = "TradeReport:"+execution.acctNumber()+":channel";
 				JSONObject j = new JSONObject();
 				j.put("orderId", execution.orderId());
 				j.put("clientId", execution.clientId());
@@ -159,11 +158,11 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 				j.put("acctNumber", execution.acctNumber());
 				j.put("exchange", execution.exchange());
 				j.put("side", execution.side());
-				j.put("shares", execution.shares());
+				j.put("shares", execution.shares().longValue());
 				j.put("price", execution.price());
 				j.put("permId", execution.permId());
 				j.put("liquidation", execution.liquidation());
-				j.put("cumQty", execution.cumQty());
+				j.put("cumQty", execution.cumQty().longValue());
 				j.put("avgPrice", execution.avgPrice());
 				j.put("orderRef", execution.orderRef());
 				j.put("evRule", execution.evRule());
@@ -172,8 +171,10 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 				j.put("lastLiquidity", execution.lastLiquidityStr());
 
 				t.hset(key, tradeKey, j.toJSONString());
+				t.publish(pubAccountChannel, j.toJSONString());
 			}
 		});
+
 		log("<-- tradeReport() " + tradeKey + " " + ibc.shownName() + execution.cumQty() + "@" + execution.price());
 	}
 	public void tradeReportEnd() {
@@ -228,8 +229,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 
 	@Override
 	public void orderStatus(
-			int orderId, OrderStatus status, double filled, 
-			double remaining, double avgFillPrice,
+			int orderId, OrderStatus status, Decimal filled,
+			Decimal remaining, double avgFillPrice,
 			int permId, int parentId, double lastFillPrice, 
 			int clientId, String whyHeld, double mktCapPrice) {
 		if (_processingOrderId != null &&_processingOrderId == orderId) {
@@ -339,7 +340,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		_allOrders.recOrders(_recvOpenOrders.toArray(new IBOrder[0]));
 		_recvOpenOrders.clear();
 		_aliveOrderInit = true;
-		if (!_omsInit && _deadOrderInit) initOMS();
+//		if (!_omsInit && _deadOrderInit) initOMS();
+		if (!_omsInit) initOMS();
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -369,10 +371,10 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			err("Should not call initOMS() when _omsInit is true");
 			return;
 		}
-		if (!_aliveOrderInit || !_deadOrderInit) {
-			err("Should not call initOMS() when _aliveOrderInit " + _aliveOrderInit + " _deadOrderInit " + _deadOrderInit);
-			return;
-		}
+//		if (!_aliveOrderInit || !_deadOrderInit) {
+//			err("Should not call initOMS() when _aliveOrderInit " + _aliveOrderInit + " _deadOrderInit " + _deadOrderInit);
+//			return;
+//		}
 		_omsInit = true;
 		info("Init OMS now");
 		final Collection<IBOrder> orders = _allOrders.orders();

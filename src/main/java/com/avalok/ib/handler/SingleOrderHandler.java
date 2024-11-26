@@ -10,9 +10,12 @@ import java.util.TimerTask;
 import com.avalok.ib.IBOrder;
 import com.avalok.ib.GatewayController;
 
+import com.ib.client.Decimal;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
+import com.ib.controller.ApiController;
 import com.ib.controller.ApiController.IOrderHandler;
+import com.ib.controller.ApiController.IOrderCancelHandler;
 
 import com.alibaba.fastjson.JSONObject;
 
@@ -21,8 +24,8 @@ import com.alibaba.fastjson.JSONObject;
  * It does the same thing as AllOrderHandler.
  *
  */
-public class SingleOrderHandler implements IOrderHandler {
-	
+public class SingleOrderHandler implements IOrderHandler, IOrderCancelHandler {
+
 	private IBOrder _order;
 	private GatewayController _ibController;
 	private AllOrderHandler _orderCacheHandler;
@@ -44,15 +47,14 @@ public class SingleOrderHandler implements IOrderHandler {
 	
 	@Override
 	public void orderStatus(
-			OrderStatus status, double filled, 
-			double remaining, double avgFillPrice,
+			OrderStatus status, Decimal filled,
+			Decimal remaining, double avgFillPrice,
 			int permId, int parentId, double lastFillPrice, 
 			int clientId, String whyHeld, double mktCapPrice) {
 		log("<-- SingleOrder udpate orderStatus: filled " + filled + " remaining:" + remaining + " permId:" + permId);
 		_order.setStatus(status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
 		_orderCacheHandler.writeToCacheAndOMS(_order);
 
-		_ibController.changeSubscribeAccountMV(_order.account());
 //		Will be slow to use in live trade
 //		if (filled > 0) {
 //			log("Force req account balance again after 1 seconds");
@@ -64,6 +66,13 @@ public class SingleOrderHandler implements IOrderHandler {
 //				}
 //			}, 1000);
 //		}
+	}
+
+	@Override
+	public void orderStatus(String orderStatus) {
+//		Use it when cancel order
+//		Always log on line 49 orderStatus()
+//		String orderStatus => "Cancelled" or some cancel status
 	}
 
 	@Override

@@ -15,6 +15,7 @@ import static com.ib.controller.AccountSummaryTag.AccountType;
 public class AccountSummaryHandler implements IAccountSummaryHandler{
     Map<String, Map<String, String>> m_map = new HashMap<>();
 
+//    https://ibkrcampus.com/ibkr-api-page/trader-workstation-api/#account-value-keys
     @Override
     public void accountSummary(String account, AccountSummaryTag tag, String value, String currency) {
         Map<String, String> summary = m_map.get(account);
@@ -23,57 +24,75 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
         switch (tag){
             case AccountType:
                 summary.put("AccountType", value);
+//                m_map.get(account).put("AccountType", value);
                 break;
             case NetLiquidation:
                 summary.put("NetLiquidation", value);
+//                m_map.get(account).put("NetLiquidation", value);
                 break;
             case TotalCashValue:
                 summary.put("TotalCashValue", value);
+//                m_map.get(account).put("TotalCashValue", value);
                 break;
             case SettledCash:
                 summary.put("SettledCash", value);
+//                m_map.get(account).put("SettledCash", value);
                 break;
             case AccruedCash:
                 summary.put("AccruedCash", value);
+//                m_map.get(account).put("AccruedCash", value);
                 break;
             case BuyingPower:
                 summary.put("BuyingPower", value);
+//                m_map.get(account).put("BuyingPower", value);
                 break;
             case EquityWithLoanValue:
                 summary.put("EquityWithLoanValue", value);
+//                m_map.get(account).put("EquityWithLoanValue", value);
                 break;
             case RegTEquity:
                 summary.put("RegTEquity", value);
+//                m_map.get(account).put("RegTEquity", value);
                 break;
             case RegTMargin:
                 summary.put("RegTMargin", value);
+//                m_map.get(account).put("RegTMargin", value);
                 break;
             case InitMarginReq:
                 summary.put("InitMarginReq", value);
+//                m_map.get(account).put("InitMarginReq", value);
                 break;
             case MaintMarginReq:
                 summary.put("MaintMarginReq", value);
+//                m_map.get(account).put("MaintMarginReq", value);
                 break;
             case ExcessLiquidity:
                 summary.put("ExcessLiquidity", value);
+//                m_map.get(account).put("ExcessLiquidity", value);
                 break;
             case Cushion:
                 summary.put("Cushion", value);
+//                m_map.get(account).put("Cushion", value);
                 break;
             case LookAheadInitMarginReq:
                 summary.put("LookAheadInitMarginReq", value);
+//                m_map.get(account).put("LookAheadInitMarginReq", value);
                 break;
             case LookAheadMaintMarginReq:
                 summary.put("LookAheadMaintMarginReq", value);
+//                m_map.get(account).put("LookAheadMaintMarginReq", value);
                 break;
             case LookAheadAvailableFunds:
                 summary.put("LookAheadAvailableFunds", value);
+//                m_map.get(account).put("LookAheadAvailableFunds", value);
                 break;
             case LookAheadExcessLiquidity:
                 summary.put("LookAheadExcessLiquidity", value);
+//                m_map.get(account).put("LookAheadExcessLiquidity", value);
                 break;
             case Leverage:
                 summary.put("Leverage", value);
+//                m_map.get(account).put("Leverage", value);
                 break;
             case AvailableFunds:
                 summary.put("AvailableFunds", value);
@@ -93,8 +112,13 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
             case GrossPositionValue:
                 summary.put("GrossPositionValue", value);
                 break;
-//            default:
-//                log("Not handle tag: " + tag + " | value: " + value);
+            case PreviousDayEquityWithLoanValue:
+                summary.put("PreviousDayEquityWithLoanValue", value);
+                break;
+            case HighestSeverity:
+                summary.put("HighestSeverity", value);
+                break;
+
         }
         m_map.put(account, summary);
 //        log("account: "+account+" tag: "+tag + " value: " + value + " currency: "+currency);
@@ -111,7 +135,5 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
             Redis.set(key, j.toJSONString());
             log("Redis -> " + key);
         });
-
-
     }
 }

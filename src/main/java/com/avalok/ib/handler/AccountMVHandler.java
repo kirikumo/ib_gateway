@@ -2,6 +2,8 @@ package com.avalok.ib.handler;
 
 import static com.bitex.util.DebugUtil.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,6 +12,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.GatewayController;
 import com.avalok.ib.IBContract;
 import com.bitex.util.Redis;
+import com.ib.client.ComboLeg;
 import com.ib.controller.Position;
 import com.ib.controller.ApiController.IAccountHandler;
 
@@ -21,7 +24,6 @@ public class AccountMVHandler implements IAccountHandler {
 	private boolean _dataInit = false;
 	private Map<String, Map<String, JSONObject>> _data = new ConcurrentHashMap<>();
 	private Map<String, Map<String, JSONObject>> _tmpData = new ConcurrentHashMap<>();
-//	public static GatewayController GW_CONTROLLER = null;
 //	public List<IBContract> ibc_cache = new ArrayList<>();
 	public Map<String, IBContract> ibc_cache = new ConcurrentHashMap<>();
 
@@ -66,33 +68,28 @@ public class AccountMVHandler implements IAccountHandler {
 	public synchronized void updatePortfolio(Position position) {
 		IBContract ibc = new IBContract(position.contract());
 		if (!ibc_cache.containsKey(ibc.pair())) {
-			ibc_cache.put(ibc.pair(), ibc);	
+			ibc_cache.put(ibc.pair(), ibc);
 		}
 
-		JSONObject contractDetails = ContractDetailsHandler.findDetails(ibc); // Auto query details for instruments in portfolio
+		ContractDetailsHandler.findDetails(ibc); // Auto query details for instruments in portfolio
 		String account = position.account();
 		info("<-- " + account + " Pos " + ibc.exchange() + "/" +
-				ibc.shownName() + " pos:" + position.position() +
+				ibc.shownName() + " pos:" + position.position().longValue() +
 				" cost:" + position.averageCost() + " realPnl:" + position.realPnl() +
 				" unrealPnl:" + position.unrealPnl() + " marketPrice:" + position.marketPrice() +
 				" marketValue:" + position.marketValue());
-
 		JSONObject j = new JSONObject();
 		j.put("type", "position");
 		j.put("contract", ibc.toJSON());
-		j.put("pos", position.position());
+		j.put("pos", position.position().longValue());
 		j.put("avgCost", position.averageCost());
 
 		j.put("realPnl", position.realPnl());
 		j.put("unrealPnl", position.unrealPnl());
 		j.put("marketPrice", position.marketPrice());
 		j.put("marketValue", position.marketValue());
-		if (contractDetails != null) {
-			j.put("contractDetails", contractDetails);
-		}
+		j.put("shortName", ibc.shownName());
 
-//		info(ibc.shownName() + " lastTickPrice: "+ GW_CONTROLLER.findTopMktDataHandler(ibc).lastTickPrice);		
-		
 		if (_dataInit) {
 			_data.putIfAbsent(account, new ConcurrentHashMap<String, JSONObject>());
 			_data.get(account).put(ibc.shownName(), j);

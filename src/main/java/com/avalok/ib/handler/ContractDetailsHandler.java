@@ -50,12 +50,12 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 			ibc.copyFrom(result);
 			return true;
 		}
-		if (GW_CONTROLLER != null) queryDetails(ibc);
 		return false;
 	}
 
 	public static JSONObject findDetails(IBContract ibc) {
 		if (GW_CONTROLLER != null) queryDetails(ibc);
+
 		if (ibc.isFullDetailed() == false)
 			fillIBContract(ibc);
 		String key = ibc.shownName();
@@ -102,12 +102,22 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		if (lastQueryT == null || lastQueryT + 10_000 < System.currentTimeMillis()) {
 			QUERY_HIS.put(key, System.currentTimeMillis());
 			warn("--> Auto query contract details:" + key);
-			GW_CONTROLLER.queryContractList(ibc);
-			if (ibc.exchange() != null && ibc.exchange().equals("SMART")) {
-				IBContract ibc2 = new IBContract(ibc);
-				ibc2.exchange(null);
-				warn("--> Auto query contract details:" + key.replace("SMART", "???"));
-				GW_CONTROLLER.queryContractList(ibc2);
+			if (ibc.isCombo()) {
+				for (ComboLeg leg: ibc.comboLegs()) {
+					JSONObject j = new JSONObject();
+					j.put("conid", leg.conid());
+					IBContract comboIbc = new IBContract(j);
+					GW_CONTROLLER.queryContractList(comboIbc);
+				}
+			}
+			else {
+				GW_CONTROLLER.queryContractList(ibc);
+				if (ibc.exchange() != null && ibc.exchange().equals("SMART")) {
+					IBContract ibc2 = new IBContract(ibc);
+					ibc2.exchange(null);
+					warn("--> Auto query contract details:" + key.replace("SMART", "???"));
+					GW_CONTROLLER.queryContractList(ibc2);
+				}
 			}
 		}
 	}
@@ -168,7 +178,7 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("liquidHours", detail.liquidHours());
 		j.put("evRule", detail.evRule());
 		j.put("evMultiplier", detail.evMultiplier());
-		j.put("mdSizeMultiplier", detail.mdSizeMultiplier());
+//		j.put("mdSizeMultiplier", detail.mdSizeMultiplier());
 		j.put("aggGroup", detail.aggGroup());
 		j.put("underSymbol", detail.underSymbol());
 		j.put("underSecType", detail.underSecType());
@@ -190,6 +200,9 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("nextOptionType", detail.nextOptionType());
 		j.put("nextOptionPartial", detail.nextOptionPartial());
 		j.put("notes", detail.notes());
+		j.put("minSize", detail.minSize().longValue());
+		j.put("sizeIncrement", detail.sizeIncrement().longValue());
+		j.put("suggestedSizeIncrement", detail.suggestedSizeIncrement().longValue());
 		j.put("_timestamp", System.currentTimeMillis()); // Write generated timestamp to redis
 		
 //		if (detail.contract().secType() == SecType.OPT) {
@@ -229,7 +242,7 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("liquidHours", detail.liquidHours());
 		j.put("evRule", detail.evRule());
 		j.put("evMultiplier", detail.evMultiplier());
-		j.put("mdSizeMultiplier", detail.mdSizeMultiplier());
+//		j.put("mdSizeMultiplier", detail.mdSizeMultiplier());
 		j.put("aggGroup", detail.aggGroup());
 		j.put("underSymbol", detail.underSymbol());
 		j.put("underSecType", detail.underSecType());
@@ -251,6 +264,9 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("nextOptionType", detail.nextOptionType());
 		j.put("nextOptionPartial", detail.nextOptionPartial());
 		j.put("notes", detail.notes());
+		j.put("minSize", detail.minSize().longValue());
+		j.put("sizeIncrement", detail.sizeIncrement().longValue());
+		j.put("suggestedSizeIncrement", detail.suggestedSizeIncrement().longValue());
 		j.put("_timestamp", System.currentTimeMillis()); // Write generated timestamp to redis
 
 //		if (detail.contract().secType() == SecType.OPT) {
