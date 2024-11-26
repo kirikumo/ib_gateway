@@ -52,7 +52,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 			}
 			public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 				if (this != _activeIBConnectionHandler) {
-					log("Ignore obsolete IBConnectionHandler event: message");
+					log("Ignore obsolete IBConnectionHandler event: message -> " + advancedOrderRejectJson);
 					return;
 				}
 				BaseIBController.this.message(id, errorCode, errorMsg, advancedOrderRejectJson);
@@ -122,7 +122,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 	private static Thread connectThread = new Thread();
 	protected synchronized void _connect() {
 		// DebugUtil.printStackInfo();
-		if (isConnected()) {
+		if (isConnected() || isRealConnected()) {
 			log("status is still good, abort _connect()");
 			return;
 		} else if (_initConnTS <= 0) {
@@ -152,6 +152,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 				while (true) {
 //					if (isConnected()) break;
 					try {
+						
 						log("Connecting gateway " + TWS_API_ADDR + " ID " + _apiClientID);
 						// TODO this step might hang.
 						IBApiController newController = new IBApiController(_assignNewIConnectionHandler(), new NullIBLogger(), new NullIBLogger());
@@ -238,7 +239,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 		try {
 			log("_markDisconnected() Remove and disconnect old APIController...");
 			IBApiController old_controller = _apiController;
-			_apiController = null;
+//			_apiController = null;
 			_postDisconnected();
 			old_controller.disconnect(); // Dispose resource at last
 		} catch (Exception e1) {

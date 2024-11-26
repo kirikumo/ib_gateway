@@ -140,8 +140,10 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		case CLOSE:
 			break;
 		case LOW:
+			info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
 			break;
 		case HIGH:
+			info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
 			break;
 		case HALTED:
 			break;
@@ -192,7 +194,11 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		if (_contract.exchange().equals("SEHK") || _contract.exchange().equals("HKFE")){
 			size = size_in_lot.longValue() * 1.0;
 		} else {
+//			log("size_in_lot: " + size_in_lot.longValue() + " multiplier: "+ multiplier + " marketDataSizeMultiplier: "+ marketDataSizeMultiplier);
 			size = size_in_lot.longValue() * multiplier * marketDataSizeMultiplier;
+			if (size == 0) {
+				size = size_in_lot.longValue() * multiplier;
+			}
 		}
 		if (_debug)
 			info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);

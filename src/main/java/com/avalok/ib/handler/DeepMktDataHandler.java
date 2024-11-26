@@ -108,7 +108,11 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 		if (_contract.exchange().equals("SEHK") || _contract.exchange().equals("HKFE")){
 			size = fixIbondSizeBug(size_in_lot.longValue());
 		} else {
+//			log("mm:" + mm +" size_in_lot: " + size_in_lot.longValue() + " multiplier: "+ multiplier + " marketDataSizeMultiplier: "+ marketDataSizeMultiplier);
 			size = size_in_lot.longValue() * multiplier * marketDataSizeMultiplier;
+			if (size == 0) {
+				size = size_in_lot.longValue() * multiplier;
+			}
 		}
 //		log("START ==========================================================================");
 //		log("DeepType " + pos + " " + side + " " + operation + " " + price + " " + size);

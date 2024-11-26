@@ -104,9 +104,7 @@ public class IBApiController {
 		recordOperationHistory("reqAccountUpdates:" + acctCode);
 		_api.reqAccountUpdates(subscribe, acctCode, handler);
 	}
-	public void reqAccountUpdatesMulti(String account, String modelCode, boolean ledgerAndNLV, IAccountUpdateMultiHandler handler) {
-		_api.reqAccountUpdatesMulti(account, modelCode, ledgerAndNLV, handler);
-	}
+
 	public void reqPositions(IPositionHandler handler) {
 		twsAPIRateControl();
 		recordOperationHistory("reqPositions");
