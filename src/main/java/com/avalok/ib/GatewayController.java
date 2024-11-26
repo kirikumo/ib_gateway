@@ -53,6 +53,9 @@ public class GatewayController extends BaseIBController {
 				j.put("t", System.currentTimeMillis());
 				Redis.set(liveStatusKey, j);
 				Redis.pub(ackChannel, j);
+				if (isRealConnected()) {
+					Redis.setex(name() + "_CONNECTION", 2, "Not None");
+				}
 			}
 		}, 0, liveStatusInvertal);
 	}
@@ -63,6 +66,7 @@ public class GatewayController extends BaseIBController {
 	////////////////////////////////////////////////////////////////
 	private ConcurrentHashMap<String, DeepMktDataHandler> _depthTasks = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<Integer, String> _depthTaskByReqID = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<String, List<String>> _depthShareHost = new ConcurrentHashMap<>();
 	private final boolean isSmartDepth = false;
 
 	private int subscribeDepthData(IBContract contract) {
@@ -81,6 +85,21 @@ public class GatewayController extends BaseIBController {
 		return qid;
 	}
 
+	private int subscribeDepthDataAndMarkHost(IBContract contract, String hostName) {
+		String jobKey = contract.exchange() + "/" + contract.shownName();
+		if (_depthShareHost.containsKey(jobKey)) {
+			if (!_depthShareHost.get(jobKey).contains(hostName)) {
+				_depthShareHost.get(jobKey).add(hostName);
+			}
+			return 0;
+		}
+		int qid = subscribeDepthData(contract);
+		List<String> hostList = new ArrayList<>();
+		hostList.add(hostName);
+		_depthShareHost.put(jobKey, hostList);
+		return qid;
+	}
+
 	private int unsubscribeDepthData(IBContract contract) {
 		String jobKey = contract.exchange() + "/" + contract.shownName();
 		DeepMktDataHandler handler = _depthTasks.get(jobKey);
@@ -94,7 +113,25 @@ public class GatewayController extends BaseIBController {
 		_depthTasks.remove(jobKey);
 		return qid;
 	}
-	
+
+	private int unsubscribeDepthDataAndMarkHost(IBContract contract, String hostName) {
+		String jobKey = contract.exchange() + "/" + contract.shownName();
+		int qid = 0;
+		if (!_depthShareHost.containsKey(jobKey)) {
+			return 0;
+		}
+		if (!_depthShareHost.get(jobKey).contains(hostName)) {
+			return 0;
+		}
+
+		_depthShareHost.get(jobKey).remove(hostName);
+		if (_depthShareHost.get(jobKey).size() == 0) {
+			qid = unsubscribeDepthData(contract);
+			_depthShareHost.remove(jobKey);
+		}
+		return qid;
+	}
+
 	////////////////////////////////////////////////////////////////
 	// Market top data module
 	////////////////////////////////////////////////////////////////
@@ -102,6 +139,7 @@ public class GatewayController extends BaseIBController {
 	private ConcurrentHashMap<String, TopMktDataHandler> _topTasks = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<String, OptionTopMktDataHandler> _optionTopTasks = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<Integer, String> _topTaskByReqID = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<String, List<String>> _topShareHost = new ConcurrentHashMap<>();
 	private int subscribeTopData(IBContract contract) {
 		String jobKey = contract.exchange() + "/" + contract.shownName();
 		boolean isOptType = contract.secType() == SecType.OPT;
@@ -144,6 +182,21 @@ public class GatewayController extends BaseIBController {
 		return qid;
 	}
 
+	private int subscribeTopDataAndMarkHost(IBContract contract, String hostName) {
+		String jobKey = contract.exchange() + "/" + contract.shownName();
+		if (_topShareHost.containsKey(jobKey)) {
+			if (!_topShareHost.get(jobKey).contains(hostName)) {
+				_topShareHost.get(jobKey).add(hostName);
+			}
+			return 0;
+		}
+		int qid = subscribeTopData(contract);
+		List<String> hostList = new ArrayList<>();
+		hostList.add(hostName);
+		_topShareHost.put(jobKey, hostList);
+		return qid;
+	}
+
 	private int unsubscribeTopData(IBContract contract) {
 		String jobKey = contract.exchange() + "/" + contract.shownName();
 		boolean isOptType = contract.secType() == SecType.OPT;
@@ -167,6 +220,22 @@ public class GatewayController extends BaseIBController {
 			_topTasks.remove(jobKey);
 		}
 		int qid = _apiController.lastReqId();
+		return qid;
+	}
+	int unsubscribeTopDataAndMarkHost(IBContract contract, String hostName) {
+		String jobKey = contract.exchange() + "/" + contract.shownName();
+		int qid = 0;
+		if (!_topShareHost.containsKey(jobKey)) {
+			return 0;
+		}
+		if (!_topShareHost.get(jobKey).contains(hostName)) {
+			return 0;
+		}
+		_topShareHost.get(jobKey).remove(hostName);
+		if (_topShareHost.get(jobKey).size() == 0) {
+			qid = unsubscribeTopData(contract);
+			_topShareHost.remove(jobKey);
+		}
 		return qid;
 	}
 
@@ -240,6 +309,10 @@ public class GatewayController extends BaseIBController {
 		}
 //		AccountSummaryTag[] a = AccountSummaryTag.values();
 		_apiController.cancelAccountSummary(accountSummaryHandler);
+
+		if (!isConnected()) {
+			return 0;
+		}
 		_apiController.reqAccountSummary("All", AccountSummaryTag.values(), accountSummaryHandler);
 		return _apiController.lastReqId();
 	}
@@ -542,9 +615,9 @@ public class GatewayController extends BaseIBController {
 				err("Failed to parse command " + e.getMessage());
 				return;
 			}
-			log("test: _twsConnected: "+ _twsConnected + ", _apiConnected: "+ _apiConnected);
+//			log("test: _twsConnected: "+ _twsConnected + ", _apiConnected: "+ _apiConnected);
 			try {
-				if (!_twsConnected || !_apiConnected) _connect();
+				if (!isConnected()) _connect();
 			} catch (Exception e) {
 				err("Failed to connect " + e.getMessage());
 			}
@@ -558,14 +631,26 @@ public class GatewayController extends BaseIBController {
 				case "SUB_ODBK":
 					apiReqId = subscribeDepthData(new IBContract(j.getJSONObject("contract")));
 					break;
+				case "SUB_ODBK_MARK":
+					apiReqId = subscribeDepthDataAndMarkHost(new IBContract(j.getJSONObject("contract")), j.getString("botId"));
+					break;
 				case "UNSUB_ODBK":
 					apiReqId = unsubscribeDepthData(new IBContract(j.getJSONObject("contract")));
+					break;
+				case "UNSUB_ODBK_MARK":
+					apiReqId = unsubscribeDepthDataAndMarkHost(new IBContract(j.getJSONObject("contract")), j.getString("botId"));
 					break;
 				case "SUB_TOP":
 					apiReqId = subscribeTopData(new IBContract(j.getJSONObject("contract")));
 					break;
+				case "SUB_TOP_MARK":
+					apiReqId = subscribeTopDataAndMarkHost(new IBContract(j.getJSONObject("contract")), j.getString("botId"));
+					break;
 				case "UNSUB_TOP":
 					apiReqId = unsubscribeTopData(new IBContract(j.getJSONObject("contract")));
+					break;
+				case "UNSUB_TOP_MARK":
+					apiReqId = unsubscribeTopDataAndMarkHost(new IBContract(j.getJSONObject("contract")), j.getString("botId"));
 					break;
 				case "RESET":
 					_postConnected();
@@ -608,6 +693,10 @@ public class GatewayController extends BaseIBController {
 					break;
 				case "TEST_DISCONNECT":
 					disconnected();
+					break;
+				case "REFRESH_TODAY_ORDERS":
+					refreshLiveOrders();
+					refreshCompletedOrders();
 					break;
 //				case "TEST_PNL":
 //					_apiController.reqExecutions();

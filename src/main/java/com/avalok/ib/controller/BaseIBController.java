@@ -118,7 +118,6 @@ public abstract class BaseIBController implements IConnectionHandler {
 	public final static String TWS_NAME = TWS_API_ADDR + "_" + TWS_API_PORT;
 	protected int _apiClientID = Integer.parseInt(System.getenv("TWS_API_CLIENTID")); // Only the default client (i.e 0) can auto bind orders
 	protected Long callConnectTS = 0L;
-//	protected boolean waitingConnect = false;
 
 	private static Thread connectThread = new Thread();
 	protected synchronized void _connect() {
@@ -133,10 +132,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 			log("call _connect() too fast");
 			return;
 		}
-//		else if (waitingConnect) {
-//			log("waitingConnect connectThread:" + connectThread.isAlive());
-//			return;
-//		}
+
 		if (_initConnTS >= System.currentTimeMillis()) {
 			// The first call _connect() will set new initConnTs
 			log("Sleep " + (_initConnTS - System.currentTimeMillis()) + "ms before _connect()");
@@ -148,7 +144,6 @@ public abstract class BaseIBController implements IConnectionHandler {
 //		}
 		connectThread.interrupt();
 
-//		waitingConnect = true;
 		callConnectTS = System.currentTimeMillis();
 		connectThread = new Thread(new Runnable() {
 			public void run() {
@@ -171,7 +166,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 						_apiController = newController;  // Only assign after _connect()
 						_connectedTS = System.currentTimeMillis();
 						log("Gateway connected with client ID " + _apiClientID);
-						_markTWSServerConnected(false);
+//						_markTWSServerConnected(false);
 						break;
 					} catch (StackOverflowError e) {
 						log("StackOverflowError in connecting gateway with ID " + _apiClientID + " retry_ct:" + retry_ct);
@@ -183,8 +178,14 @@ public abstract class BaseIBController implements IConnectionHandler {
 						sleep(50);
 					}
 				}
-				log("Connect thread finished.");
-//				waitingConnect = false;
+				log("sleep 10s for waiting connection");
+				sleep(10000);
+				if (isRealConnected()) {
+					log("Connect thread finished.");
+				} else {
+					log("Connect thread failed, try again _connect");
+					_connect();
+				}
 			}
 		});
 		connectThread.start();
@@ -194,6 +195,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 	// Connectivity & Status Set/Get functions
 	//////////////////////////////////////////////////////
 	protected boolean _apiConnected = false, _twsConnected = false;
+	protected Boolean realConnectedFlag = false;
 
 	protected void _markTWSServerDisconnected() {
 		_twsConnected = false;
@@ -212,6 +214,10 @@ public abstract class BaseIBController implements IConnectionHandler {
 	////////////////////////////////////////////////////////////////
 	public boolean isConnected() {
 		return _apiConnected && _twsConnected;
+	}
+
+	public boolean isRealConnected() {
+		return realConnectedFlag;
 	}
 
 	protected static final long RECONNECT_DELAY = 20_000;
@@ -247,6 +253,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 	public void connected() {
 		_apiConnected = true;
 		_twsConnected = true;
+		realConnectedFlag = true;
 		recordMessage(0, 0, "IB APIController connected");
 		log("connected() _apiConnected:" + _apiConnected + " _twsConnected:" + _twsConnected);
 		// DebugUtil.printStackInfo();
@@ -261,9 +268,9 @@ public abstract class BaseIBController implements IConnectionHandler {
 //		if (_initConnTS >= System.currentTimeMillis()) return;
 
 		recordMessage(0, 0, "IB API disconnected");
-
+		realConnectedFlag = false;
 		if (!isConnected()) {
-			log("call disconnected() but but not connected, dont _markDisconnected() just call _connect()");
+			log("call disconnected() but not connected, dont _markDisconnected() just call _connect()");
 			_connect();
 			return;
 		}

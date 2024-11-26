@@ -233,7 +233,7 @@ public class IBOrder {
 		// BUY Price
 		sb.append(StringUtils.rightPad(order.action().toString(), 5));
 		sb.append(StringUtils.rightPad(""+order.lmtPrice(), 8));
-		
+
 		// execute/total
 		if (statusFilled)
 			sb.append(StringUtils.leftPad("" + order.filledQuantity().toString(), 8));
@@ -304,8 +304,8 @@ public class IBOrder {
 		j.put("updateTime", System.currentTimeMillis());
 		j.put("market", contract.exchange());
 		j.put("orderType", order.orderType()); // LMT
-		j.put("tif", order.tif()); // LMT
-		j.put("whatIf", order.whatIf()); // LMT
+		j.put("tif", order.tif());
+		j.put("whatIf", order.whatIf());
 		j.put("secType", contract.secType());
 		if (orderState.commission() == Double.MAX_VALUE) {
 			j.put("commission", 0);

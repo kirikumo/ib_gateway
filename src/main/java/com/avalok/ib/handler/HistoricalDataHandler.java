@@ -29,7 +29,7 @@ public class HistoricalDataHandler implements ApiController.IHistoricalDataHandl
         j.put("high", bar.high());
         j.put("low", bar.low());
         j.put("close", bar.close());
-        j.put("volume", bar.volume());
+        j.put("volume", bar.volume().longValue());
 //        j.put("formattedTime", bar.formattedTime());
         historyBar.add(j);
 //    	log(bar.formattedTime() + " " + msg);

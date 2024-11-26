@@ -105,6 +105,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		JSONObject pubJ = new JSONObject();
 		String hmap = "URANUS:"+ibc.exchange()+":"+o.account()+":O:"+ibc.pair();
 		String pubChannel = "URANUS:"+ibc.exchange()+":"+o.account()+":O_channel";
+		String pubAccountChannel = "URANUS:"+o.account()+":O_channel";
 		String hmapShort = "URANUS:"+ibc.exchange()+":"+o.account()+":O:";
 		t.hdel(hmap, "0"); // Clear historical remained trash, could delete this after stable version released.
 		if (o.omsClientOID() != null) {
@@ -120,6 +121,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		}
 		t.hset(hmap, "t", timeStr); // Mark latest updated timestamp.
 		t.publish(pubChannel, JSON.toJSONString(pubJ));
+		t.publish(pubAccountChannel, jstr);
 	}
 
 	public void teardownOMS(String reason) {
@@ -146,6 +148,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			public void accept(Jedis t) {
 //				String key = "TradeReport:"+ibc.exchange()+":"+execution.acctNumber()+":O:"+ibc.pair();
 				String key = "TradeReport:"+execution.acctNumber();
+				String pubAccountChannel = "TradeReport:"+execution.acctNumber()+":channel";
 				JSONObject j = new JSONObject();
 				j.put("orderId", execution.orderId());
 				j.put("clientId", execution.clientId());
@@ -167,6 +170,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 				j.put("lastLiquidity", execution.lastLiquidityStr());
 
 				t.hset(key, tradeKey, j.toJSONString());
+				t.publish(pubAccountChannel, j.toJSONString());
 			}
 		});
 
@@ -335,7 +339,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		_allOrders.recOrders(_recvOpenOrders.toArray(new IBOrder[0]));
 		_recvOpenOrders.clear();
 		_aliveOrderInit = true;
-		if (!_omsInit && _deadOrderInit) initOMS();
+//		if (!_omsInit && _deadOrderInit) initOMS();
+		if (!_omsInit) initOMS();
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -365,10 +370,10 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			err("Should not call initOMS() when _omsInit is true");
 			return;
 		}
-		if (!_aliveOrderInit || !_deadOrderInit) {
-			err("Should not call initOMS() when _aliveOrderInit " + _aliveOrderInit + " _deadOrderInit " + _deadOrderInit);
-			return;
-		}
+//		if (!_aliveOrderInit || !_deadOrderInit) {
+//			err("Should not call initOMS() when _aliveOrderInit " + _aliveOrderInit + " _deadOrderInit " + _deadOrderInit);
+//			return;
+//		}
 		_omsInit = true;
 		info("Init OMS now");
 		final Collection<IBOrder> orders = _allOrders.orders();

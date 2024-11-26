@@ -217,10 +217,6 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			break;
 		case CLOSE:
 			break;
-		case LOW:
-			break;
-		case HIGH:
-			break;
 		case HALTED:
 			break;
 		// Refer https://interactivebrokers.github.io/tws-api/market_data_type.html
@@ -243,14 +239,6 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			// info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
 			break;
 		case DELAYED_VOLUME:
-			break;
-		case DELAYED_OPEN:
-			break;
-		case DELAYED_CLOSE:
-			break;
-		case DELAYED_LOW:
-			break;
-		case DELAYED_HIGH:
 			break;
 		default:
 			info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
