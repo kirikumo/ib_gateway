@@ -46,8 +46,10 @@ public class OptionTopMktDataHandler implements IOptHandler{
 
     public OptionTopMktDataHandler(IBContract contract, boolean broadcastTop, boolean broadcastTick) {
         _contract = contract;
-        publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
-        publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel";
+//        publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
+//        publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel";
+        publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
+        publishTickChannel = "URANUS:"+contract.pair()+":full_tick_channel";
         if (contract.multiplier() == null)
             multiplier = 1;
         else
