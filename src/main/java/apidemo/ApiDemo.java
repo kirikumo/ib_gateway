@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package apidemo;
@@ -113,8 +113,9 @@ public class ApiDemo implements IConnectionHandler {
         m_frame.setVisible( true);
         m_frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         
-        // make initial connection to local host, port 7496, client id 0, no connection options
-		controller().connect( "127.0.0.1", 7496, 0, m_connectionConfiguration.getDefaultConnectOptions() != null ? "" : null );
+        // make initial connection to local host, port 7496, client id 0
+        controller().connect( "127.0.0.1", 7496, 0, 
+                m_connectionConfiguration.getDefaultConnectOptions() != null ? m_connectionConfiguration.getDefaultConnectOptions() : null);
     }
 	
 	@Override public void connected() {

@@ -11,6 +11,7 @@ import com.avalok.ib.IBOrder;
 import com.avalok.ib.GatewayController;
 
 import com.ib.client.Decimal;
+import com.ib.client.Order;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
 import com.ib.controller.ApiController;
@@ -40,11 +41,12 @@ public class SingleOrderHandler implements IOrderHandler, IOrderCancelHandler {
 	// IOrderHandler
 	////////////////////////////////////////////////////////////////
 	@Override
-	public void orderState(OrderState orderState) {
+	public void orderState(OrderState orderState, Order order) {
 		_order.orderState(orderState);
+		_order.order = order;
 		log("<-- SingleOrder udpate orderState: " + orderState.status());
 	}
-	
+
 	@Override
 	public void orderStatus(
 			OrderStatus status, Decimal filled,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2023 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package apidemo;
@@ -88,7 +88,7 @@ public class TradesPanel extends JPanel implements ITradeReportHandler {
 		}
 
 		@Override public int getColumnCount() {
-			return 9;
+			return 10;
 		}
 		
 		@Override public String getColumnName(int col) {
@@ -101,7 +101,8 @@ public class TradesPanel extends JPanel implements ITradeReportHandler {
 				case 5: return "Description";
 				case 6: return "Price";
 				case 7: return "Commission";
-				case 8: return "Last liquidity";
+				case 8: return "Last Liquidity";
+				case 9: return "Pending Price Revision";
 				default: return null;
 			}
 		}
@@ -119,6 +120,7 @@ public class TradesPanel extends JPanel implements ITradeReportHandler {
 				case 6: return Util.DoubleMaxString(full.m_trade.price());
 				case 7: return full.m_commissionReport != null ? Util.DoubleMaxString(full.m_commissionReport.commission()) : null;
 				case 8: return full.m_trade.lastLiquidity();
+				case 9: return full.m_trade.pendingPriceRevision();
 				default: return null;
 			}
 		}

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.client;
@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import com.ib.client.Types.SecType;
 
 public class EWrapperMsgGenerator {
     public static final String SCANNER_PARAMETERS = "SCANNER PARAMETERS:";
@@ -138,14 +139,47 @@ public class EWrapperMsgGenerator {
         + "minSize = " + contractDetails.minSize() + "\n"
         + "sizeIncrement = " + contractDetails.sizeIncrement() + "\n"
         + "suggestedSizeIncrement = " + contractDetails.suggestedSizeIncrement() + "\n"
-        + contractDetailsSecIdList(contractDetails);
+        + contractDetailsFundData(contractDetails)
+        + contractDetailsSecIdList(contractDetails) 
+        + contractDetailsIneligibilityReasons(contractDetails);
     }
-    
+
+    private static String contractDetailsFundData(ContractDetails contractDetails) {
+        final StringBuilder sb = new StringBuilder();
+        if (contractDetails.contract().secType() == SecType.FUND) {
+            sb.append("fundData={\n");
+            sb.append("  fundName=").append(contractDetails.fundName()).append("\n");
+            sb.append("  fundFamily=").append(contractDetails.fundFamily()).append("\n");
+            sb.append("  fundType=").append(contractDetails.fundType()).append("\n");
+            sb.append("  fundFrontLoad=").append(contractDetails.fundFrontLoad()).append("\n");
+            sb.append("  fundBackLoad=").append(contractDetails.fundBackLoad()).append("\n");
+            sb.append("  fundBackLoadTimeInterval=").append(contractDetails.fundBackLoadTimeInterval()).append("\n");
+            sb.append("  fundManagementFee=").append(contractDetails.fundManagementFee()).append("\n");
+            sb.append("  fundClosed=").append(contractDetails.fundClosed()).append("\n");
+            sb.append("  fundClosedForNewInvestors=").append(contractDetails.fundClosedForNewInvestors()).append("\n");
+            sb.append("  fundClosedForNewMoney=").append(contractDetails.fundClosedForNewMoney()).append("\n");
+            sb.append("  fundNotifyAmount=").append(contractDetails.fundNotifyAmount()).append("\n");
+            sb.append("  fundMinimumInitialPurchase=").append(contractDetails.fundMinimumInitialPurchase()).append("\n");
+            sb.append("  fundSubsequentMinimumPurchase=").append(contractDetails.fundSubsequentMinimumPurchase()).append("\n");
+            sb.append("  fundBlueSkyStates=").append(contractDetails.fundBlueSkyStates()).append("\n");
+            sb.append("  fundBlueSkyTerritories=").append(contractDetails.fundBlueSkyTerritories()).append("\n");
+            if (contractDetails.fundDistributionPolicyIndicator() != null) {
+                sb.append("  fundDistributionPolicyIndicator=").append(contractDetails.fundDistributionPolicyIndicator().name()).append("\n");
+            }
+            if (contractDetails.fundAssetType() != null) {
+                sb.append("  fundAssetType=").append(contractDetails.fundAssetType().name()).append("\n");
+            }
+            sb.append("}\n");
+        }
+        return sb.toString();
+    }
+
 	private static String contractMsg(Contract contract) {
 		return "conid = " + contract.conid() + "\n"
         + "symbol = " + contract.symbol() + "\n"
         + "secType = " + contract.getSecType() + "\n"
-        + "lastTradeDate = " + contract.lastTradeDateOrContractMonth() + "\n"
+        + "lastTradeDateOrContractMonth = " + contract.lastTradeDateOrContractMonth() + "\n"
+        + "lastTradeDate = " + contract.lastTradeDate() + "\n"
         + "strike = " + Util.DoubleMaxString(contract.strike()) + "\n"
         + "right = " + contract.getRight() + "\n"
         + "multiplier = " + contract.multiplier() + "\n"
@@ -213,7 +247,25 @@ public class EWrapperMsgGenerator {
         sb.append("}\n");
         return sb.toString();
     }
+    
+    public static String contractDetailsIneligibilityReasons(ContractDetails contractDetails) {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("ineligibilityReasonList={");
+        sb.append(contractDetailsIneligibilityReasonList(contractDetails));
+        sb.append("}\n");
+        return sb.toString();
+    }
 
+    public static String contractDetailsIneligibilityReasonList(ContractDetails contractDetails) {
+        final StringBuilder sb = new StringBuilder();
+        if (contractDetails.ineligibilityReasonList() != null) {
+            for (IneligibilityReason ineligibilityReason : contractDetails.ineligibilityReasonList()) {
+                sb.append(ineligibilityReason).append(";");
+            }
+        }
+        return sb.toString();
+    }
+    
     public static String contractDetailsEnd(int reqId) {
     	return "reqId = " + reqId + " =============== end ===============";
     }
@@ -240,6 +292,7 @@ public class EWrapperMsgGenerator {
         + "evMultiplier = " + Util.DoubleMaxString(execution.evMultiplier()) + "\n"
         + "modelCode = " + execution.modelCode() + "\n"
         + "lastLiquidity = " + execution.lastLiquidity() + "\n"
+        + "pendingPriceRevision = " + execution.pendingPriceRevision() + "\n"
         + " ---- Execution Details end ----\n";
     }
     
@@ -266,7 +319,7 @@ public class EWrapperMsgGenerator {
     }
     
     public static String receiveFA(int faDataType, String xml) {
-    	return FINANCIAL_ADVISOR + " " + EClient.faMsgTypeName(faDataType) + " " + xml;
+        return FINANCIAL_ADVISOR + " " + Types.FADataType.getById(faDataType) + " " + xml;
     }
     
     public static String historicalData(int reqId, String date, double open, double high, double low,
@@ -312,7 +365,7 @@ public class EWrapperMsgGenerator {
         " rank=" + Util.IntMaxString(rank) +
         " symbol=" + contract.symbol() +
         " secType=" + contract.getSecType() +
-        " lastTradeDate=" + contract.lastTradeDateOrContractMonth() +
+        " lastTradeDateOrContractMonth=" + contract.lastTradeDateOrContractMonth() +
         " strike=" + Util.DoubleMaxString(contract.strike()) +
         " right=" + contract.getRight() +
         " exchange=" + contract.exchange() +
@@ -725,7 +778,7 @@ public class EWrapperMsgGenerator {
         Util.appendPositiveIntValue(sb, "conid", contract.conid());
         Util.appendNonEmptyString(sb, "symbol", contract.symbol());
         Util.appendNonEmptyString(sb, "secType", contract.getSecType());
-        Util.appendNonEmptyString(sb, "lastTradeDate", contract.lastTradeDateOrContractMonth());
+        Util.appendNonEmptyString(sb, "lastTradeDateOrContractMonth", contract.lastTradeDateOrContractMonth());
         Util.appendPositiveDoubleValue(sb, "strike", contract.strike());
         Util.appendNonEmptyString(sb, "right", contract.getRight(), "?");
         Util.appendNonEmptyString(sb, "multiplier", contract.multiplier());
@@ -754,7 +807,6 @@ public class EWrapperMsgGenerator {
         Util.appendNonEmptyString(sb, "faGroup", order.faGroup());
         Util.appendNonEmptyString(sb, "faMethod", order.getFaMethod());
         Util.appendNonEmptyString(sb, "faPercentage", order.faPercentage());
-        Util.appendNonEmptyString(sb, "faProfile", order.faProfile());
         Util.appendPositiveIntValue(sb, "shortSaleSlot", order.shortSaleSlot());
         if (order.shortSaleSlot() > 0) {
             Util.appendNonEmptyString(sb, "designatedLocation", order.designatedLocation());
@@ -823,7 +875,7 @@ public class EWrapperMsgGenerator {
         Util.appendBooleanFlag(sb, "discretionaryUpToLimitPrice", order.discretionaryUpToLimitPrice());
         Util.appendBooleanFlag(sb, "usePriceMgmtAlgo", order.usePriceMgmtAlgo());
 
-        if ("PEG BENCH".equals(order.getOrderType())) {
+        if (Util.IsPegBenchOrder(order.orderType())) {
             Util.appendPositiveIntValue(sb, "referenceContractId", order.referenceContractId());
             Util.appendBooleanFlag(sb, "isPeggedChangeAmountDecrease", order.isPeggedChangeAmountDecrease());
             Util.appendValidDoubleValue(sb, "peggedChangeAmount", order.peggedChangeAmount());
@@ -926,6 +978,9 @@ public class EWrapperMsgGenerator {
         }
         Util.appendValidDoubleValue(sb, "midOffsetAtWhole", order.midOffsetAtWhole());
         Util.appendValidDoubleValue(sb, "midOffsetAtHalf", order.midOffsetAtHalf());
+        Util.appendNonEmptyString(sb, "customerAccount", order.customerAccount());
+        Util.appendBooleanFlag(sb, "professionalCustomer", order.professionalCustomer());
+        Util.appendNonEmptyString(sb, "bondAccruedInterest", order.bondAccruedInterest());
         
         Util.appendNonEmptyString(sb, "status", orderState.getStatus());
         Util.appendNonEmptyString(sb, "completedTime", orderState.completedTime());

@@ -43,17 +43,17 @@ public class Bar {
 		m_count = count;
 	}
 
-//	public Bar( String timeStr, double high, double low, double open, double close, Decimal wap, Decimal volume, int count) {
-//		m_time = Long.MAX_VALUE;
-//		m_timeStr = timeStr;
-//		m_high = high;
-//		m_low = low;
-//		m_open = open;
-//		m_close = close;
-//		m_wap = wap;
-//		m_volume = volume;
-//		m_count = count;
-//	}
+	public Bar( String timeStr, double high, double low, double open, double close, Decimal wap, Decimal volume, int count) {
+		m_time = Long.MAX_VALUE;
+		m_timeStr = timeStr;
+		m_high = high;
+		m_low = low;
+		m_open = open;
+		m_close = close;
+		m_wap = wap;
+		m_volume = volume;
+		m_count = count;
+	}
 	
 	public String formattedTime() {
 		return Formats.fmtDate( m_time * 1000);

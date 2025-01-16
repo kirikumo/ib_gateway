@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package samples.testbed;
@@ -21,6 +21,9 @@ public class Testbed {
 		
 		final EClientSocket m_client = wrapper.getClient();
 		final EReaderSignal m_signal = wrapper.getSignal();
+		
+		m_client.setConnectOptions("+PACEAPI");
+		
 		//! [connect]
 		m_client.eConnect("127.0.0.1", 7497, 2);
 		//! [connect]
@@ -49,7 +52,7 @@ public class Testbed {
 		//tickOptionComputations(wrapper.getClient());
 		//optionsOperations(wrapper.getClient());
 		//orderOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
-		contractOperations(wrapper.getClient());
+		//contractOperations(wrapper.getClient());
 		//hedgeSample(wrapper.getClient(), wrapper.getCurrentOrderId());
 		//testAlgoSamples(wrapper.getClient(), wrapper.getCurrentOrderId());
 		//bracketSample(wrapper.getClient(), wrapper.getCurrentOrderId());
@@ -73,6 +76,7 @@ public class Testbed {
 		//financialAdvisorOperations(wrapper.getClient());
 		//realTimeBars(wrapper.getClient());    
 		//wshCalendarOperations(wrapper.getClient());
+		rfqOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
 
 		Thread.sleep(100000);
 		m_client.eDisconnect();
@@ -160,27 +164,18 @@ public class Testbed {
         client.placeOrder(nextOrderId++, ContractSamples.USStock(), faOrderOneAccount);
         //! [faorderoneaccount]
         
-        //! [faordergroupequalquantity]
-        Order faOrderGroupEQ = OrderSamples.LimitOrder("SELL", Decimal.get(200), 2000);
-        faOrderGroupEQ.faGroup("Group_Equal_Quantity");
-        faOrderGroupEQ.faMethod("EqualQuantity");
-        client.placeOrder(nextOrderId++, ContractSamples.USStock(), faOrderGroupEQ);
-        //! [faordergroupequalquantity]
+        //! [faordergroup]
+        Order faOrderGroup = OrderSamples.LimitOrder("BUY", Decimal.get(200), 10);
+        faOrderGroup.faGroup("MyTestGroup1");
+        faOrderGroup.faMethod("AvailableEquity");
+        client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), faOrderGroup);
+        //! [faordergroup]
         
-        //! [faordergrouppctchange]
-        Order faOrderGroupPC = OrderSamples.MarketOrder("BUY", Decimal.ZERO);
-        // You should not specify any order quantity for PctChange allocation method
-        faOrderGroupPC.faGroup("Pct_Change");
-        faOrderGroupPC.faMethod("PctChange");
-        faOrderGroupPC.faPercentage("100");
-        client.placeOrder(nextOrderId++, ContractSamples.EurGbpFx(), faOrderGroupPC);
-        //! [faordergrouppctchange]
-        
-        //! [faorderprofile]
-        Order faOrderProfile = OrderSamples.LimitOrder("BUY", Decimal.get(200), 100);
-        faOrderProfile.faProfile("Percent_60_40");
-		client.placeOrder(nextOrderId++, ContractSamples.EuropeanStock(), faOrderProfile);
-        //! [faorderprofile]
+        //! [faorderuserdefinedgroup]
+        Order faOrderUserDefinedGroup = OrderSamples.LimitOrder("BUY", Decimal.get(200), 10);
+        faOrderUserDefinedGroup.faGroup("MyTestProfile1");
+        client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), faOrderUserDefinedGroup);
+        //! [faorderuserdefinedgroup]
         
 		//! [modelorder]
         Order modelOrder = OrderSamples.LimitOrder("BUY", Decimal.get(200), 100);
@@ -199,7 +194,7 @@ public class Testbed {
 
 		int cancelID = nextOrderId -1;
 		//! [cancelorder]
-		client.cancelOrder(cancelID, Order.EMPTY_STR);
+		client.cancelOrder(cancelID, new OrderCancel("20240614-00:00:04"));
 		//! [cancelorder]
 
 		//! [reqglobalcancel]
@@ -221,7 +216,7 @@ public class Testbed {
         
         //! [manual_order_cancel_time]
         cancelID = nextOrderId - 1;
-        client.cancelOrder(cancelID, "20220314-19:00:00");
+        client.cancelOrder(cancelID, new OrderCancel("20220314-19:00:00"));
         //! [manual_order_cancel_time]
 
         //! [pegbest_up_to_mid_order_submission]
@@ -235,6 +230,10 @@ public class Testbed {
         //! [pegmid_order_submission]
         client.placeOrder(nextOrderId++, ContractSamples.IBKRATSContract(), OrderSamples.PegMidOrder("BUY", Decimal.get(100), 111.11, 100, 0.02, 0.025));
         //! [pegmid_order_submission]
+
+        //! [customer_account]
+        client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), OrderSamples.LimitOrderWithCustomerAccount("BUY", Decimal.get(100), 111.11, "CustAcct"));
+        //! [customer_account]
 
         Thread.sleep(10000);
         
@@ -258,6 +257,9 @@ public class Testbed {
 	}
 	
 	private static void tickDataOperations(EClientSocket client) throws InterruptedException {
+		//! [reqmktdatatype]
+		client.reqMarketDataType(4);
+		//! [reqmktdatatype]
 		
 		/*** Requesting real time market data ***/
 		//Thread.sleep(1000);
@@ -316,12 +318,16 @@ public class Testbed {
         //! [reqavgoptvolume]
         
         //! [reqetfticks]
-        client.reqMktData(1017, ContractSamples.etf(), "mdoff,576,577,578,614,623", false, false, null);
+        client.reqMktData(1017, ContractSamples.etf(), "mdoff,577,614,623", false, false, null);
         //! [reqetfticks]
         
         //! [IPOPrice]
         client.reqMktData(1018, ContractSamples.StockWithIPOPrice(), "mdoff,586", false, false, null);
         //! [IPOPrice]
+
+        //! [yieldbidask]
+        client.reqMktData(1019, ContractSamples.Bond(), "", false, false, null);
+        //! [yieldbidask]
         
 		Thread.sleep(10000);
 		//! [cancelmktdata]
@@ -333,6 +339,7 @@ public class Testbed {
 		client.cancelMktData(1016);
 		client.cancelMktData(1017);
         client.cancelMktData(1018);
+        client.cancelMktData(1019);
 		//! [cancelmktdata]
 		
 	}
@@ -543,7 +550,6 @@ public class Testbed {
 		//! [order_conditioning_activate]
 		Order mkt = OrderSamples.MarketOrder("BUY", Decimal.ONE_HUNDRED);
 		//Order will become active if conditioning criteria is met
-		mkt.conditionsCancelOrder(true);
 		mkt.conditions().add(OrderSamples.PriceCondition(208813720, "SMART", 600, false, false));
 		mkt.conditions().add(OrderSamples.ExecutionCondition("EUR.USD", "CASH", "IDEALPRO", true));
 		mkt.conditions().add(OrderSamples.MarginCondition(30, true, false));
@@ -575,6 +581,8 @@ public class Testbed {
 		client.reqContractDetails(215, ContractSamples.USStockAtSmart());
 		client.reqContractDetails(216, ContractSamples.CryptoContract());
 		client.reqContractDetails(217, ContractSamples.ByIssuerId());
+		client.reqContractDetails(218, ContractSamples.Fund());
+		client.reqContractDetails(219, ContractSamples.USStock());
 		//! [reqcontractdetails]
 
 		//! [reqmatchingsymbols]
@@ -841,26 +849,10 @@ public class Testbed {
 		client.requestFA(FADataType.GROUPS.ordinal());
 		//! [requestfagroups]
 		
-		//! [requestfaprofiles]
-		client.requestFA(FADataType.PROFILES.ordinal());
-		//! [requestfaprofiles]
-		
 		/*** Replacing FA information - Fill in with the appropriate XML string. ***/
-		//! [replacefaonegroup]
-		client.replaceFA(1000, FADataType.GROUPS.ordinal(), FAMethodSamples.FA_ONE_GROUP);
-		//! [replacefaonegroup]
-		
-		//! [replacefatwogroups]
-		client.replaceFA(1001, FADataType.GROUPS.ordinal(), FAMethodSamples.FA_TWO_GROUPS);
-		//! [replacefatwogroups]
-		
-		//! [replacefaoneprofile]
-		client.replaceFA(1002, FADataType.PROFILES.ordinal(), FAMethodSamples.FA_ONE_PROFILE);
-		//! [replacefaoneprofile]
-		
-		//! [replacefatwoprofiles]
-		client.replaceFA(1003, FADataType.PROFILES.ordinal(), FAMethodSamples.FA_TWO_PROFILES);
-		//! [replacefatwoprofiles]
+		//! [replacefaupdatedgroup]
+		client.replaceFA(1000, FADataType.GROUPS.ordinal(), FAMethodSamples.FA_UPDATED_GROUP);
+		//! [replacefaupdatedgroup]
 		
         //! [reqSoftDollarTiers]
         client.reqSoftDollarTiers(4001);
@@ -924,7 +916,7 @@ public class Testbed {
 		
 		//! [exercise_options]
 		//** Exercising options ***
-		client.exerciseOptions(5003, ContractSamples.OptionWithTradingClass(), 1, 1, "", 1);
+		client.exerciseOptions(5003, ContractSamples.OptionWithTradingClass(), 1, 1, "", 1, "20231018-12:00:00", "CustAcct", true);
 		//! [exercise_options]
 	}
 
@@ -1019,7 +1011,7 @@ public class Testbed {
 		
 		/*** Placing what-if order ***/
 		//! [whatiforder]
-		client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), OrderSamples.WhatIfLimitOrder("BUY", Decimal.get(200), 120));
+		client.placeOrder(nextOrderId++, ContractSamples.BondWithCusip(), OrderSamples.WhatIfLimitOrder("BUY", Decimal.get(200), 20));
 		//! [whatiforder]
 	}
 	
@@ -1031,4 +1023,23 @@ public class Testbed {
 		//! [ibkratssubmit]
 		
 	}
+
+    private static void rfqOperations(EClientSocket client, int nextOrderId) throws InterruptedException {
+        //! [rfq_submission]
+        client.placeOrder(nextOrderId++, ContractSamples.BondWithCusip(), OrderSamples.RfqEmpty());
+        //! [rfq_submission]
+
+        Thread.sleep(5000);
+
+        int cancelID = nextOrderId - 1;
+        //! [rfq_cancel]
+        client.cancelOrder(cancelID, OrderSamples.RfqCancel());
+        //! [rfq_cancel]
+
+        Thread.sleep(1000);
+
+        //! [rfq_submission]
+        client.placeOrder(nextOrderId++, ContractSamples.BondWithCusip(), OrderSamples.Rfq());
+        //! [rfq_submission]
+    }
 }

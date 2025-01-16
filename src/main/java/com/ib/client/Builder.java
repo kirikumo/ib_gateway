@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.client;
@@ -111,7 +111,7 @@ class Builder implements ObjectOutput {
         b[position+3] = (byte)(0xff & val);
     }
     
-    private static boolean isAsciiPrintable(String str) {
+    static boolean isAsciiPrintable(String str) {
         if (str == null) {
             return false;
         }
@@ -124,7 +124,7 @@ class Builder implements ObjectOutput {
     }
 
     private static boolean isAsciiPrintable(char ch) {
-        return ch >= 32 && ch < 127;
+        return ch >= 32 && ch < 127 || ch == 9 || ch == 10 || ch == 13;
     }
 
     /** inner class: ByteBuffer - storage for bytes and direct access to buffer. */

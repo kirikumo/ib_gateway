@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package TestJavaClient;
@@ -24,6 +24,7 @@ import com.ib.client.Decimal;
 import com.ib.client.DeltaNeutralContract;
 import com.ib.client.MarketDataType;
 import com.ib.client.Order;
+import com.ib.client.OrderCancel;
 import com.ib.client.TagValue;
 import com.ib.client.Types.UsePriceMgmtAlgo;
 
@@ -47,6 +48,7 @@ public class OrderDlg extends JDialog {
     public int          m_marketDepthRows;
     private Contract 	m_contract = new Contract();
     public Order 		m_order = new Order();
+    public OrderCancel  m_orderCancel = new OrderCancel();
     public DeltaNeutralContract	m_deltaNeutralContract = new DeltaNeutralContract();
     public int          m_exerciseAction;
     public int          m_exerciseQuantity;
@@ -108,7 +110,6 @@ public class OrderDlg extends JDialog {
     private SampleFrame m_parent;
 
     private String      m_faGroup;
-    private String      m_faProfile;
     private String      m_faMethod;
     private String      m_faPercentage;
 	public  String      m_genericTicks;
@@ -118,7 +119,6 @@ public class OrderDlg extends JDialog {
     private static final int COL1_WIDTH = 30 ;
     private static final int COL2_WIDTH = 100 - COL1_WIDTH ;
     public void faGroup(String s) { m_faGroup = s;}
-    public void faProfile(String s) { m_faProfile = s;}
     public void faMethod(String s) { m_faMethod = s;}
     public void faPercentage(String s) { m_faPercentage = s; }
 
@@ -449,7 +449,6 @@ public class OrderDlg extends JDialog {
             m_order.cashQty(parseStringToMaxDouble( m_cashQty.getText() ));
 
             m_order.faGroup(m_faGroup);
-            m_order.faProfile(m_faProfile);
             m_order.faMethod(m_faMethod);
             m_order.faPercentage(m_faPercentage);
             

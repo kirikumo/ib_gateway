@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package apidemo;
@@ -20,6 +20,7 @@ import javax.swing.table.AbstractTableModel;
 import com.ib.client.Contract;
 import com.ib.client.Decimal;
 import com.ib.client.Order;
+import com.ib.client.OrderCancel;
 import com.ib.client.OrderState;
 import com.ib.client.OrderStatus;
 import com.ib.client.OrderType;
@@ -126,8 +127,10 @@ public class OrdersPanel extends JPanel {
 
     protected void onCancelOrder() {
         OrderRow order = getSelectedOrder();
+        OrderCancel orderCancel = new OrderCancel();
+
         if (order != null) {
-            TicketDlg dlg = new TicketDlg( order.m_contract, order.m_order, true);
+            TicketDlg dlg = new TicketDlg( order.m_contract, order.m_order, orderCancel);
             dlg.setVisible( true);
         }
     }
@@ -226,7 +229,7 @@ public class OrdersPanel extends JPanel {
 		}
 		
 		@Override public int getColumnCount() {
-			return 10;
+			return 12;
 		}
 		
 		@Override public String getColumnName(int col) {
@@ -240,7 +243,9 @@ public class OrdersPanel extends JPanel {
 				case 6: return "Quantity";
 				case 7: return "Cash Qty";
 				case 8: return "Contract";
-				case 9: return "Status";
+				case 9: return "Cust Acct";
+				case 10: return "Prof Cust";
+				case 11: return "Status";
 				default: return null;
 			}
 		}
@@ -258,7 +263,9 @@ public class OrdersPanel extends JPanel {
 				case 6: return order.totalQuantity();
 				case 7: return Util.DoubleMaxString(order.cashQty());
 				case 8: return fullOrder.m_contract.textDescription();
-				case 9: return fullOrder.m_state.status();
+				case 9: return order.customerAccount();
+				case 10: return order.professionalCustomer();
+				case 11: return fullOrder.m_state.status();
 				default: return null;
 			}
 		}

@@ -1,11 +1,17 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.controller;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import com.avalok.ib.handler.ContractDetailsHandler;
 import com.ib.client.*;
@@ -19,8 +25,6 @@ import com.ib.client.Types.FundamentalType;
 import com.ib.client.Types.NewsType;
 import com.ib.client.Types.WhatToShow;
 import com.ib.controller.ApiConnection.ILogger;
-
-import static com.bitex.util.DebugUtil.log;
 
 public class ApiController implements EWrapper {
 	private ApiConnection m_client;
@@ -113,16 +117,14 @@ public class ApiController implements EWrapper {
                     reader.processMsgs();
                 } catch (IOException e) {
                     error(e);
-                } catch (NullPointerException e) {
-					// Fix ib auto restart connection error
-					error(e);
-				}
+                }
             }
         }).start();
 	}
 
-	public void connect( String host, int port, int clientId, String connectionOpts ) {
+	public void connect( String host, int port, int clientId, String connectOptions ) {
 		if(!m_client.isConnected()){
+			m_client.setConnectOptions(connectOptions);
 			m_client.eConnect(host, port, clientId);
 			startMsgProcessingThread();
 	        sendEOM();
@@ -432,7 +434,7 @@ public class ApiController implements EWrapper {
 		m_orderHandlers.put(reqId, new IOrderHandler() { public void handle(int errorCode, String errorMsg) { processor.contractDetailsEnd();}
 
 		@Override
-		public void orderState(OrderState orderState) {
+		public void orderState(OrderState orderState, Order order) {
 			// TODO Auto-generated method stub
 			
 		}
@@ -784,21 +786,18 @@ public class ApiController implements EWrapper {
 	// ---------------------------------------- Advisor info ----------------------------------------
 	public interface IAdvisorHandler {
 		void groups(List<Group> groups);
-		void profiles(List<Profile> profiles);
 		void aliases(List<Alias> aliases);
 		void updateGroupsEnd(String text);
-		void updateProfilesEnd(String text);
 	}
 	
 	private static final int REPLACE_FA_GROUPS_REQ_ID = 0;
-	private static final int REPLACE_FA_PROFILES_REQ_ID = 1;
 
 	public void reqAdvisorData( FADataType type, IAdvisorHandler handler) {
 		if (!checkConnection())
 			return;
 
 		m_advisorHandler = handler;
-		m_client.requestFA( type.ordinal() );
+		m_client.requestFA( type.id() );
 		sendEOM();
 	}
 
@@ -806,15 +805,7 @@ public class ApiController implements EWrapper {
 		if (!checkConnection())
 			return;
 
-		m_client.replaceFA( REPLACE_FA_GROUPS_REQ_ID, FADataType.GROUPS.ordinal(), AdvisorUtil.getGroupsXml( groups) );
-		sendEOM();
-	}
-
-	public void updateProfiles(List<Profile> profiles) {
-		if (!checkConnection())
-			return;
-
-		m_client.replaceFA( REPLACE_FA_PROFILES_REQ_ID, FADataType.PROFILES.ordinal(), AdvisorUtil.getProfilesXml( profiles) );
+		m_client.replaceFA( REPLACE_FA_GROUPS_REQ_ID, FADataType.GROUPS.id(), AdvisorUtil.getGroupsXml( groups) );
 		sendEOM();
 	}
 
@@ -823,17 +814,12 @@ public class ApiController implements EWrapper {
 			return;
 		}
 
-		FADataType type = FADataType.get( faDataType);
+		FADataType type = FADataType.getById( faDataType);
 
 		switch( type) {
 			case GROUPS:
 				List<Group> groups = AdvisorUtil.getGroups( xml);
 				m_advisorHandler.groups(groups);
-				break;
-
-			case PROFILES:
-				List<Profile> profiles = AdvisorUtil.getProfiles( xml);
-				m_advisorHandler.profiles(profiles);
 				break;
 
 			case ALIASES:
@@ -852,9 +838,6 @@ public class ApiController implements EWrapper {
 		case REPLACE_FA_GROUPS_REQ_ID:
 			m_advisorHandler.updateGroupsEnd(text);	
 			break;
-		case REPLACE_FA_PROFILES_REQ_ID:
-			m_advisorHandler.updateProfilesEnd(text);	
-			break;
 		default:
 			break;
 		}
@@ -865,7 +848,7 @@ public class ApiController implements EWrapper {
 	/** This interface is for receiving events for a specific order placed from the API.
 	 *  Compare to ILiveOrderHandler. */
 	public interface IOrderHandler {
-		void orderState(OrderState orderState);
+		void orderState(OrderState orderState, Order order);
 		void orderStatus(OrderStatus status, Decimal filled, Decimal remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice);
 		void handle(int errorCode, String errorMsg);
 	}
@@ -891,7 +874,7 @@ public class ApiController implements EWrapper {
 		sendEOM();
 	}
 
-    public void cancelOrder(int orderId, String manualOrderCancelTime, final IOrderCancelHandler orderCancelHandler) {
+    public void cancelOrder(int orderId, OrderCancel orderCancel, final IOrderCancelHandler orderCancelHandler) {
 		if (!checkConnection())
 			return;
 
@@ -899,7 +882,7 @@ public class ApiController implements EWrapper {
             m_orderCancelHandlers.put( orderId, orderCancelHandler);
         }
 
-        m_client.cancelOrder( orderId, manualOrderCancelTime);
+        m_client.cancelOrder( orderId, orderCancel);
 		sendEOM();
 	}
 
@@ -911,11 +894,11 @@ public class ApiController implements EWrapper {
 		sendEOM();
 	}
 
-	public void exerciseOption( String account, Contract contract, ExerciseType type, int quantity, boolean override) {
+	public void exerciseOption( String account, Contract contract, ExerciseType type, int quantity, boolean override, String manualOrderTime, String customerAccount, boolean professionalCustomer) {
 		if (!checkConnection())
 			return;
 
-		m_client.exerciseOptions( m_reqId++, contract, type.ordinal(), quantity, account, override ? 1 : 0);
+		m_client.exerciseOptions( m_reqId++, contract, type.ordinal(), quantity, account, override ? 1 : 0, manualOrderTime, customerAccount, professionalCustomer);
 		sendEOM();
 	}
 
@@ -971,7 +954,7 @@ public class ApiController implements EWrapper {
 	@Override public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) {
 		IOrderHandler handler = m_orderHandlers.get( orderId);
 		if (handler != null) {
-			handler.orderState(orderState);
+			handler.orderState(orderState, order);
 		}
 
 		if (!order.whatIf() ) {
@@ -1086,17 +1069,6 @@ public class ApiController implements EWrapper {
     	m_client.reqHistoricalData(reqId, contract, endDateTime, durationStr, barSize.toString(), whatToShow.toString(), rthOnly ? 1 : 0, 1, keepUpToDate, Collections.emptyList());
 		sendEOM();
     }
-//    public void reqHistoricalDataDrictly( int reqId, Contract contract, String endDateTime,
-//    		String durationStr, String barSizeSetting, String whatToShow, int useRTH, int formatDate, boolean keepUpToDate, IHistoricalDataHandler handler) {
-//
-//		if (!checkConnection())
-//			return;
-//
-//    	int reqId = m_reqId++;
-//    	m_historicalDataMap.put( reqId, handler);
-//    	m_client.reqHistoricalData(reqId, contract, endDateTime, durationStr, barSizeSetting, whatToShow.toString(), rthOnly ? 1 : 0, 2, keepUpToDate, Collections.emptyList());
-//		sendEOM();
-//    }
 
     public void cancelHistoricalData( IHistoricalDataHandler handler) {
 		if (!checkConnection())
@@ -1109,20 +1081,6 @@ public class ApiController implements EWrapper {
     	}
     }
 
-//	@Override public void historicalData(int reqId, com.ib.client.Bar bar) {
-//		IHistoricalDataHandler handler = m_historicalDataMap.get( reqId);
-//		if (handler != null) {
-//			if (bar.time().startsWith( "finished")) {
-//				handler.historicalDataEnd();
-//			}
-//			else {
-//				Bar bar2 = new Bar( bar.time(), bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
-//				handler.historicalData(bar2);
-//			}
-//		}
-//		recEOM();
-//	}
-
 	@Override public void historicalData(int reqId, com.ib.client.Bar bar) {
 		IHistoricalDataHandler handler = m_historicalDataMap.get( reqId);
 		if (handler != null) {
@@ -1130,22 +1088,13 @@ public class ApiController implements EWrapper {
 				handler.historicalDataEnd();
 			}
 			else {
-				long longDate;
-				if (bar.time().length() == 8) {
-					int year = Integer.parseInt( bar.time().substring( 0, 4) );
-					int month = Integer.parseInt( bar.time().substring( 4, 6) );
-					int day = Integer.parseInt( bar.time().substring( 6) );
-					longDate = new GregorianCalendar( year, month - 1, day).getTimeInMillis() / 1000;
-				}
-				else {
-					longDate = Long.parseLong( bar.time());
-				}
-				Bar bar2 = new Bar( longDate, bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
+				Bar bar2 = new Bar( bar.time(), bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
 				handler.historicalData(bar2);
 			}
 		}
 		recEOM();
 	}
+
 
 	//----------------------------------------- Real-time bars --------------------------------------
 	public interface IRealTimeBarHandler {
@@ -1249,6 +1198,8 @@ public class ApiController implements EWrapper {
 	}
 
 	public void cancelBulletins() {
+		m_bulletinHandler = null;
+
 		if (!checkConnection())
 			return;
 
@@ -1256,7 +1207,9 @@ public class ApiController implements EWrapper {
 	}
 
 	@Override public void updateNewsBulletin(int msgId, int msgType, String message, String origExchange) {
-		m_bulletinHandler.bulletin( msgId, NewsType.get( msgType), message, origExchange);
+		if (m_bulletinHandler != null)
+			m_bulletinHandler.bulletin( msgId, NewsType.get( msgType), message, origExchange);
+
 		recEOM();
 	}
 
