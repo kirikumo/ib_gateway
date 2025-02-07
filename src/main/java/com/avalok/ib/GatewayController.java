@@ -81,6 +81,8 @@ public class GatewayController extends BaseIBController {
 			err("Task dulicated, skip subscribing depth data " + jobKey);
 			return 0;
 		}
+		_apiController.reqMktDataType(MarketDataType.DELAYED);
+
 		log("Subscribe depth data for " + jobKey);
 		int numOfRows = 10;
 		DeepMktDataHandler handler = new DeepMktDataHandler(contract, true);
@@ -157,6 +159,8 @@ public class GatewayController extends BaseIBController {
 			log("Task dulicated, skip subscribing top data " + jobKey);
 			return 0;
 		}
+
+		_apiController.reqMktDataType(MarketDataType.DELAYED);
 
 		if (isOptType) {
 			log("Subscribe option top data for " + jobKey);
