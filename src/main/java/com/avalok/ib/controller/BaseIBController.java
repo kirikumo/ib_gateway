@@ -133,6 +133,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 			return;
 		}
 
+		callConnectTS = System.currentTimeMillis();
 		if (_initConnTS >= System.currentTimeMillis()) {
 			// The first call _connect() will set new initConnTs
 			log("Sleep " + (_initConnTS - System.currentTimeMillis()) + "ms before _connect()");
@@ -144,7 +145,6 @@ public abstract class BaseIBController implements IConnectionHandler {
 //		}
 		connectThread.interrupt();
 
-		callConnectTS = System.currentTimeMillis();
 		connectThread = new Thread(new Runnable() {
 			public void run() {
 				int retry_ct = 0;
