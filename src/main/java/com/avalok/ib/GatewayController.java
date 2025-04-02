@@ -96,7 +96,8 @@ public class GatewayController extends BaseIBController {
 	}
 
 	private int subscribeDepthData(IBContract contract) {
-		String jobKey = contract.pair();
+		// String jobKey = contract.pair();
+		String jobKey = contract.exchange() + ":" + contract.pair();
 		if (_depthTasks.get(jobKey) != null) {
 			err("Task dulicated, skip subscribing depth data " + jobKey);
 			return 0;
@@ -115,7 +116,8 @@ public class GatewayController extends BaseIBController {
 	}
 
 	private int subscribeDepthDataAndMarkHost(IBContract contract, String hostName) {
-		String jobKey = contract.pair();
+		// String jobKey = contract.pair();
+		String jobKey = contract.exchange() + ":" + contract.pair();
 		if (_depthShareHost.containsKey(jobKey)) {
 			if (!_depthShareHost.get(jobKey).contains(hostName)) {
 				_depthShareHost.get(jobKey).add(hostName);
@@ -131,7 +133,8 @@ public class GatewayController extends BaseIBController {
 	}
 
 	private int unsubscribeDepthData(IBContract contract) {
-		String jobKey = contract.pair();
+		// String jobKey = contract.pair();
+		String jobKey = contract.exchange() + ":" + contract.pair();
 		DeepMktDataHandler handler = _depthTasks.get(jobKey);
 		if (_depthTasks.get(jobKey) == null) {
 			err("Task not exist, skip canceling depth data " + jobKey);
@@ -145,7 +148,8 @@ public class GatewayController extends BaseIBController {
 	}
 
 	private int unsubscribeDepthDataAndMarkHost(IBContract contract, String hostName) {
-		String jobKey = contract.pair();
+		// String jobKey = contract.pair();
+		String jobKey = contract.exchange() + ":" + contract.pair();
 		int qid = 0;
 		if (!_depthShareHost.containsKey(jobKey)) {
 			return 0;
@@ -172,7 +176,8 @@ public class GatewayController extends BaseIBController {
 	private ConcurrentHashMap<String, List<String>> _topShareHost = new ConcurrentHashMap<>();
 
 	private int subscribeTopData(IBContract contract) {
-		String jobKey = contract.pair();
+		// String jobKey = contract.pair();
+		String jobKey = contract.exchange() + ":" + contract.pair();
 		boolean isOptType = contract.secType() == SecType.OPT;
 		if (isOptType && _optionTopTasks.get(jobKey) != null) {
 			log("Task dulicated, skip subscribing option top data " + jobKey);
@@ -221,7 +226,8 @@ public class GatewayController extends BaseIBController {
 	}
 
 	private int subscribeTopDataAndMarkHost(IBContract contract, String hostName) {
-		String jobKey = contract.pair();
+		// String jobKey = contract.pair();
+		String jobKey = contract.exchange() + ":" + contract.pair();
 		if (_topShareHost.containsKey(jobKey)) {
 			if (!_topShareHost.get(jobKey).contains(hostName)) {
 				_topShareHost.get(jobKey).add(hostName);
@@ -237,7 +243,8 @@ public class GatewayController extends BaseIBController {
 	}
 
 	private int unsubscribeTopData(IBContract contract) {
-		String jobKey = contract.pair();
+		// String jobKey = contract.pair();
+		String jobKey = contract.exchange() + ":" + contract.pair();
 		boolean isOptType = contract.secType() == SecType.OPT;
 		if (isOptType && _optionTopTasks.get(jobKey) == null) {
 			err("Task not exist, skip canceling option top data " + jobKey);
@@ -262,7 +269,8 @@ public class GatewayController extends BaseIBController {
 		return qid;
 	}
 	int unsubscribeTopDataAndMarkHost(IBContract contract, String hostName) {
-		String jobKey = contract.pair();
+		// String jobKey = contract.pair();
+		String jobKey = contract.exchange() + ":" + contract.pair();
 		int qid = 0;
 		if (!_topShareHost.containsKey(jobKey)) {
 			return 0;
