@@ -239,7 +239,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 		try {
 			log("_markDisconnected() Remove and disconnect old APIController...");
 			IBApiController old_controller = _apiController;
-//			_apiController = null;
+			//			_apiController = null;
 			_postDisconnected();
 			old_controller.disconnect(); // Dispose resource at last
 		} catch (Exception e1) {
@@ -272,7 +272,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 		realConnectedFlag = false;
 		if (!isConnected()) {
 			log("call disconnected() but not connected, dont _markDisconnected() just call _connect()");
-			_connect();
+			// _connect();
 			return;
 		}
 
@@ -330,11 +330,11 @@ public abstract class BaseIBController implements IConnectionHandler {
 			case 502: // Couldn't connect to TWS. Confirm that API is enabled in TWS via the Configure>API menu command.
 				// TWS gateway might be down, retry in longer time.
 				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
-				disconnected();
+				// disconnected();
 				break;
 			case 504: // TWS not connected, retry in short time.
 				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
-				disconnected();
+				// disconnected();
 				break;
 			case 507: // Bad Message Length null
 				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
@@ -346,8 +346,9 @@ public abstract class BaseIBController implements IConnectionHandler {
 				break;
 			case 1100: // Connectivity between IB and TWS has been lost.
 				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
-				_twsConnected = false;
-				_markDisconnected();
+				// NOTE: Don't know why cannot receive code 1101 or 1102, so don't try to do anything.
+				// _twsConnected = false;
+				// _markDisconnected();
 				break;
 			case 1101: // Connectivity between IB and TWS has been restored- data lost.
 				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
@@ -370,20 +371,24 @@ public abstract class BaseIBController implements IConnectionHandler {
 				break;
 			case 2104: // Market data farm connection is OK
 				latestMsgIsOkay = true;
+				_markTWSServerConnected(false);
 				break;
 			case 2105: // HMDS data farm connection is broken
 				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				break;
 			case 2106: // HMDS data farm connection is OK
 				latestMsgIsOkay = true;
+				_markTWSServerConnected(false);
 				break;
 			case 2107: // HMDS data farm connection is inactive but should be available upon demand.hthmds
 				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				latestMsgIsOkay = true;
+				_markTWSServerConnected(false);
 				break;
 			case 2108: // Market data farm connection is inactive but should be available upon demand.usfarm
 				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
 				latestMsgIsOkay = true;
+				_markTWSServerConnected(false);
 				break;
 			case 2110: // Connectivity between Trader Workstation and server is broken. It will be restored automatically.
 				log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"+ advancedOrderRejectJson);
@@ -392,6 +397,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 				break;
 			case 2158: // Sec-def data farm connection is OK:secdefhk
 				latestMsgIsOkay = true;
+				_markTWSServerConnected(false);
 				break;
 			default:
 				if (lastAckErrorID != id || lastAckErrorCode != errorCode || lastAckErrorMsg.equals(errorMsg) == false)

@@ -46,10 +46,10 @@ public class OptionTopMktDataHandler implements IOptHandler{
 
     public OptionTopMktDataHandler(IBContract contract, boolean broadcastTop, boolean broadcastTick) {
         _contract = contract;
-//        publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
-//        publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel";
-        publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
-        publishTickChannel = "URANUS:"+contract.pair()+":full_tick_channel";
+        publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
+        publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel";
+//        publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
+//        publishTickChannel = "URANUS:"+contract.pair()+":full_tick_channel";
         if (contract.multiplier() == null)
             multiplier = 1;
         else
@@ -337,13 +337,13 @@ public class OptionTopMktDataHandler implements IOptHandler{
         j.put("updateTime", System.currentTimeMillis());
         switch (tickType) {
             case BID_OPTION:
-                writeComputation("IBGateway:BidComputation:" + _contract.shownName(), j);
+                // writeComputation("IBGateway:BidComputation:" + _contract.shownName(), j);
                 break;
             case ASK_OPTION:
-                writeComputation("IBGateway:AskComputation:" + _contract.shownName(), j);
+                // writeComputation("IBGateway:AskComputation:" + _contract.shownName(), j);
                 break;
             case LAST_OPTION:
-                writeComputation("IBGateway:LastComputation:" + _contract.shownName(), j);
+                // writeComputation("IBGateway:LastComputation:" + _contract.shownName(), j);
                 lastGamma = gamma;
                 lastVega = vega;
                 lastTheta = theta;
@@ -351,16 +351,16 @@ public class OptionTopMktDataHandler implements IOptHandler{
                 isLive = true;
                 break;
             case MODEL_OPTION:
-                writeComputation("IBGateway:ModelComputation:" + _contract.shownName(), j);
+                // writeComputation("IBGateway:ModelComputation:" + _contract.shownName(), j);
                 break;
             case DELAYED_BID_OPTION:
-                writeComputation("IBGateway:BidComputation:" + _contract.shownName(), j);
+                // writeComputation("IBGateway:BidComputation:" + _contract.shownName(), j);
                 break;
             case DELAYED_ASK_OPTION:
-                writeComputation("IBGateway:AskComputation:" + _contract.shownName(), j);
+                // writeComputation("IBGateway:AskComputation:" + _contract.shownName(), j);
                 break;
             case DELAYED_LAST_OPTION:
-                writeComputation("IBGateway:LastComputation:" + _contract.shownName(), j);
+                // writeComputation("IBGateway:LastComputation:" + _contract.shownName(), j);
                 lastGamma = gamma;
                 lastVega = vega;
                 lastTheta = theta;
@@ -368,7 +368,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
                 isLive = false;
                 break;
             case DELAYED_MODEL_OPTION:
-                writeComputation("IBGateway:ModelComputation:" + _contract.shownName(), j);
+                // writeComputation("IBGateway:ModelComputation:" + _contract.shownName(), j);
                 break;
             default:
                 info(_contract.shownName() + " tickOptionComputation() tickType " + tickType +

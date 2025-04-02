@@ -74,6 +74,26 @@ public class GatewayController extends BaseIBController {
 	private ConcurrentHashMap<Integer, String> _depthTaskByReqID = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<String, List<String>> _depthShareHost = new ConcurrentHashMap<>();
 	private final boolean isSmartDepth = false;
+	private String CACHE_SUB_TOP_KEY = "SubTop:" + _name ;
+	private String CACHE_SUB_DEPTH_KEY = "SubDepth:" + _name ;
+
+	private void cacheSubPair(String cacheKey, String pair) {
+		Redis.exec(new Consumer<Jedis>() {
+			@Override
+			public void accept(Jedis t) {
+				t.hset(cacheKey, pair, "1");
+			}
+		});
+	}
+
+	private void cleanCacheSubPair() {
+		Redis.exec(new Consumer<Jedis>() {
+			@Override
+			public void accept(Jedis t) {
+				t.del(CACHE_SUB_DEPTH_KEY, CACHE_SUB_TOP_KEY);
+			}
+		});
+	}
 
 	private int subscribeDepthData(IBContract contract) {
 		String jobKey = contract.pair();
@@ -83,13 +103,14 @@ public class GatewayController extends BaseIBController {
 		}
 		_apiController.reqMktDataType(MarketDataType.DELAYED);
 
-		log("Subscribe depth data for " + jobKey);
+		log("Subscribe depth data for " + jobKey + ", exchange: " + contract.exchange());
 		int numOfRows = 10;
 		DeepMktDataHandler handler = new DeepMktDataHandler(contract, true);
 		_apiController.reqDeepMktData(contract, numOfRows, isSmartDepth, handler);
 		int qid = _apiController.lastReqId();
 		_depthTaskByReqID.put(qid, jobKey); // reference for error msg
 		_depthTasks.put(jobKey, handler);
+		cacheSubPair(CACHE_SUB_DEPTH_KEY, contract.pair());
 		return qid;
 	}
 
@@ -99,6 +120,7 @@ public class GatewayController extends BaseIBController {
 			if (!_depthShareHost.get(jobKey).contains(hostName)) {
 				_depthShareHost.get(jobKey).add(hostName);
 			}
+			cacheSubPair(CACHE_SUB_DEPTH_KEY, contract.pair());
 			return 0;
 		}
 		int qid = subscribeDepthData(contract);
@@ -163,7 +185,7 @@ public class GatewayController extends BaseIBController {
 		_apiController.reqMktDataType(MarketDataType.DELAYED);
 
 		if (isOptType) {
-			log("Subscribe option top data for " + jobKey);
+			log("Subscribe option top data for " + jobKey + ", exchange: " + contract.exchange());
 			boolean broadcastTop = true, broadcastTick = true;
 			OptionTopMktDataHandler handler = new OptionTopMktDataHandler(contract, broadcastTop, broadcastTick);
 			String genericTickList = "";
@@ -175,8 +197,9 @@ public class GatewayController extends BaseIBController {
 			regulatorySnapshot = false;
 			_apiController.reqOptionMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
 			_optionTopTasks.put(jobKey, handler);
+			cacheSubPair(CACHE_SUB_TOP_KEY,contract.pair());
 		} else {
-			log("Subscribe top data for " + jobKey);
+			log("Subscribe top data for " + jobKey + ", exchange: " + contract.exchange());
 			boolean broadcastTop = true, broadcastTick = true;
 			TopMktDataHandler handler = new TopMktDataHandler(contract, broadcastTop, broadcastTick);
 			// See <Generic tick required> at
@@ -190,6 +213,7 @@ public class GatewayController extends BaseIBController {
 			regulatorySnapshot = false;
 			_apiController.reqTopMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
 			_topTasks.put(jobKey, handler);
+			cacheSubPair(CACHE_SUB_TOP_KEY, contract.pair());
 		}
 		int qid = _apiController.lastReqId();
 		_topTaskByReqID.put(qid, jobKey); // reference for error msg
@@ -202,6 +226,7 @@ public class GatewayController extends BaseIBController {
 			if (!_topShareHost.get(jobKey).contains(hostName)) {
 				_topShareHost.get(jobKey).add(hostName);
 			}
+			cacheSubPair(CACHE_SUB_TOP_KEY,contract.pair());
 			return 0;
 		}
 		int qid = subscribeTopData(contract);
@@ -284,6 +309,7 @@ public class GatewayController extends BaseIBController {
 //	}
 
 	protected AccountMVHandler accountMVHandler = new AccountMVHandler();
+	String focusAccount = "";
 
 //	protected Long nextSubAcTs = 0L;
 	public void subscribeAccountMV() { // Is this streaming updating? Yes, with some latency 1~5s.
@@ -291,26 +317,37 @@ public class GatewayController extends BaseIBController {
 		log("--> Req account mv default");
 		if (accList != null) {
 			long delay = 3000L;
+			String lastAccount = "";
 			for (String account : accList) {
 				log("--> Req account mv " + account);
 				if (_apiController == null)
 					continue;
 				_apiController.reqAccountUpdates(subscribe, account, accountMVHandler);
+				lastAccount = account;
 				sleep(delay);
+			}
+			if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
+				_apiController.reqAccountUpdates(subscribe, focusAccount, accountMVHandler);
 			}
 		} else {
 			log("--> Req account mv default");
-			_apiController.reqAccountUpdates(subscribe, "", accountMVHandler);
+			_apiController.reqAccountUpdates(subscribe, focusAccount, accountMVHandler);
+//			_apiController.reqAccountUpdates(subscribe, "", accountMVHandler);
 		}
 	}
 
 	public void reqAccountUpdates(JSONArray updateAcList) {
 		long delay = 3000L;
 		new Thread(() -> {
+			String lastAccount = "";
 			for (Object account : updateAcList) {
 				log("--> Req account mv " + account);
 				_apiController.reqAccountUpdates(true, (String) account, accountMVHandler);
 				sleep(delay);
+				lastAccount = (String) account;
+			}
+			if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
+				_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
 			}
 		}).start();
 	}
@@ -598,12 +635,13 @@ public class GatewayController extends BaseIBController {
 						log("_postConnected : refresh alive and completed orders");
 						refreshLiveOrders();
 						refreshCompletedOrders();
+						cleanCacheSubPair();
 //						if (TEST_REDIS_TRADE) listenRedis();
 						connectTimerTask = null;
 						retryConnectCount = 0;
 						break;
 					} else {
-						log("_postConnected : isConnected " + isConnected() + " accList null? " + (accList != null));
+						log("_postConnected : isConnected " + isConnected() + " accList not null? " + (accList != null) + " retryConnectCount: " + retryConnectCount);
 						if (retryConnectCount >= 60) {
 							log("retryConnectCount >= 60, call _connect");
 							_connect();
@@ -648,7 +686,7 @@ public class GatewayController extends BaseIBController {
 			}
 //			log("test: _twsConnected: "+ _twsConnected + ", _apiConnected: "+ _apiConnected);
 			try {
-				if (!isConnected()) _connect();
+				// if (!isConnected()) _connect();
 			} catch (Exception e) {
 				err("Failed to connect " + e.getMessage());
 			}
@@ -709,6 +747,10 @@ public class GatewayController extends BaseIBController {
 //					subscribeAccountMV();
 					reqAccountUpdates(j.getJSONArray("updateAcList"));
 					break;
+				case "UPDATE_FOCUS_ACCOUNT":
+					focusAccount = j.getString("focusAccount");
+					_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
+					break;
 				case "FIND_ACCOUNT_SUMMARY":
 					apiReqId = queryAccountSummary();
 					break;
@@ -724,7 +766,12 @@ public class GatewayController extends BaseIBController {
 					_apiController.reqExecutions(new ExecutionFilter(), new TradeReportHandler());
 					break;
 				case "TEST_DISCONNECT":
+					log("isConnected: " + isConnected());
 					disconnected();
+					break;
+				case "TEST_DISCONNECT_2":
+					_twsConnected = false;
+					_markDisconnected();
 					break;
 				case "REFRESH_TODAY_ORDERS":
 					refreshLiveOrders();
