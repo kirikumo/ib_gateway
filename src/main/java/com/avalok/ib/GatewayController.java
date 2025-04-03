@@ -5,8 +5,6 @@ import static com.bitex.util.DebugUtil.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -76,12 +74,45 @@ public class GatewayController extends BaseIBController {
 	private final boolean isSmartDepth = false;
 	private String CACHE_SUB_TOP_KEY = "SubTop:" + _name ;
 	private String CACHE_SUB_DEPTH_KEY = "SubDepth:" + _name ;
+	private static class ReqData {
+		String key;
+		String hostName;
+		ReqData(String _key, String _hostName){
+			key = _key;
+			hostName = _hostName;
+		}
+	}
 
-	private void cacheSubPair(String cacheKey, String pair) {
+	enum SubState {
+		SUCCESS, ERROR
+	}
+	private static class SubData {
+		int apiId;
+		SubState state;
+		SubData(int _apiId, SubState _state){
+			apiId = _apiId;
+			state = _state;
+		}
+	}
+	private final ConcurrentHashMap<String, SubData> subDataTopKeyMap = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, SubData> subDataDepthKeyMap = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Integer, ReqData> apiIdReqDataMap = new ConcurrentHashMap<>();
+
+	private void cacheSubKey(String cacheKey, String name, String value) {
+//		value: "1" == success, "2" == error
 		Redis.exec(new Consumer<Jedis>() {
 			@Override
 			public void accept(Jedis t) {
-				t.hset(cacheKey, pair, "1");
+				t.hset(cacheKey, name, value);
+			}
+		});
+	}
+
+	private void delCacheSubKey(String cacheKey, String name) {
+		Redis.exec(new Consumer<Jedis>() {
+			@Override
+			public void accept(Jedis t) {
+				t.hdel(cacheKey, name);
 			}
 		});
 	}
@@ -93,6 +124,28 @@ public class GatewayController extends BaseIBController {
 				t.del(CACHE_SUB_DEPTH_KEY, CACHE_SUB_TOP_KEY);
 			}
 		});
+	}
+
+	private void handleSubscribeError(int id) {
+		final String ErrorFlag = "2";
+		if (apiIdReqDataMap.containsKey(id)) {
+			ReqData reqData = apiIdReqDataMap.get(id);
+			String key = reqData.key;
+			String hostName = reqData.hostName;
+
+			if (subDataDepthKeyMap.containsKey(key)) {
+				cacheSubKey(CACHE_SUB_DEPTH_KEY, key, ErrorFlag);
+				if (_depthShareHost.containsKey(key) && _depthShareHost.get(key).contains(hostName)) {
+					_depthShareHost.get(key).remove(hostName);
+				}
+			}
+			if (subDataTopKeyMap.containsKey(key)) {
+				cacheSubKey(CACHE_SUB_TOP_KEY, key, ErrorFlag);
+				if (_topShareHost.containsKey(key) && _topShareHost.get(key).contains(hostName)) {
+					_topShareHost.get(key).remove(hostName);
+				}
+			}
+		}
 	}
 
 	private int subscribeDepthData(IBContract contract) {
@@ -111,24 +164,50 @@ public class GatewayController extends BaseIBController {
 		int qid = _apiController.lastReqId();
 		_depthTaskByReqID.put(qid, jobKey); // reference for error msg
 		_depthTasks.put(jobKey, handler);
-		cacheSubPair(CACHE_SUB_DEPTH_KEY, contract.pair());
+//		cacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey, "1");
 		return qid;
 	}
 
+//	private int subscribeDepthDataAndMarkHost(IBContract contract, String hostName) {
+//		// String jobKey = contract.pair();
+//		String jobKey = contract.exchange() + ":" + contract.pair();
+//		if (_depthShareHost.containsKey(jobKey)) {
+//			int _qid = 0;
+//			if (!_depthShareHost.get(jobKey).contains(hostName)) {
+//				_qid = subscribeDepthData(contract);
+//				_depthShareHost.get(jobKey).add(hostName);
+//			}
+//			cacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey);
+//			return _qid;
+//		}
+//		int qid = subscribeDepthData(contract);
+//		List<String> hostList = new ArrayList<>();
+//		hostList.add(hostName);
+//		_depthShareHost.put(jobKey, hostList);
+//		return qid;
+//	}
+
 	private int subscribeDepthDataAndMarkHost(IBContract contract, String hostName) {
-		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		if (_depthShareHost.containsKey(jobKey)) {
-			if (!_depthShareHost.get(jobKey).contains(hostName)) {
-				_depthShareHost.get(jobKey).add(hostName);
-			}
-			cacheSubPair(CACHE_SUB_DEPTH_KEY, contract.pair());
-			return 0;
+			if (_depthShareHost.get(jobKey).contains(hostName)) return 0;
+		} else {
+			List<String> hostList = new ArrayList<>();
+			_depthShareHost.put(jobKey, hostList);
 		}
+
 		int qid = subscribeDepthData(contract);
-		List<String> hostList = new ArrayList<>();
-		hostList.add(hostName);
-		_depthShareHost.put(jobKey, hostList);
+		cacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey, "1");
+		_depthShareHost.get(jobKey).add(hostName);
+
+//		remove cache qid data before mark new qid data
+		if (subDataDepthKeyMap.containsKey(jobKey)) {
+			SubData data = subDataDepthKeyMap.get(jobKey);
+			apiIdReqDataMap.remove(data.apiId);
+		}
+		apiIdReqDataMap.put(qid, new ReqData(jobKey, hostName));
+		subDataDepthKeyMap.put(jobKey, new SubData(qid, SubState.SUCCESS));
+
 		return qid;
 	}
 
@@ -150,18 +229,21 @@ public class GatewayController extends BaseIBController {
 	private int unsubscribeDepthDataAndMarkHost(IBContract contract, String hostName) {
 		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
-		int qid = 0;
-		if (!_depthShareHost.containsKey(jobKey)) {
-			return 0;
-		}
-		if (!_depthShareHost.get(jobKey).contains(hostName)) {
-			return 0;
+		if (subDataDepthKeyMap.containsKey(jobKey)) {
+			SubData data = subDataDepthKeyMap.get(jobKey);
+			apiIdReqDataMap.remove(data.apiId);
+			subDataDepthKeyMap.remove((jobKey));
 		}
 
-		_depthShareHost.get(jobKey).remove(hostName);
+		int qid = 0;
+		if (_depthShareHost.containsKey(jobKey) && _depthShareHost.get(jobKey).contains(hostName)) {
+			_depthShareHost.get(jobKey).remove(hostName);
+		}
+
 		if (_depthShareHost.get(jobKey).size() == 0) {
 			qid = unsubscribeDepthData(contract);
 			_depthShareHost.remove(jobKey);
+			delCacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey);
 		}
 		return qid;
 	}
@@ -202,7 +284,7 @@ public class GatewayController extends BaseIBController {
 			regulatorySnapshot = false;
 			_apiController.reqOptionMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
 			_optionTopTasks.put(jobKey, handler);
-			cacheSubPair(CACHE_SUB_TOP_KEY,contract.pair());
+//			cacheSubKey(CACHE_SUB_TOP_KEY,contract.pair());
 		} else {
 			log("Subscribe top data for " + jobKey + ", exchange: " + contract.exchange());
 			boolean broadcastTop = true, broadcastTick = true;
@@ -218,31 +300,60 @@ public class GatewayController extends BaseIBController {
 			regulatorySnapshot = false;
 			_apiController.reqTopMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
 			_topTasks.put(jobKey, handler);
-			cacheSubPair(CACHE_SUB_TOP_KEY, contract.pair());
+//			cacheSubKey(CACHE_SUB_TOP_KEY, contract.pair());
 		}
 		int qid = _apiController.lastReqId();
 		_topTaskByReqID.put(qid, jobKey); // reference for error msg
 		return qid;
 	}
 
+//	private int subscribeTopDataAndMarkHost(IBContract contract, String hostName) {
+//		// String jobKey = contract.pair();
+//		String jobKey = contract.exchange() + ":" + contract.pair();
+//		if (_topShareHost.containsKey(jobKey)) {
+//			int _qid = 0;
+//			if (!_topShareHost.get(jobKey).contains(hostName)) {
+//				_qid = subscribeTopData(contract);
+//				_topShareHost.get(jobKey).add(hostName);
+//			}
+//			cacheSubKey(CACHE_SUB_TOP_KEY,contract.pair());
+//			apiIdPairMap.put(_qid, contract.pair());
+//			return _qid;
+//		}
+//		int qid = subscribeTopData(contract);
+//		List<String> hostList = new ArrayList<>();
+//		hostList.add(hostName);
+//		_topShareHost.put(jobKey, hostList);
+//		apiIdPairMap.put(qid, contract.pair());
+//		return qid;
+//	}
+
 	private int subscribeTopDataAndMarkHost(IBContract contract, String hostName) {
-		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		if (_topShareHost.containsKey(jobKey)) {
-			if (!_topShareHost.get(jobKey).contains(hostName)) {
-				_topShareHost.get(jobKey).add(hostName);
-			}
-			cacheSubPair(CACHE_SUB_TOP_KEY,contract.pair());
-			return 0;
+			if (_topShareHost.get(jobKey).contains(hostName)) return 0;
+		} else {
+			List<String> hostList = new ArrayList<>();
+			_topShareHost.put(jobKey, hostList);
 		}
+
 		int qid = subscribeTopData(contract);
-		List<String> hostList = new ArrayList<>();
-		hostList.add(hostName);
-		_topShareHost.put(jobKey, hostList);
+		cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
+		_topShareHost.get(jobKey).add(hostName);
+
+//		remove cache qid data before mark new qid data
+		if (subDataTopKeyMap.containsKey(jobKey)) {
+			SubData data = subDataTopKeyMap.get(jobKey);
+			apiIdReqDataMap.remove(data.apiId);
+		}
+		apiIdReqDataMap.put(qid, new ReqData(jobKey, hostName));
+		subDataTopKeyMap.put(jobKey, new SubData(qid, SubState.SUCCESS));
+
 		return qid;
 	}
 
-	private int unsubscribeTopData(IBContract contract) {
+
+		private int unsubscribeTopData(IBContract contract) {
 		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		boolean isOptType = contract.secType() == SecType.OPT;
@@ -271,17 +382,21 @@ public class GatewayController extends BaseIBController {
 	int unsubscribeTopDataAndMarkHost(IBContract contract, String hostName) {
 		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
+		if (subDataTopKeyMap.containsKey(jobKey)) {
+			SubData data = subDataTopKeyMap.get(jobKey);
+			apiIdReqDataMap.remove(data.apiId);
+			subDataTopKeyMap.remove((jobKey));
+		}
+
 		int qid = 0;
-		if (!_topShareHost.containsKey(jobKey)) {
-			return 0;
+		if (_topShareHost.containsKey(jobKey) && _topShareHost.get(jobKey).contains(hostName)) {
+			_topShareHost.get(jobKey).remove(hostName);
 		}
-		if (!_topShareHost.get(jobKey).contains(hostName)) {
-			return 0;
-		}
-		_topShareHost.get(jobKey).remove(hostName);
+
 		if (_topShareHost.get(jobKey).size() == 0) {
 			qid = unsubscribeTopData(contract);
 			_topShareHost.remove(jobKey);
+			delCacheSubKey(CACHE_SUB_TOP_KEY, jobKey);
 		}
 		return qid;
 	}
@@ -884,6 +999,9 @@ public class GatewayController extends BaseIBController {
 			_postConnected();
 			break;
 		case 2157: // msg:Sec-def data farm connection is broken:secdefhk
+			break;
+		case 10089:
+			handleSubscribeError(id);
 			break;
 		case 162:
 			j.put("type", "error");
