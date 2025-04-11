@@ -61,7 +61,7 @@ public class IBContract extends Contract {
 					s = s + "@" + lastTradeDateOrContractMonth();
 				else
 					s = s + "@" + lastTradeDateOrContractMonth() + "@" + multiplier();
-			} else if(secType() == SecType.OPT) {
+			} else if(secType() == SecType.OPT || secType() == SecType.FOP) {
 				s = s + "@" + lastTradeDateOrContractMonth() + "@" + multiplier() + getRight() + strike();
 			} else if(secType() == SecType.BOND) {
 				// bonds contract don't symbol()

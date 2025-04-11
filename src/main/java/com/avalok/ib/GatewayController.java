@@ -103,6 +103,7 @@ public class GatewayController extends BaseIBController {
 		Redis.exec(new Consumer<Jedis>() {
 			@Override
 			public void accept(Jedis t) {
+				log("cache: " + cacheKey + " | "+ name + " | "+ value);
 				t.hset(cacheKey, name, value);
 			}
 		});
@@ -112,6 +113,7 @@ public class GatewayController extends BaseIBController {
 		Redis.exec(new Consumer<Jedis>() {
 			@Override
 			public void accept(Jedis t) {
+				log("del: " + cacheKey + " | "+ name );
 				t.hdel(cacheKey, name);
 			}
 		});
@@ -190,12 +192,13 @@ public class GatewayController extends BaseIBController {
 	private int subscribeDepthDataAndMarkHost(IBContract contract, String hostName) {
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		if (_depthShareHost.containsKey(jobKey)) {
-			if (_depthShareHost.get(jobKey).contains(hostName)) return 0;
+			// if (_depthShareHost.get(jobKey).contains(hostName)) return 0;
 		} else {
 			List<String> hostList = new ArrayList<>();
 			_depthShareHost.put(jobKey, hostList);
 		}
 
+		unsubscribeDepthData(contract);
 		int qid = subscribeDepthData(contract);
 		cacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey, "1");
 		_depthShareHost.get(jobKey).add(hostName);
@@ -240,7 +243,7 @@ public class GatewayController extends BaseIBController {
 			_depthShareHost.get(jobKey).remove(hostName);
 		}
 
-		if (_depthShareHost.get(jobKey).size() == 0) {
+		if (_depthShareHost.containsKey(jobKey) && _depthShareHost.get(jobKey).size() == 0) {
 			qid = unsubscribeDepthData(contract);
 			_depthShareHost.remove(jobKey);
 			delCacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey);
@@ -260,7 +263,7 @@ public class GatewayController extends BaseIBController {
 	private int subscribeTopData(IBContract contract) {
 		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
-		boolean isOptType = contract.secType() == SecType.OPT;
+		boolean isOptType = contract.secType() == SecType.OPT || contract.secType() == SecType.FOP;
 		if (isOptType && _optionTopTasks.get(jobKey) != null) {
 			log("Task dulicated, skip subscribing option top data " + jobKey);
 			return 0;
@@ -331,12 +334,13 @@ public class GatewayController extends BaseIBController {
 	private int subscribeTopDataAndMarkHost(IBContract contract, String hostName) {
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		if (_topShareHost.containsKey(jobKey)) {
-			if (_topShareHost.get(jobKey).contains(hostName)) return 0;
+			// if (_topShareHost.get(jobKey).contains(hostName)) return 0;
 		} else {
 			List<String> hostList = new ArrayList<>();
 			_topShareHost.put(jobKey, hostList);
 		}
 
+		unsubscribeTopData(contract);
 		int qid = subscribeTopData(contract);
 		cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
 		_topShareHost.get(jobKey).add(hostName);
@@ -356,7 +360,7 @@ public class GatewayController extends BaseIBController {
 		private int unsubscribeTopData(IBContract contract) {
 		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
-		boolean isOptType = contract.secType() == SecType.OPT;
+		boolean isOptType = contract.secType() == SecType.OPT || contract.secType() == SecType.FOP;
 		if (isOptType && _optionTopTasks.get(jobKey) == null) {
 			err("Task not exist, skip canceling option top data " + jobKey);
 			return 0;
@@ -393,7 +397,7 @@ public class GatewayController extends BaseIBController {
 			_topShareHost.get(jobKey).remove(hostName);
 		}
 
-		if (_topShareHost.get(jobKey).size() == 0) {
+		if (_topShareHost.containsKey(jobKey) && _topShareHost.get(jobKey).size() == 0) {
 			qid = unsubscribeTopData(contract);
 			_topShareHost.remove(jobKey);
 			delCacheSubKey(CACHE_SUB_TOP_KEY, jobKey);
