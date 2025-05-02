@@ -153,10 +153,10 @@ public class GatewayController extends BaseIBController {
 	private int subscribeDepthData(IBContract contract) {
 		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
-		if (_depthTasks.get(jobKey) != null) {
-			err("Task dulicated, skip subscribing depth data " + jobKey);
-			return 0;
-		}
+		// if (_depthTasks.get(jobKey) != null) {
+		// 	err("Task dulicated, skip subscribing depth data " + jobKey);
+		// 	return 0;
+		// }
 		_apiController.reqMktDataType(MarketDataType.DELAYED);
 
 		log("Subscribe depth data for " + jobKey + ", exchange: " + contract.exchange());
@@ -264,13 +264,13 @@ public class GatewayController extends BaseIBController {
 		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		boolean isOptType = contract.secType() == SecType.OPT || contract.secType() == SecType.FOP;
-		if (isOptType && _optionTopTasks.get(jobKey) != null) {
-			log("Task dulicated, skip subscribing option top data " + jobKey);
-			return 0;
-		} else if (!isOptType && _topTasks.get(jobKey) != null) {
-			log("Task dulicated, skip subscribing top data " + jobKey);
-			return 0;
-		}
+		// if (isOptType && _optionTopTasks.get(jobKey) != null) {
+		// 	log("Task dulicated, skip subscribing option top data " + jobKey);
+		// 	return 0;
+		// } else if (!isOptType && _topTasks.get(jobKey) != null) {
+		// 	log("Task dulicated, skip subscribing top data " + jobKey);
+		// 	return 0;
+		// }
 
 		_apiController.reqMktDataType(MarketDataType.DELAYED);
 
