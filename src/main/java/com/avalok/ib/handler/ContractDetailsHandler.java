@@ -37,7 +37,8 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		IBContract result = null;
 		for (IBContract _ibc : contracts) {
 			// Don't fill with those SMART exchange contract
-			if (_ibc.exchange().equals("SMART") == false && ibc.matchFullDetails(_ibc)) {
+//			if (_ibc.exchange().equals("SMART") == false && ibc.matchFullDetails(_ibc)) {
+			if (ibc.matchFullDetails(_ibc)) {
 				if (result == null)
 					result = _ibc;
 				else if (ibc.shownName() == null)
@@ -47,9 +48,11 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 			}
 		}
 		if (result != null) {
+			log("fillIBContract: "+ result);
 			ibc.copyFrom(result);
 			return true;
 		}
+		log("No fillIBContract");
 		return false;
 	}
 
