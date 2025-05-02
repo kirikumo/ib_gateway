@@ -235,4 +235,10 @@ public class IBApiController {
 		recordOperationHistory("reqOptionVolatility");
 		_api.reqOptionVolatility(c, optPrice, underPrice, handler);
 	}
+
+	public void reqMktDataType(int marketDataType){
+		twsAPIRateControl();
+		recordOperationHistory("reqMktDataType:");
+		_api.reqMktDataType(marketDataType);
+	}
 }

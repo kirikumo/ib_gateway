@@ -42,8 +42,8 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 	private Consumer<Jedis> broadcastLambda;
 	public DeepMktDataHandler(IBContract contract, boolean broadcast) {
 		_contract = contract;
-//		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
-		publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
+		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
+//		publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
 		if (contract.multiplier() == null)
 			multiplier = 1;
 		else
