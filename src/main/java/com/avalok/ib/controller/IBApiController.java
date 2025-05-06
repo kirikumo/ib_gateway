@@ -30,6 +30,7 @@ import com.ib.controller.ApiController.IRealTimeBarHandler;
 import com.ib.controller.ApiController.ITopMktDataHandler;
 import com.ib.controller.ApiController.ITradeReportHandler;
 import com.ib.controller.ApiController.IOrderCancelHandler;
+import com.ib.client.OrderCancel;
 
 /**
  * A warpper of ApiController for rate control and other proxy.
@@ -203,7 +204,7 @@ public class IBApiController {
 //		manualOrderCancelTime format is "20220314-19:00:00"
 //		look EClient.cancelOrder and ref https://interactivebrokers.github.io/tws-api/basic_orders.html
 //		Guess this is useless feature for this moment(2022-11-14), so set it to null
-		_api.cancelOrder(orderId, null, orderCancelHandler);
+		_api.cancelOrder(orderId, new OrderCancel(), orderCancelHandler);
 	}
 	public void cancelAllOrders() {
 		twsAPIRateControl();

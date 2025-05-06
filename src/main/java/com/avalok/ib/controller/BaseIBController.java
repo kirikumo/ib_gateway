@@ -163,7 +163,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 							_apiController.disconnect();
 						}
 						// make initial connection to local host, port 7496, client id 0, no connection options
-						newController.connect(TWS_API_ADDR, TWS_API_PORT, _apiClientID, null);
+						newController.connect(TWS_API_ADDR, TWS_API_PORT, _apiClientID, "");  // NOTE: DON'T SET null to connection options
 						_apiController = newController;  // Only assign after _connect()
 						_connectedTS = System.currentTimeMillis();
 						log("Gateway connected with client ID " + _apiClientID);

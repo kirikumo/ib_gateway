@@ -1081,6 +1081,20 @@ public class ApiController implements EWrapper {
     	}
     }
 
+	// @Override public void historicalData(int reqId, com.ib.client.Bar bar) {
+	// 	IHistoricalDataHandler handler = m_historicalDataMap.get( reqId);
+	// 	if (handler != null) {
+	// 		if (bar.time().startsWith( "finished")) {
+	// 			handler.historicalDataEnd();
+	// 		}
+	// 		else {
+	// 			Bar bar2 = new Bar( bar.time(), bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
+	// 			handler.historicalData(bar2);
+	// 		}
+	// 	}
+	// 	recEOM();
+	// }
+
 	@Override public void historicalData(int reqId, com.ib.client.Bar bar) {
 		IHistoricalDataHandler handler = m_historicalDataMap.get( reqId);
 		if (handler != null) {
@@ -1088,13 +1102,22 @@ public class ApiController implements EWrapper {
 				handler.historicalDataEnd();
 			}
 			else {
-				Bar bar2 = new Bar( bar.time(), bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
+				long longDate;
+				if (bar.time().length() == 8) {
+					int year = Integer.parseInt( bar.time().substring( 0, 4) );
+					int month = Integer.parseInt( bar.time().substring( 4, 6) );
+					int day = Integer.parseInt( bar.time().substring( 6) );
+					longDate = new GregorianCalendar( year, month - 1, day).getTimeInMillis() / 1000;
+				}
+				else {
+					longDate = Long.parseLong( bar.time());
+				}
+				Bar bar2 = new Bar( longDate, bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
 				handler.historicalData(bar2);
 			}
 		}
 		recEOM();
 	}
-
 
 	//----------------------------------------- Real-time bars --------------------------------------
 	public interface IRealTimeBarHandler {
