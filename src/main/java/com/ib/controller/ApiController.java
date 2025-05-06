@@ -25,6 +25,7 @@ import com.ib.client.Types.FundamentalType;
 import com.ib.client.Types.NewsType;
 import com.ib.client.Types.WhatToShow;
 import com.ib.controller.ApiConnection.ILogger;
+import java.util.GregorianCalendar;
 
 public class ApiController implements EWrapper {
 	private ApiConnection m_client;
