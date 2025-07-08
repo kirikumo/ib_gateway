@@ -21,7 +21,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
     public final int max_depth = 1;
     protected IBContract _contract;
     protected final double multiplier;
-    protected final double marketDataSizeMultiplier;
+    protected double marketDataSizeMultiplier;
     protected final String publishODBKChannel; // Publish odbk to universal system
     protected final String publishTickChannel; // Publish odbk to universal system
     protected final JSONArray topDataSnapshot = new JSONArray();

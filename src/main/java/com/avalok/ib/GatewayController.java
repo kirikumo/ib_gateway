@@ -332,6 +332,7 @@ public class GatewayController extends BaseIBController {
 //	}
 
 	private int subscribeTopDataAndMarkHost(IBContract contract, String hostName) {
+		if (!isRealConnected()) return 0;
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		if (_topShareHost.containsKey(jobKey)) {
 			// if (_topShareHost.get(jobKey).contains(hostName)) return 0;
@@ -523,6 +524,13 @@ public class GatewayController extends BaseIBController {
 	protected int placeOrder(IBOrder order) throws Exception {
 		if (order.omsClientOID() == null)
 			throw new Exception("Abort placing order without OMS client_oid, no orderRef?");
+		if (order.contract.exchange().equals("ISLAND")) {
+//			Upcoming ISLAND to NASDAQ naming change will make all of the ISLAND exchange definitions invalid.
+//			As a compatibility measure a new setting has been introduced in TWS 10.16+: "Compatibility Mode: Send ISLAND for US Stocks trading on NASDAQ".
+//			This setting will enable all of the contract definitions with ISLAND exchange to be still acknowledged.
+//			It is strongly recommended to start implementing the NASDAQ exchange definition.
+			order.contract.exchange("NASDAQ");
+		}
 		_apiController.placeOrModifyOrder(order.contract, order.order,
 				new SingleOrderHandler(this, orderCacheHandler, order));
 		return _apiController.lastReqId();
@@ -876,7 +884,9 @@ public class GatewayController extends BaseIBController {
 					break;
 				case "UPDATE_FOCUS_ACCOUNT":
 					focusAccount = j.getString("focusAccount");
+					if (_apiController != null) {
 					_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
+					}
 					break;
 				case "FIND_ACCOUNT_SUMMARY":
 					apiReqId = queryAccountSummary();

@@ -25,10 +25,11 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	public final int max_depth = 1;
 	protected IBContract _contract;
 	protected final double multiplier;
-	protected final double marketDataSizeMultiplier;
+	protected double marketDataSizeMultiplier;
 	protected final String publishODBKChannel; // Publish odbk to universal system
 	protected final String publishTickChannel; // Publish odbk to universal system
-	
+	protected final String setexTickChannel;
+
 	protected final JSONArray topDataSnapshot = new JSONArray();
 	protected final JSONObject[] topAsks = new JSONObject[] {new JSONObject()};
 	protected final JSONObject[] topBids = new JSONObject[] {new JSONObject()};
@@ -46,6 +47,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		_contract = contract;
 		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
 		publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel";
+		setexTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel:expire";
 //		publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
 //		publishTickChannel = "URANUS:"+contract.pair()+":full_tick_channel";
 		if (contract.multiplier() == null)
@@ -109,6 +111,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 					if (_debug)
 						warn("Publish to " + publishTickChannel);
 					t.publish(publishTickChannel, JSON.toJSONString(newTicksData));
+					t.setex(setexTickChannel,300, JSON.toJSONString(newTicksData));
 				}
 			};
 		}
