@@ -50,7 +50,9 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	public final String _twsName;
 	protected OrderCache _allOrders = new OrderCache();
 	protected static ConcurrentHashMap<String, String> KNOWN_EXCHANGES = new ConcurrentHashMap<>();
-	public AllOrderHandler(GatewayController ibController) {
+    Map<String, JSONObject> result = new HashMap<>();
+
+    public AllOrderHandler(GatewayController ibController) {
 		_ibController = ibController;
 		_twsName = ibController.name();
 	}
@@ -145,43 +147,88 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	public void tradeReport(String tradeKey, Contract contract, Execution execution) {
 		IBContract ibc = new IBContract(contract);
 //		log(execution.acctNumber());
-		Redis.exec(new Consumer<Jedis>() {
-			@Override
-			public void accept(Jedis t) {
-//				String key = "TradeReport:"+ibc.exchange()+":"+execution.acctNumber()+":O:"+ibc.pair();
-				String key = "TradeReport:"+execution.acctNumber();
-				String pubAccountChannel = "TradeReport:"+execution.acctNumber()+":channel";
-				JSONObject j = new JSONObject();
-				j.put("orderId", execution.orderId());
-				j.put("clientId", execution.clientId());
-				j.put("execId", execution.execId());
-				j.put("time", execution.time());
-				j.put("acctNumber", execution.acctNumber());
-				j.put("exchange", execution.exchange());
-				j.put("side", execution.side());
-				j.put("shares", execution.shares().longValue());
-				j.put("price", execution.price());
-				j.put("permId", execution.permId());
-				j.put("liquidation", execution.liquidation());
-				j.put("cumQty", execution.cumQty().longValue());
-				j.put("avgPrice", execution.avgPrice());
-				j.put("orderRef", execution.orderRef());
-				j.put("evRule", execution.evRule());
-				j.put("evMultiplier", execution.evMultiplier());
-				j.put("modelCode", execution.modelCode());
-				j.put("lastLiquidity", execution.lastLiquidityStr());
-
-				t.hset(key, tradeKey, j.toJSONString());
-				t.publish(pubAccountChannel, j.toJSONString());
-			}
-		});
+        if (!result.containsKey(tradeKey)) {
+            result.put(tradeKey, new JSONObject());
+        }
+        JSONObject j = result.get(tradeKey);
+        j.put("orderId", execution.orderId());
+        j.put("clientId", execution.clientId());
+        j.put("execId", execution.execId());
+        j.put("time", execution.time());
+        j.put("acctNumber", execution.acctNumber());
+        j.put("exchange", execution.exchange());
+        j.put("side", execution.side());
+        j.put("shares", execution.shares().longValue());
+        j.put("price", execution.price());
+        j.put("permId", execution.permId());
+        j.put("liquidation", execution.liquidation());
+        j.put("cumQty", execution.cumQty().longValue());
+        j.put("avgPrice", execution.avgPrice());
+        j.put("orderRef", execution.orderRef());
+        j.put("evRule", execution.evRule());
+        j.put("evMultiplier", execution.evMultiplier());
+        j.put("modelCode", execution.modelCode());
+        j.put("lastLiquidity", execution.lastLiquidityStr());
+//		Redis.exec(new Consumer<Jedis>() {
+//			@Override
+//			public void accept(Jedis t) {
+////				String key = "TradeReport:"+ibc.exchange()+":"+execution.acctNumber()+":O:"+ibc.pair();
+//				String key = "TradeReport:"+execution.acctNumber();
+//				String pubAccountChannel = "TradeReport:"+execution.acctNumber()+":channel";
+//				JSONObject j = new JSONObject();
+//				j.put("orderId", execution.orderId());
+//				j.put("clientId", execution.clientId());
+//				j.put("execId", execution.execId());
+//				j.put("time", execution.time());
+//				j.put("acctNumber", execution.acctNumber());
+//				j.put("exchange", execution.exchange());
+//				j.put("side", execution.side());
+//				j.put("shares", execution.shares().longValue());
+//				j.put("price", execution.price());
+//				j.put("permId", execution.permId());
+//				j.put("liquidation", execution.liquidation());
+//				j.put("cumQty", execution.cumQty().longValue());
+//				j.put("avgPrice", execution.avgPrice());
+//				j.put("orderRef", execution.orderRef());
+//				j.put("evRule", execution.evRule());
+//				j.put("evMultiplier", execution.evMultiplier());
+//				j.put("modelCode", execution.modelCode());
+//				j.put("lastLiquidity", execution.lastLiquidityStr());
+//
+//				t.hset(key, tradeKey, j.toJSONString());
+//				t.publish(pubAccountChannel, j.toJSONString());
+//			}
+//		});
 
 		log("<-- tradeReport() " + tradeKey + " " + ibc.shownName() + execution.cumQty() + "@" + execution.price());
 	}
 	public void tradeReportEnd() {
+        Redis.exec(new Consumer<Jedis>() {
+            @Override
+            public void accept(Jedis t) {
+                result.forEach((tradeKey, v) -> {
+                    String acctNumber = v.getString("acctNumber");
+                    String key = "TradeReport:"+acctNumber;
+                    v.put("tradeKey", tradeKey);
+                    t.hset(key, tradeKey, v.toJSONString());
+                });
+            }
+        });
+
 		log("<-- tradeReportEnd");
 	}
-	public void commissionReport(String tradeKey, CommissionReport commissionReport) { }
+	public void commissionReport(String tradeKey, CommissionReport commissionReport) {
+        if (!result.containsKey(tradeKey)) {
+            result.put(tradeKey, new JSONObject());
+        }
+        JSONObject j = result.get(tradeKey);
+        j.put("commission", commissionReport.commission());
+        j.put("execId", commissionReport.execId());
+        j.put("currency", commissionReport.currency());
+        j.put("realizedPNL", commissionReport.realizedPNL());
+        j.put("yield", commissionReport.yield());
+        j.put("yieldRedemptionDate", commissionReport.yieldRedemptionDate());
+    }
 	
 	////////////////////////////////////////////////////////////////
 	// ICompletedOrdersHandler

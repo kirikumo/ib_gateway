@@ -228,7 +228,7 @@ public class IBApiController {
 	}
 	public void cancelAccountSummary(ApiController.IAccountSummaryHandler handler) {
 		twsAPIRateControl();
-		recordOperationHistory("cancelAccountSummary:");
+		recordOperationHistory("cancelAccountSummary");
 		_api.cancelAccountSummary(handler);
 	}
 	public  void reqOptionVolatility(Contract c, double optPrice, double underPrice, IOptHandler handler) {
@@ -239,7 +239,7 @@ public class IBApiController {
 
 	public void reqMktDataType(int marketDataType){
 		twsAPIRateControl();
-		recordOperationHistory("reqMktDataType:");
+		recordOperationHistory("reqMktDataType");
 		_api.reqMktDataType(marketDataType);
 	}
 }

@@ -40,7 +40,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	// Wait until tickSnapshotEnd(), This function suddenly does not work any more. 20200514
 	// protected boolean tickDataInited = false;
 	protected boolean tickDataInited = true;
-	
+	protected String cacheKey = "Unknown";
+
 	private Consumer<Jedis> broadcastTopLambda;
 	private Consumer<Jedis> broadcastTickLambda;
 	public TopMktDataHandler(IBContract contract, boolean broadcastTop, boolean broadcastTick) {
@@ -344,6 +345,11 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			info(_contract.shownName() + " marketDataType() " + marketDataType);
 		else
 			warn(_contract.shownName() + " marketDataType() " + marketDataType);
+		Redis.setex(cacheKey, 3600, String.valueOf(marketDataType));
+	}
+
+	public void setMktCacheKey(String key) {
+		cacheKey = key;
 	}
 
 	@Override

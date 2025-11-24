@@ -278,6 +278,7 @@ public class GatewayController extends BaseIBController {
 			log("Subscribe option top data for " + jobKey + ", exchange: " + contract.exchange());
 			boolean broadcastTop = true, broadcastTick = true;
 			OptionTopMktDataHandler handler = new OptionTopMktDataHandler(contract, broadcastTop, broadcastTick);
+			handler.setMktCacheKey(CACHE_SUB_TOP_KEY + ":" + contract.exchange() + ":" + contract.pair() + ":mkt");
 			String genericTickList = "";
 
 			// Request snapshot, then updates
@@ -287,11 +288,11 @@ public class GatewayController extends BaseIBController {
 			regulatorySnapshot = false;
 			_apiController.reqOptionMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
 			_optionTopTasks.put(jobKey, handler);
-//			cacheSubKey(CACHE_SUB_TOP_KEY,contract.pair());
 		} else {
 			log("Subscribe top data for " + jobKey + ", exchange: " + contract.exchange());
 			boolean broadcastTop = true, broadcastTick = true;
 			TopMktDataHandler handler = new TopMktDataHandler(contract, broadcastTop, broadcastTick);
+			handler.setMktCacheKey(CACHE_SUB_TOP_KEY + ":" + contract.exchange() + ":" + contract.pair() + ":mkt");
 			// See <Generic tick required> at
 			// https://interactivebrokers.github.io/tws-api/tick_types.html
 			String genericTickList = "";
@@ -303,33 +304,11 @@ public class GatewayController extends BaseIBController {
 			regulatorySnapshot = false;
 			_apiController.reqTopMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
 			_topTasks.put(jobKey, handler);
-//			cacheSubKey(CACHE_SUB_TOP_KEY, contract.pair());
 		}
 		int qid = _apiController.lastReqId();
 		_topTaskByReqID.put(qid, jobKey); // reference for error msg
 		return qid;
 	}
-
-//	private int subscribeTopDataAndMarkHost(IBContract contract, String hostName) {
-//		// String jobKey = contract.pair();
-//		String jobKey = contract.exchange() + ":" + contract.pair();
-//		if (_topShareHost.containsKey(jobKey)) {
-//			int _qid = 0;
-//			if (!_topShareHost.get(jobKey).contains(hostName)) {
-//				_qid = subscribeTopData(contract);
-//				_topShareHost.get(jobKey).add(hostName);
-//			}
-//			cacheSubKey(CACHE_SUB_TOP_KEY,contract.pair());
-//			apiIdPairMap.put(_qid, contract.pair());
-//			return _qid;
-//		}
-//		int qid = subscribeTopData(contract);
-//		List<String> hostList = new ArrayList<>();
-//		hostList.add(hostName);
-//		_topShareHost.put(jobKey, hostList);
-//		apiIdPairMap.put(qid, contract.pair());
-//		return qid;
-//	}
 
 	private int subscribeTopDataAndMarkHost(IBContract contract, String hostName) {
 		if (!isRealConnected()) return 0;
@@ -1015,6 +994,12 @@ public class GatewayController extends BaseIBController {
 		case 2157: // msg:Sec-def data farm connection is broken:secdefhk
 			break;
 		case 10089:
+			// Requested market data requires additional subscription for API.
+			handleSubscribeError(id);
+			break;
+		case 354:
+			// Requested market data is not subscribed.
+			// Check API status by selecting the Account menu then under Management choose Market Data Subscription Manager and/or availability of delayed data.
 			handleSubscribeError(id);
 			break;
 		case 162:

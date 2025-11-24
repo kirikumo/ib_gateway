@@ -20,6 +20,9 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
     public void accountSummary(String account, AccountSummaryTag tag, String value, String currency) {
         Map<String, String> summary = m_map.get(account);
         if (summary == null) summary = new HashMap<>();
+        if (!summary.containsKey("BaseCurrency") && currency != null) {
+            summary.put("BaseCurrency", currency);
+        }
 
         switch (tag){
             case AccountType:
@@ -118,6 +121,8 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
             case HighestSeverity:
                 summary.put("HighestSeverity", value);
                 break;
+            // default:
+            //     summary.put(tag.toString(), value);
 
         }
         m_map.put(account, summary);
