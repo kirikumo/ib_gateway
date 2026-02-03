@@ -50,7 +50,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	public final String _twsName;
 	protected OrderCache _allOrders = new OrderCache();
 	protected static ConcurrentHashMap<String, String> KNOWN_EXCHANGES = new ConcurrentHashMap<>();
-    Map<String, JSONObject> result = new HashMap<>();
+    private final ConcurrentHashMap<String, JSONObject> result = new ConcurrentHashMap<>();
+	private static final int MAX_TRADE_RESULT_SIZE = 10000;
 
     public AllOrderHandler(GatewayController ibController) {
 		_ibController = ibController;
@@ -145,6 +146,15 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	// ITradeReportHandler
 	////////////////////////////////////////////////////////////////
 	public void tradeReport(String tradeKey, Contract contract, Execution execution) {
+		if (result.size() >= MAX_TRADE_RESULT_SIZE) {
+			err("Trade result map exceeded max size: " + MAX_TRADE_RESULT_SIZE);
+			int toRemove = MAX_TRADE_RESULT_SIZE / 2;
+			result.entrySet().stream()
+				.limit(toRemove)
+				.map(Map.Entry::getKey)
+				.forEach(result::remove);
+		}
+
 		IBContract ibc = new IBContract(contract);
 //		log(execution.acctNumber());
         if (!result.containsKey(tradeKey)) {
@@ -206,12 +216,16 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
         Redis.exec(new Consumer<Jedis>() {
             @Override
             public void accept(Jedis t) {
-                result.forEach((tradeKey, v) -> {
-                    String acctNumber = v.getString("acctNumber");
-                    String key = "TradeReport:"+acctNumber;
-                    v.put("tradeKey", tradeKey);
-                    t.hset(key, tradeKey, v.toJSONString());
-                });
+                try {
+                    result.forEach((tradeKey, v) -> {
+                        String acctNumber = v.getString("acctNumber");
+                        String key = "TradeReport:" + acctNumber;
+                        v.put("tradeKey", tradeKey);
+                        t.hset(key, tradeKey, v.toJSONString());
+                    });
+                } finally {
+                    result.clear();
+                }
             }
         });
 

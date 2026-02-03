@@ -1,6 +1,5 @@
 package com.avalok.ib.handler;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.bitex.util.Redis;
 import com.ib.client.CommissionReport;
@@ -9,17 +8,28 @@ import com.ib.client.Execution;
 import com.ib.controller.ApiController;
 import redis.clients.jedis.Jedis;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
+import static com.bitex.util.DebugUtil.err;
 import static com.bitex.util.DebugUtil.log;
 
 public class TradeReportHandler implements ApiController.ITradeReportHandler {
-    Map<String, JSONObject> result = new HashMap<>();
+    private final ConcurrentHashMap<String, JSONObject> result = new ConcurrentHashMap<>();
+    private static final int MAX_TRADE_RESULT_SIZE = 10000;
 
     @Override
     public void tradeReport(String tradeKey, Contract contract, Execution execution) {
+		if (result.size() >= MAX_TRADE_RESULT_SIZE) {
+			err("Trade result map exceeded max size: " + MAX_TRADE_RESULT_SIZE);
+			int toRemove = MAX_TRADE_RESULT_SIZE / 2;
+			result.entrySet().stream()
+				.limit(toRemove)
+				.map(Map.Entry::getKey)
+				.forEach(result::remove);
+        }
+
         if (!result.containsKey(tradeKey)) {
             result.put(tradeKey, new JSONObject());
         }
@@ -77,12 +87,16 @@ public class TradeReportHandler implements ApiController.ITradeReportHandler {
          Redis.exec(new Consumer<Jedis>() {
              @Override
              public void accept(Jedis t) {
-                 result.forEach((tradeKey, v) -> {
-                     String acctNumber = v.getString("acctNumber");
-                     String key = "TradeReport:"+acctNumber;
-                     v.put("tradeKey", tradeKey);
-                     t.hset(key, tradeKey, v.toJSONString());
-                 });
+                try {
+                    result.forEach((tradeKey, v) -> {
+                        String acctNumber = v.getString("acctNumber");
+                        String key = "TradeReport:" + acctNumber;
+                        v.put("tradeKey", tradeKey);
+                        t.hset(key, tradeKey, v.toJSONString());
+                    });
+                } finally {
+                    result.clear();
+                }
               }
           });
 
