@@ -1,14 +1,22 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.client;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.ib.client.Types.SecType;
 import com.ib.client.Types.WhatToShow;
+import com.ib.client.protobuf.CancelOrderRequestProto;
+import com.ib.client.protobuf.ExecutionRequestProto;
+import com.ib.client.protobuf.GlobalCancelRequestProto;
+import com.ib.client.protobuf.PlaceOrderRequestProto;
 
 public abstract class EClient {
 
@@ -83,7 +91,7 @@ public abstract class EClient {
 	//      InitPosition, InitFillQty and RandomPercent) in openOrder
 	// 55 = can receive orderComboLegs (price) in openOrder
 	// 56 = can receive trailingPercent in openOrder
-	// 57 = can receive commissionReport message
+	// 57 = can receive commissionAndFeesReport message
 	// 58 = can receive CUSIP/ISIN/etc. in contractDescription/bondContractDescription
 	// 59 = can receive evRule, evMultiplier in contractDescription/bondContractDescription/executionDetails
 	//      can receive multiplier in executionDetails
@@ -182,6 +190,7 @@ public abstract class EClient {
     private static final int REQ_WSH_EVENT_DATA = 102;
     private static final int CANCEL_WSH_EVENT_DATA = 103;
     private static final int REQ_USER_INFO = 104;
+    private static final int REQ_CURRENT_TIME_IN_MILLIS = 105;
 
 	private static final int MIN_SERVER_VER_REAL_TIME_BARS = 34;
 	private static final int MIN_SERVER_VER_SCALE_ORDERS = 35;
@@ -312,9 +321,34 @@ public abstract class EClient {
     protected static final int MIN_SERVER_VER_BOND_ACCRUED_INTEREST = 185;
     protected static final int MIN_SERVER_VER_INELIGIBILITY_REASONS = 186;
     protected static final int MIN_SERVER_VER_RFQ_FIELDS = 187;
+    protected static final int MIN_SERVER_VER_BOND_TRADING_HOURS = 188;
+    protected static final int MIN_SERVER_VER_INCLUDE_OVERNIGHT = 189;
+    protected static final int MIN_SERVER_VER_UNDO_RFQ_FIELDS = 190;
+    protected static final int MIN_SERVER_VER_PERM_ID_AS_LONG = 191;
+    protected static final int MIN_SERVER_VER_CME_TAGGING_FIELDS = 192;
+    protected static final int MIN_SERVER_VER_CME_TAGGING_FIELDS_IN_OPEN_ORDER = 193;
+    protected static final int MIN_SERVER_VER_ERROR_TIME = 194;
+    protected static final int MIN_SERVER_VER_FULL_ORDER_PREVIEW_FIELDS = 195;
+    protected static final int MIN_SERVER_VER_HISTORICAL_DATA_END = 196;
+    protected static final int MIN_SERVER_VER_CURRENT_TIME_IN_MILLIS = 197;
+    protected static final int MIN_SERVER_VER_SUBMITTER = 198;
+    protected static final int MIN_SERVER_VER_IMBALANCE_ONLY = 199;
+    protected static final int MIN_SERVER_VER_PARAMETRIZED_DAYS_OF_EXECUTIONS = 200;
+    protected static final int MIN_SERVER_VER_PROTOBUF = 201;
+    protected static final int MIN_SERVER_VER_ZERO_STRIKE = 202;
+    protected static final int MIN_SERVER_VER_PROTOBUF_PLACE_ORDER = 203;
     
     public static final int MIN_VERSION = 100; // envelope encoding, applicable to useV100Plus mode only
-    public static final int MAX_VERSION = MIN_SERVER_VER_RFQ_FIELDS; // ditto
+    public static final int MAX_VERSION = MIN_SERVER_VER_PROTOBUF_PLACE_ORDER; // ditto
+    
+    public static final int PROTOBUF_MSG_ID = 200;
+    public static final Map<Integer, Integer> PROTOBUF_MSG_IDS = new HashMap<Integer, Integer>();
+    static {
+        PROTOBUF_MSG_IDS.put(REQ_EXECUTIONS, MIN_SERVER_VER_PROTOBUF);
+        PROTOBUF_MSG_IDS.put(PLACE_ORDER, MIN_SERVER_VER_PROTOBUF_PLACE_ORDER);
+        PROTOBUF_MSG_IDS.put(CANCEL_ORDER, MIN_SERVER_VER_PROTOBUF_PLACE_ORDER);
+        PROTOBUF_MSG_IDS.put(REQ_GLOBAL_CANCEL, MIN_SERVER_VER_PROTOBUF_PLACE_ORDER);
+    }
 
     protected EReaderSignal m_signal;
     protected EWrapper m_eWrapper;    // msg handler
@@ -331,6 +365,11 @@ public abstract class EClient {
 	public boolean isUseV100Plus() {
 		return m_useV100Plus;
 	}
+	
+    private boolean useProtoBuf(int msgId) {
+        Integer unifiedVersion = PROTOBUF_MSG_IDS.get(msgId);
+        return unifiedVersion != null && unifiedVersion.intValue() <= serverVersion();
+    }
 
     public int serverVersion()          { return m_serverVersion;   }
     public String getTwsConnectionTime()   { return m_TwsTime; }
@@ -366,7 +405,7 @@ public abstract class EClient {
     
     public void disableUseV100Plus() {
     	if( isConnected() ) {
-            m_eWrapper.error(EClientErrors.NO_VALID_ID, EClientErrors.ALREADY_CONNECTED.code(),
+            m_eWrapper.error(EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.ALREADY_CONNECTED.code(),
                     EClientErrors.ALREADY_CONNECTED.msg(), null);
     		return;
   		}
@@ -377,7 +416,7 @@ public abstract class EClient {
     
     public void setConnectOptions(String options) {
     	if( isConnected() ) {
-            m_eWrapper.error(EClientErrors.NO_VALID_ID, EClientErrors.ALREADY_CONNECTED.code(),
+            m_eWrapper.error(EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.ALREADY_CONNECTED.code(),
                     EClientErrors.ALREADY_CONNECTED.msg(), null);
     		return;
   		}
@@ -386,13 +425,13 @@ public abstract class EClient {
     }
 
     protected void connectionError() {
-        m_eWrapper.error( EClientErrors.NO_VALID_ID, EClientErrors.CONNECT_FAIL.code(),
+        m_eWrapper.error( EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.CONNECT_FAIL.code(),
                 EClientErrors.CONNECT_FAIL.msg(), null);
     }
 
     protected String checkConnected(String host) {
         if( isConnected()) {
-            m_eWrapper.error(EClientErrors.NO_VALID_ID, EClientErrors.ALREADY_CONNECTED.code(),
+            m_eWrapper.error(EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.ALREADY_CONNECTED.code(),
                     EClientErrors.ALREADY_CONNECTED.msg(), null);
             return null;
         }
@@ -416,7 +455,7 @@ public abstract class EClient {
         try {
         	Builder b = prepareBuffer(); 
         	
-            b.send(START_API);
+            sendMsgId(b, START_API);
             b.send(VERSION);
             b.send(m_clientId);
             
@@ -453,7 +492,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_SCANNER_SUBSCRIPTION);
+            sendMsgId(b, CANCEL_SCANNER_SUBSCRIPTION);
             b.send( VERSION);
             b.send( tickerId);
             
@@ -483,7 +522,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_SCANNER_PARAMETERS);
+            sendMsgId(b, REQ_SCANNER_PARAMETERS);
             b.send(VERSION);
 
             closeAndSend(b);
@@ -524,7 +563,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer();
 
-            b.send(REQ_SCANNER_SUBSCRIPTION);
+            sendMsgId(b, REQ_SCANNER_SUBSCRIPTION);
             
             if (m_serverVersion < MIN_SERVER_VER_SCANNER_GENERIC_OPTS) {
                 b.send(VERSION);
@@ -623,7 +662,7 @@ public abstract class EClient {
             // send req mkt data msg
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_MKT_DATA);
+            sendMsgId(b, REQ_MKT_DATA);
             b.send(VERSION);
             b.send(tickerId);
 
@@ -635,7 +674,7 @@ public abstract class EClient {
             b.send(contract.symbol());
             b.send(contract.getSecType());
             b.send(contract.lastTradeDateOrContractMonth());
-            b.send(contract.strike());
+            b.sendMax(contract.strike());
             b.send(contract.getRight());
             
             if (m_serverVersion >= 15) {
@@ -746,7 +785,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_HISTORICAL_DATA);
+            sendMsgId(b, CANCEL_HISTORICAL_DATA);
             b.send( VERSION);
             b.send( tickerId);
 
@@ -777,7 +816,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_REAL_TIME_BARS);
+            sendMsgId(b, CANCEL_REAL_TIME_BARS);
             b.send( VERSION);
             b.send( tickerId);
 
@@ -827,7 +866,7 @@ public abstract class EClient {
 
           Builder b = prepareBuffer(); 
 
-          b.send(REQ_HISTORICAL_DATA);
+          sendMsgId(b, REQ_HISTORICAL_DATA);
           
           if (m_serverVersion < MIN_SERVER_VER_SYNT_REALTIME_BARS) {
               b.send(VERSION);
@@ -843,7 +882,7 @@ public abstract class EClient {
           b.send(contract.symbol());
           b.send(contract.getSecType());
           b.send(contract.lastTradeDateOrContractMonth());
-          b.send(contract.strike());
+          b.sendMax(contract.strike());
           b.send(contract.getRight());
           b.send(contract.multiplier());
           b.send(contract.exchange());
@@ -930,7 +969,7 @@ public abstract class EClient {
 
     		Builder b = prepareBuffer(); 
 
-    		b.send(REQ_HEAD_TIMESTAMP);
+            sendMsgId(b, REQ_HEAD_TIMESTAMP);
     		b.send(tickerId);
     		b.send(contract);
     		b.send(useRTH);
@@ -964,7 +1003,7 @@ public abstract class EClient {
 
     		Builder b = prepareBuffer(); 
 
-    		b.send(CANCEL_HEAD_TIMESTAMP);
+            sendMsgId(b, CANCEL_HEAD_TIMESTAMP);
     		b.send(tickerId);
     		closeAndSend(b);
     	}
@@ -1002,7 +1041,7 @@ public abstract class EClient {
             // send req mkt data msg
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_REAL_TIME_BARS);
+            sendMsgId(b, REQ_REAL_TIME_BARS);
             b.send(VERSION);
             b.send(tickerId);
 
@@ -1014,7 +1053,7 @@ public abstract class EClient {
             b.send(contract.symbol());
             b.send(contract.getSecType());
             b.send(contract.lastTradeDateOrContractMonth());
-            b.send(contract.strike());
+            b.sendMax(contract.strike());
             b.send(contract.getRight());
             b.send(contract.multiplier());
             b.send(contract.exchange());
@@ -1097,7 +1136,7 @@ public abstract class EClient {
             // send req mkt data msg
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_CONTRACT_DATA);
+            sendMsgId(b, REQ_CONTRACT_DATA);
             b.send( VERSION);
 
             if (m_serverVersion >= MIN_SERVER_VER_CONTRACT_DATA_CHAIN) {
@@ -1111,7 +1150,7 @@ public abstract class EClient {
             b.send( contract.symbol());
             b.send( contract.getSecType());
             b.send( contract.lastTradeDateOrContractMonth());
-            b.send( contract.strike());
+            b.sendMax( contract.strike());
             b.send( contract.getRight());
             if (m_serverVersion >= 15) {
                 b.send(contract.multiplier());
@@ -1197,7 +1236,7 @@ public abstract class EClient {
             // send req mkt data msg
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_MKT_DEPTH);
+            sendMsgId(b, REQ_MKT_DEPTH);
             b.send(VERSION);
             b.send(tickerId);
 
@@ -1209,7 +1248,7 @@ public abstract class EClient {
             b.send(contract.symbol());
             b.send(contract.getSecType());
             b.send(contract.lastTradeDateOrContractMonth());
-            b.send(contract.strike());
+            b.sendMax(contract.strike());
             b.send(contract.getRight());
             
             if (m_serverVersion >= 15) {
@@ -1265,7 +1304,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_MKT_DATA);
+            sendMsgId(b, CANCEL_MKT_DATA);
             b.send( VERSION);
             b.send( tickerId);
 
@@ -1304,7 +1343,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_MKT_DEPTH);
+            sendMsgId(b, CANCEL_MKT_DEPTH);
             b.send( VERSION);
             b.send( tickerId);
             
@@ -1369,7 +1408,7 @@ public abstract class EClient {
             
             Builder b = prepareBuffer(); 
 
-            b.send(EXERCISE_OPTIONS);
+            sendMsgId(b, EXERCISE_OPTIONS);
             b.send(VERSION);
             b.send(tickerId);
 
@@ -1380,7 +1419,7 @@ public abstract class EClient {
             b.send(contract.symbol());
             b.send(contract.getSecType());
             b.send(contract.lastTradeDateOrContractMonth());
-            b.send(contract.strike());
+            b.sendMax(contract.strike());
             b.send(contract.getRight());
             b.send(contract.multiplier());
             b.send(contract.exchange());
@@ -1414,360 +1453,410 @@ public abstract class EClient {
         }
     }
 
-    public synchronized void placeOrder( int id, Contract contract, Order order) {
+    public synchronized void placeOrderProtoBuf(PlaceOrderRequestProto.PlaceOrderRequest placeOrderRequestProto) {
+        if (placeOrderRequestProto == null) {
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
             return;
         }
 
-        if (m_serverVersion < MIN_SERVER_VER_SCALE_ORDERS) {
-        	if (order.scaleInitLevelSize() != Integer.MAX_VALUE ||
-        		order.scalePriceIncrement() != Double.MAX_VALUE) {
-        		error(id, EClientErrors.UPDATE_TWS,
-            		"  It does not support Scale orders.");
-        		return;
-        	}
-        }
+        int orderId = placeOrderRequestProto.hasOrderId() ? placeOrderRequestProto.getOrderId() : Integer.MAX_VALUE;
 
-        if (m_serverVersion < MIN_SERVER_VER_SSHORT_COMBO_LEGS) {
-        	if (!contract.comboLegs().isEmpty()) {
-                for( ComboLeg comboLeg : contract.comboLegs() ) {
-                    if (comboLeg.shortSaleSlot() != 0 ||
-                    	!IsEmpty(comboLeg.designatedLocation())) {
-                		error(id, EClientErrors.UPDATE_TWS,
-                			"  It does not support SSHORT flag for combo legs.");
-                		return;
-                    }
-                }
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_WHAT_IF_ORDERS) {
-        	if (order.whatIf()) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support what-if orders.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_DELTA_NEUTRAL) {
-        	if (contract.deltaNeutralContract() != null) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support delta-neutral orders.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_SCALE_ORDERS2) {
-        	if (order.scaleSubsLevelSize() != Integer.MAX_VALUE) {
-        		error(id, EClientErrors.UPDATE_TWS,
-            		"  It does not support Subsequent Level Size for Scale orders.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_ALGO_ORDERS) {
-        	if (!IsEmpty(order.getAlgoStrategy())) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support algo orders.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_NOT_HELD) {
-        	if (order.notHeld()) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support notHeld parameter.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_SEC_ID_TYPE) {
-        	if (!IsEmpty(contract.getSecIdType()) || !IsEmpty(contract.secId())) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support secIdType and secId parameters.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_PLACE_ORDER_CONID) {
-        	if (contract.conid() > 0) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support conId parameter.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_SSHORTX) {
-        	if (order.exemptCode() != -1) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support exemptCode parameter.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_SSHORTX) {
-        	if (!contract.comboLegs().isEmpty()) {
-                for( ComboLeg comboLeg : contract.comboLegs() ) {
-                    if (comboLeg.exemptCode() != -1) {
-                		error(id, EClientErrors.UPDATE_TWS,
-                			"  It does not support exemptCode parameter.");
-                		return;
-                    }
-                }
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_HEDGE_ORDERS) {
-        	if (!IsEmpty(order.getHedgeType())) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support hedge orders.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_OPT_OUT_SMART_ROUTING) {
-        	if (order.optOutSmartRouting()) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support optOutSmartRouting parameter.");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_DELTA_NEUTRAL_CONID) {
-        	if (order.deltaNeutralConId() > 0
-        			|| !IsEmpty(order.deltaNeutralSettlingFirm())
-        			|| !IsEmpty(order.deltaNeutralClearingAccount())
-        			|| !IsEmpty(order.deltaNeutralClearingIntent())
-        			) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support deltaNeutral parameters: ConId, SettlingFirm, ClearingAccount, ClearingIntent");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_DELTA_NEUTRAL_OPEN_CLOSE) {
-        	if (!IsEmpty(order.deltaNeutralOpenClose())
-        			|| order.deltaNeutralShortSale()
-        			|| order.deltaNeutralShortSaleSlot() > 0
-        			|| !IsEmpty(order.deltaNeutralDesignatedLocation())
-        			) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support deltaNeutral parameters: OpenClose, ShortSale, ShortSaleSlot, DesignatedLocation");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_SCALE_ORDERS3) {
-        	if (order.scalePriceIncrement() > 0 && order.scalePriceIncrement() != Double.MAX_VALUE) {
-        		if (order.scalePriceAdjustValue() != Double.MAX_VALUE ||
-        			order.scalePriceAdjustInterval() != Integer.MAX_VALUE ||
-        			order.scaleProfitOffset() != Double.MAX_VALUE ||
-        			order.scaleAutoReset() ||
-        			order.scaleInitPosition() != Integer.MAX_VALUE ||
-        			order.scaleInitFillQty() != Integer.MAX_VALUE ||
-        			order.scaleRandomPercent()) {
-        			error(id, EClientErrors.UPDATE_TWS,
-        				"  It does not support Scale order parameters: PriceAdjustValue, PriceAdjustInterval, " +
-        				"ProfitOffset, AutoReset, InitPosition, InitFillQty and RandomPercent");
-        			return;
-        		}
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE && SecType.BAG.name().equalsIgnoreCase(contract.getSecType())) {
-        	if (!order.orderComboLegs().isEmpty()) {
-                for( OrderComboLeg orderComboLeg : order.orderComboLegs() ) {
-        			if (orderComboLeg.price() != Double.MAX_VALUE) {
-        			error(id, EClientErrors.UPDATE_TWS,
-        				"  It does not support per-leg prices for order combo legs.");
-        			return;
-        			}
-        		}
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_TRAILING_PERCENT) {
-        	if (order.trailingPercent() != Double.MAX_VALUE) {
-        		error(id, EClientErrors.UPDATE_TWS,
-        			"  It does not support trailing percent parameter");
-        		return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_TRADING_CLASS) {
-            if (!IsEmpty(contract.tradingClass())) {
-                  error(id, EClientErrors.UPDATE_TWS,
-                      "  It does not support tradingClass parameters in placeOrder.");
-                  return;
-            }
-        }
-        
-        if (m_serverVersion < MIN_SERVER_VER_ALGO_ID && !IsEmpty(order.algoId()) ) {
-            error(id, EClientErrors.UPDATE_TWS, " It does not support algoId parameter");
-            return;
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_SCALE_TABLE) {
-            if (!IsEmpty(order.scaleTable()) || !IsEmpty(order.activeStartTime()) || !IsEmpty(order.activeStopTime())) {
-                  error(id, EClientErrors.UPDATE_TWS,
-                      "  It does not support scaleTable, activeStartTime and activeStopTime parameters.");
-                  return;
-            }
-        }
-        
-        if (m_serverVersion < MIN_SERVER_VER_ORDER_SOLICITED) {
-        	if (order.solicited()) {
-        		error(id, EClientErrors.UPDATE_TWS,
-                        "  It does not support order solicited parameter.");
-                return;
-        	}
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_MODELS_SUPPORT) {
-            if (!IsEmpty(order.modelCode())) {
-                error(id, EClientErrors.UPDATE_TWS,
-                        "  It does not support model code parameter.");
-                return;
-            }
-        }
-        
-        if (m_serverVersion < MIN_SERVER_VER_EXT_OPERATOR && !IsEmpty(order.extOperator()) ) {
-            error(id, EClientErrors.UPDATE_TWS, " It does not support ext operator");
-            return;
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_SOFT_DOLLAR_TIER && 
-                (!IsEmpty(order.softDollarTier().name()) || !IsEmpty(order.softDollarTier().value()))) {
-            error(id, EClientErrors.UPDATE_TWS, " It does not support soft dollar tier");
-            return;
-        }
-        
-
-        if (m_serverVersion < MIN_SERVER_VER_CASH_QTY) {
-            if (order.cashQty() != Double.MAX_VALUE) {
-                error(id, EClientErrors.UPDATE_TWS,
-                    " It does not support cash quantity parameter");
-                return;
-            }
-        }
-        
-        if (m_serverVersion < MIN_SERVER_VER_DECISION_MAKER
-            && (!IsEmpty(order.mifid2DecisionMaker())
-                || !IsEmpty(order.mifid2DecisionAlgo()))) {
-            error(id, EClientErrors.UPDATE_TWS,
-                    " It does not support MIFID II decision maker parameters");
-            return;
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_MIFID_EXECUTION
-                && (!IsEmpty(order.mifid2ExecutionTrader())
-                        || !IsEmpty(order.mifid2ExecutionAlgo()))) {
-            error(id, EClientErrors.UPDATE_TWS,
-                    " It does not support MIFID II execution parameters");
-            return;
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_AUTO_PRICE_FOR_HEDGE
-                && order.dontUseAutoPriceForHedge()) {
-            error(id, EClientErrors.UPDATE_TWS,
-                "  It does not support don't use auto price for hedge parameter.");
-            return;
-        }
-        
-        if (m_serverVersion < MIN_SERVER_VER_ORDER_CONTAINER
-                && order.isOmsContainer()) {
-            error(id, EClientErrors.UPDATE_TWS,
-                    "  It does not support oms container parameter.");
-            return;           
-        }
-        
-        if (m_serverVersion < MIN_SERVER_VER_D_PEG_ORDERS
-                && order.discretionaryUpToLimitPrice()) {
-            error(id, EClientErrors.UPDATE_TWS,
-                    "  It does not support D-Peg orders.");
-            return;           
-        }
-        
-        if (m_serverVersion < MIN_SERVER_VER_PRICE_MGMT_ALGO 
-                && order.usePriceMgmtAlgo() != null) {
-            error(id, EClientErrors.UPDATE_TWS, "  It does not support price management algo parameter");
-            return;
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_DURATION 
-                && order.duration() != Integer.MAX_VALUE) {
-            error(id, EClientErrors.UPDATE_TWS, "  It does not support duration attribute");
-            return;
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_POST_TO_ATS 
-                && order.postToAts() != Integer.MAX_VALUE) {
-            error(id, EClientErrors.UPDATE_TWS, "  It does not support postToAts attribute");
-            return;
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_AUTO_CANCEL_PARENT 
-                && order.autoCancelParent()) {
-            error(id, EClientErrors.UPDATE_TWS, "  It does not support autoCancelParent attribute");
-            return;
-        }
-        
-        if (m_serverVersion < MIN_SERVER_VER_ADVANCED_ORDER_REJECT) {
-            if (!IsEmpty(order.advancedErrorOverride())) {
-                error(id, EClientErrors.UPDATE_TWS, "  It does not support advanced error override attribute");
-                return;
-            }
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_MANUAL_ORDER_TIME) {
-            if (!IsEmpty(order.manualOrderTime())) {
-                error(id, EClientErrors.UPDATE_TWS, "  It does not support manual order time attribute");
-                return;
-            }
-        }
-        
-        if (m_serverVersion < MIN_SERVER_VER_PEGBEST_PEGMID_OFFSETS) {
-            if (order.minTradeQty() != Integer.MAX_VALUE ||
-                order.minCompeteSize() != Integer.MAX_VALUE ||
-                order.competeAgainstBestOffset() != Double.MAX_VALUE ||
-                order.midOffsetAtWhole() != Double.MAX_VALUE ||
-                order.midOffsetAtHalf() != Double.MAX_VALUE) {
-                error(id, EClientErrors.UPDATE_TWS,
-                    "  It does not support PEG BEST / PEG MID order parameters: minTradeQty, minCompeteSize, " +
-                    "competeAgainstBestOffset, midOffsetAtWhole and midOffsetAtHalf");
-                return;
-            }
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_CUSTOMER_ACCOUNT) {
-            if (!IsEmpty(order.customerAccount())) {
-                error(id, EClientErrors.UPDATE_TWS, "  It does not support customer account parameter");
-                return;
-            }
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_PROFESSIONAL_CUSTOMER) {
-            if (order.professionalCustomer()) {
-                error(id, EClientErrors.UPDATE_TWS, "  It does not support professional customer parameter");
-                return;
-            }
-        }
-
-        if (m_serverVersion < MIN_SERVER_VER_RFQ_FIELDS && 
-                (!IsEmpty(order.externalUserId()) || order.manualOrderIndicator() != Integer.MAX_VALUE)) {
-            error(id, EClientErrors.UPDATE_TWS, " It does not support external user id and manual order indicator parameters");
-            return;
-        }
-
-        int VERSION = (m_serverVersion < MIN_SERVER_VER_NOT_HELD) ? 27 : 45;
-
-        // send place order msg
         try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, PLACE_ORDER + PROTOBUF_MSG_ID);
+
+            byte[] byteArray = placeOrderRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(orderId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(orderId, EClientErrors.FAIL_SEND_ORDER, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void placeOrder(int id, Contract contract, Order order) {
+        try {
+	        if (useProtoBuf(PLACE_ORDER)) {
+	            placeOrderProtoBuf(EClientUtils.createPlaceOrderRequestProto(id, contract, order));
+	            return;
+	        }
+	
+	        // not connected?
+	        if( !isConnected()) {
+	            notConnected();
+	            return;
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_SCALE_ORDERS) {
+	        	if (order.scaleInitLevelSize() != Integer.MAX_VALUE ||
+	        		order.scalePriceIncrement() != Double.MAX_VALUE) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	            		"  It does not support Scale orders.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_SSHORT_COMBO_LEGS) {
+	        	if (!contract.comboLegs().isEmpty()) {
+	                for( ComboLeg comboLeg : contract.comboLegs() ) {
+	                    if (comboLeg.shortSaleSlot() != 0 ||
+	                    	!IsEmpty(comboLeg.designatedLocation())) {
+	                		error(id, EClientErrors.UPDATE_TWS,
+	                			"  It does not support SSHORT flag for combo legs.");
+	                		return;
+	                    }
+	                }
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_WHAT_IF_ORDERS) {
+	        	if (order.whatIf()) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support what-if orders.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_DELTA_NEUTRAL) {
+	        	if (contract.deltaNeutralContract() != null) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support delta-neutral orders.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_SCALE_ORDERS2) {
+	        	if (order.scaleSubsLevelSize() != Integer.MAX_VALUE) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	            		"  It does not support Subsequent Level Size for Scale orders.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_ALGO_ORDERS) {
+	        	if (!IsEmpty(order.getAlgoStrategy())) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support algo orders.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_NOT_HELD) {
+	        	if (order.notHeld()) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support notHeld parameter.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_SEC_ID_TYPE) {
+	        	if (!IsEmpty(contract.getSecIdType()) || !IsEmpty(contract.secId())) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support secIdType and secId parameters.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_PLACE_ORDER_CONID) {
+	        	if (contract.conid() > 0) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support conId parameter.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_SSHORTX) {
+	        	if (order.exemptCode() != -1) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support exemptCode parameter.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_SSHORTX) {
+	        	if (!contract.comboLegs().isEmpty()) {
+	                for( ComboLeg comboLeg : contract.comboLegs() ) {
+	                    if (comboLeg.exemptCode() != -1) {
+	                		error(id, EClientErrors.UPDATE_TWS,
+	                			"  It does not support exemptCode parameter.");
+	                		return;
+	                    }
+	                }
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_HEDGE_ORDERS) {
+	        	if (!IsEmpty(order.getHedgeType())) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support hedge orders.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_OPT_OUT_SMART_ROUTING) {
+	        	if (order.optOutSmartRouting()) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support optOutSmartRouting parameter.");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_DELTA_NEUTRAL_CONID) {
+	        	if (order.deltaNeutralConId() > 0
+	        			|| !IsEmpty(order.deltaNeutralSettlingFirm())
+	        			|| !IsEmpty(order.deltaNeutralClearingAccount())
+	        			|| !IsEmpty(order.deltaNeutralClearingIntent())
+	        			) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support deltaNeutral parameters: ConId, SettlingFirm, ClearingAccount, ClearingIntent");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_DELTA_NEUTRAL_OPEN_CLOSE) {
+	        	if (!IsEmpty(order.deltaNeutralOpenClose())
+	        			|| order.deltaNeutralShortSale()
+	        			|| order.deltaNeutralShortSaleSlot() > 0
+	        			|| !IsEmpty(order.deltaNeutralDesignatedLocation())
+	        			) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support deltaNeutral parameters: OpenClose, ShortSale, ShortSaleSlot, DesignatedLocation");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_SCALE_ORDERS3) {
+	        	if (order.scalePriceIncrement() > 0 && order.scalePriceIncrement() != Double.MAX_VALUE) {
+	        		if (order.scalePriceAdjustValue() != Double.MAX_VALUE ||
+	        			order.scalePriceAdjustInterval() != Integer.MAX_VALUE ||
+	        			order.scaleProfitOffset() != Double.MAX_VALUE ||
+	        			order.scaleAutoReset() ||
+	        			order.scaleInitPosition() != Integer.MAX_VALUE ||
+	        			order.scaleInitFillQty() != Integer.MAX_VALUE ||
+	        			order.scaleRandomPercent()) {
+	        			error(id, EClientErrors.UPDATE_TWS,
+	        				"  It does not support Scale order parameters: PriceAdjustValue, PriceAdjustInterval, " +
+	        				"ProfitOffset, AutoReset, InitPosition, InitFillQty and RandomPercent");
+	        			return;
+	        		}
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_ORDER_COMBO_LEGS_PRICE && SecType.BAG.name().equalsIgnoreCase(contract.getSecType())) {
+	        	if (!order.orderComboLegs().isEmpty()) {
+	                for( OrderComboLeg orderComboLeg : order.orderComboLegs() ) {
+	        			if (orderComboLeg.price() != Double.MAX_VALUE) {
+	        			error(id, EClientErrors.UPDATE_TWS,
+	        				"  It does not support per-leg prices for order combo legs.");
+	        			return;
+	        			}
+	        		}
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_TRAILING_PERCENT) {
+	        	if (order.trailingPercent() != Double.MAX_VALUE) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	        			"  It does not support trailing percent parameter");
+	        		return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_TRADING_CLASS) {
+	            if (!IsEmpty(contract.tradingClass())) {
+	                  error(id, EClientErrors.UPDATE_TWS,
+	                      "  It does not support tradingClass parameters in placeOrder.");
+	                  return;
+	            }
+	        }
+	        
+	        if (m_serverVersion < MIN_SERVER_VER_ALGO_ID && !IsEmpty(order.algoId()) ) {
+	            error(id, EClientErrors.UPDATE_TWS, " It does not support algoId parameter");
+	            return;
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_SCALE_TABLE) {
+	            if (!IsEmpty(order.scaleTable()) || !IsEmpty(order.activeStartTime()) || !IsEmpty(order.activeStopTime())) {
+	                  error(id, EClientErrors.UPDATE_TWS,
+	                      "  It does not support scaleTable, activeStartTime and activeStopTime parameters.");
+	                  return;
+	            }
+	        }
+	        
+	        if (m_serverVersion < MIN_SERVER_VER_ORDER_SOLICITED) {
+	        	if (order.solicited()) {
+	        		error(id, EClientErrors.UPDATE_TWS,
+	                        "  It does not support order solicited parameter.");
+	                return;
+	        	}
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_MODELS_SUPPORT) {
+	            if (!IsEmpty(order.modelCode())) {
+	                error(id, EClientErrors.UPDATE_TWS,
+	                        "  It does not support model code parameter.");
+	                return;
+	            }
+	        }
+	        
+	        if (m_serverVersion < MIN_SERVER_VER_EXT_OPERATOR && !IsEmpty(order.extOperator()) ) {
+	            error(id, EClientErrors.UPDATE_TWS, " It does not support ext operator");
+	            return;
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_SOFT_DOLLAR_TIER && 
+	                (!IsEmpty(order.softDollarTier().name()) || !IsEmpty(order.softDollarTier().value()))) {
+	            error(id, EClientErrors.UPDATE_TWS, " It does not support soft dollar tier");
+	            return;
+	        }
+	        
+	
+	        if (m_serverVersion < MIN_SERVER_VER_CASH_QTY) {
+	            if (order.cashQty() != Double.MAX_VALUE) {
+	                error(id, EClientErrors.UPDATE_TWS,
+	                    " It does not support cash quantity parameter");
+	                return;
+	            }
+	        }
+	        
+	        if (m_serverVersion < MIN_SERVER_VER_DECISION_MAKER
+	            && (!IsEmpty(order.mifid2DecisionMaker())
+	                || !IsEmpty(order.mifid2DecisionAlgo()))) {
+	            error(id, EClientErrors.UPDATE_TWS,
+	                    " It does not support MIFID II decision maker parameters");
+	            return;
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_MIFID_EXECUTION
+	                && (!IsEmpty(order.mifid2ExecutionTrader())
+	                        || !IsEmpty(order.mifid2ExecutionAlgo()))) {
+	            error(id, EClientErrors.UPDATE_TWS,
+	                    " It does not support MIFID II execution parameters");
+	            return;
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_AUTO_PRICE_FOR_HEDGE
+	                && order.dontUseAutoPriceForHedge()) {
+	            error(id, EClientErrors.UPDATE_TWS,
+	                "  It does not support don't use auto price for hedge parameter.");
+	            return;
+	        }
+	        
+	        if (m_serverVersion < MIN_SERVER_VER_ORDER_CONTAINER
+	                && order.isOmsContainer()) {
+	            error(id, EClientErrors.UPDATE_TWS,
+	                    "  It does not support oms container parameter.");
+	            return;           
+	        }
+	        
+	        if (m_serverVersion < MIN_SERVER_VER_D_PEG_ORDERS
+	                && order.discretionaryUpToLimitPrice()) {
+	            error(id, EClientErrors.UPDATE_TWS,
+	                    "  It does not support D-Peg orders.");
+	            return;           
+	        }
+	        
+	        if (m_serverVersion < MIN_SERVER_VER_PRICE_MGMT_ALGO 
+	                && order.usePriceMgmtAlgo() != null) {
+	            error(id, EClientErrors.UPDATE_TWS, "  It does not support price management algo parameter");
+	            return;
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_DURATION 
+	                && order.duration() != Integer.MAX_VALUE) {
+	            error(id, EClientErrors.UPDATE_TWS, "  It does not support duration attribute");
+	            return;
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_POST_TO_ATS 
+	                && order.postToAts() != Integer.MAX_VALUE) {
+	            error(id, EClientErrors.UPDATE_TWS, "  It does not support postToAts attribute");
+	            return;
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_AUTO_CANCEL_PARENT 
+	                && order.autoCancelParent()) {
+	            error(id, EClientErrors.UPDATE_TWS, "  It does not support autoCancelParent attribute");
+	            return;
+	        }
+	        
+	        if (m_serverVersion < MIN_SERVER_VER_ADVANCED_ORDER_REJECT) {
+	            if (!IsEmpty(order.advancedErrorOverride())) {
+	                error(id, EClientErrors.UPDATE_TWS, "  It does not support advanced error override attribute");
+	                return;
+	            }
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_MANUAL_ORDER_TIME) {
+	            if (!IsEmpty(order.manualOrderTime())) {
+	                error(id, EClientErrors.UPDATE_TWS, "  It does not support manual order time attribute");
+	                return;
+	            }
+	        }
+	        
+	        if (m_serverVersion < MIN_SERVER_VER_PEGBEST_PEGMID_OFFSETS) {
+	            if (order.minTradeQty() != Integer.MAX_VALUE ||
+	                order.minCompeteSize() != Integer.MAX_VALUE ||
+	                order.competeAgainstBestOffset() != Double.MAX_VALUE ||
+	                order.midOffsetAtWhole() != Double.MAX_VALUE ||
+	                order.midOffsetAtHalf() != Double.MAX_VALUE) {
+	                error(id, EClientErrors.UPDATE_TWS,
+	                    "  It does not support PEG BEST / PEG MID order parameters: minTradeQty, minCompeteSize, " +
+	                    "competeAgainstBestOffset, midOffsetAtWhole and midOffsetAtHalf");
+	                return;
+	            }
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_CUSTOMER_ACCOUNT) {
+	            if (!IsEmpty(order.customerAccount())) {
+	                error(id, EClientErrors.UPDATE_TWS, "  It does not support customer account parameter");
+	                return;
+	            }
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_PROFESSIONAL_CUSTOMER) {
+	            if (order.professionalCustomer()) {
+	                error(id, EClientErrors.UPDATE_TWS, "  It does not support professional customer parameter");
+	                return;
+	            }
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_INCLUDE_OVERNIGHT) {
+	            if (order.includeOvernight()) {
+	                error(id, EClientErrors.UPDATE_TWS, "  It does not support include overnight parameter");
+	                return;
+	            }
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_CME_TAGGING_FIELDS) {
+	            if (order.manualOrderIndicator() != Integer.MAX_VALUE) {
+	                error(id, EClientErrors.UPDATE_TWS, "  It does not support manual order indicator parameter");
+	                return;
+	            }
+	        }
+	
+	        if (m_serverVersion < MIN_SERVER_VER_IMBALANCE_ONLY) {
+	            if (order.imbalanceOnly()) {
+	                error(id, EClientErrors.UPDATE_TWS, "  It does not support imbalance only parameter");
+	                return;
+	            }
+	        }
+	
+	        int VERSION = (m_serverVersion < MIN_SERVER_VER_NOT_HELD) ? 27 : 45;
+
+	        // send place order msg
             final Builder b = prepareBuffer(); 
 
-            b.send( PLACE_ORDER);
+            sendMsgId(b, PLACE_ORDER);
             
             if (m_serverVersion < MIN_SERVER_VER_ORDER_CONTAINER) {
                 b.send( VERSION);
@@ -1782,7 +1871,7 @@ public abstract class EClient {
             b.send( contract.symbol());
             b.send( contract.getSecType());
             b.send( contract.lastTradeDateOrContractMonth());
-            b.send( contract.strike());
+            b.sendMax( contract.strike());
             b.send( contract.getRight());
             if (m_serverVersion >= 15) {
                 b.send(contract.multiplier());
@@ -2235,9 +2324,21 @@ public abstract class EClient {
                b.send(order.professionalCustomer());
            }
 
-           if (m_serverVersion >= MIN_SERVER_VER_RFQ_FIELDS) {
-               b.send(order.externalUserId());
+           if (m_serverVersion >= MIN_SERVER_VER_RFQ_FIELDS && m_serverVersion < MIN_SERVER_VER_UNDO_RFQ_FIELDS) {
+               b.send("");
+               b.send(Integer.MAX_VALUE);
+           }
+
+           if (m_serverVersion >= MIN_SERVER_VER_INCLUDE_OVERNIGHT) {
+               b.send(order.includeOvernight());
+           }
+
+           if (m_serverVersion >= MIN_SERVER_VER_CME_TAGGING_FIELDS) {
                b.send(order.manualOrderIndicator());
+           }
+
+           if (m_serverVersion >= MIN_SERVER_VER_IMBALANCE_ONLY) {
+               b.send(order.imbalanceOnly());
            }
 
            closeAndSend(b);
@@ -2264,7 +2365,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_ACCOUNT_DATA );
+            sendMsgId(b, REQ_ACCOUNT_DATA);
             b.send( VERSION);
             b.send( subscribe);
 
@@ -2283,11 +2384,56 @@ public abstract class EClient {
         }
     }
 
-    public synchronized void reqExecutions(int reqId, ExecutionFilter filter) {
+    public synchronized void reqExecutionsProtoBuf(ExecutionRequestProto.ExecutionRequest executionRequestProto) {
+        if (executionRequestProto == null) {
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
             return;
+        }
+
+        int reqId = executionRequestProto.hasReqId() ? executionRequestProto.getReqId() : Integer.MAX_VALUE;
+
+        // send req executions msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_EXECUTIONS + PROTOBUF_MSG_ID);
+
+            // send execution request
+            byte[] byteArray = executionRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_EXEC, e.toString());
+            close();
+        }
+    }
+
+    
+    public synchronized void reqExecutions(int reqId, ExecutionFilter filter) {
+        if (useProtoBuf(REQ_EXECUTIONS)) {
+            reqExecutionsProtoBuf(EClientUtils.createExecutionRequestProto(reqId, filter));
+            return;
+        }
+
+        // not connected?
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        if (m_serverVersion < MIN_SERVER_VER_PARAMETRIZED_DAYS_OF_EXECUTIONS) {
+            if (filter.lastNDays() != Integer.MAX_VALUE || (filter.specificDates() != null && !filter.specificDates().isEmpty())) {
+                error(reqId, EClientErrors.UPDATE_TWS, "  It does not support last N days and specific dates parameters");
+                return;
+            }
         }
 
         final int VERSION = 3;
@@ -2296,7 +2442,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_EXECUTIONS);
+            sendMsgId(b, REQ_EXECUTIONS);
             b.send( VERSION);
 
             if (m_serverVersion >= MIN_SERVER_VER_EXECUTION_DATA_CHAIN) {
@@ -2314,6 +2460,18 @@ public abstract class EClient {
                 b.send( filter.secType());
                 b.send( filter.exchange());
                 b.send( filter.side());
+
+                if (m_serverVersion >= MIN_SERVER_VER_PARAMETRIZED_DAYS_OF_EXECUTIONS) {
+                    b.send( filter.lastNDays());
+                    if (filter.specificDates() != null && !filter.specificDates().isEmpty()) {
+	                    b.send( filter.specificDates().size());
+	                    for (Integer specificDate : filter.specificDates()) {
+	                        b.send( specificDate);
+	                    }
+                    } else {
+                        b.send( 0);
+                    }
+                }
             }
             closeAndSend(b);
         }
@@ -2326,7 +2484,42 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelOrderProtoBuf(CancelOrderRequestProto.CancelOrderRequest cancelOrderRequestProto) {
+        if (cancelOrderRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int orderId = cancelOrderRequestProto.hasOrderId() ? cancelOrderRequestProto.getOrderId() : Integer.MAX_VALUE;
+
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_ORDER + PROTOBUF_MSG_ID);
+
+            byte[] byteArray = cancelOrderRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(orderId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(orderId, EClientErrors.FAIL_SEND_CORDER, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelOrder( int id, OrderCancel orderCancel) {
+        if (useProtoBuf(CANCEL_ORDER)) {
+            cancelOrderProtoBuf(EClientUtils.createCancelOrderRequestProto(id, orderCancel));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2340,34 +2533,40 @@ public abstract class EClient {
             }
         }
 
-        if (m_serverVersion < MIN_SERVER_VER_RFQ_FIELDS) { 
-            if (!IsEmpty(orderCancel.extOperator()) || !IsEmpty(orderCancel.externalUserId()) || orderCancel.manualOrderIndicator() != Integer.MAX_VALUE) {
-                error(id, EClientErrors.UPDATE_TWS, " It does not support ext operator, external user id and manual order indicator parameters");
+        if (m_serverVersion < MIN_SERVER_VER_CME_TAGGING_FIELDS) {
+            if (!IsEmpty(orderCancel.extOperator()) || orderCancel.manualOrderIndicator() != Integer.MAX_VALUE) {
+                error(id, EClientErrors.UPDATE_TWS, "  It does not support ext operator and manual order indicator parameters");
                 return;
             }
         }
-        
-        
+
         final int VERSION = 1;
 
         // send cancel order msg
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_ORDER);
-            b.send( VERSION);
+            sendMsgId(b, CANCEL_ORDER);
+            if (m_serverVersion < MIN_SERVER_VER_CME_TAGGING_FIELDS) {
+                b.send( VERSION);
+            }
             b.send( id);
 
             if (m_serverVersion >= MIN_SERVER_VER_MANUAL_ORDER_TIME) {
                 b.send(orderCancel.manualOrderCancelTime());
             }
 
-            if (m_serverVersion >= MIN_SERVER_VER_RFQ_FIELDS) {
+            if (m_serverVersion >= MIN_SERVER_VER_RFQ_FIELDS && m_serverVersion < MIN_SERVER_VER_UNDO_RFQ_FIELDS) {
+                b.send("");
+                b.send("");
+                b.send(Integer.MAX_VALUE);
+            }
+
+            if (m_serverVersion >= MIN_SERVER_VER_CME_TAGGING_FIELDS) {
                 b.send(orderCancel.extOperator());
-                b.send(orderCancel.externalUserId());
                 b.send(orderCancel.manualOrderIndicator());
             }
-            
+
             closeAndSend(b);
         }
         catch( EClientException e) {
@@ -2392,7 +2591,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_OPEN_ORDERS);
+            sendMsgId(b, REQ_OPEN_ORDERS);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -2415,7 +2614,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_IDS);
+            sendMsgId(b, REQ_IDS);
             b.send( VERSION);
             b.send( numIds);
 
@@ -2439,7 +2638,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_NEWS_BULLETINS);
+            sendMsgId(b, REQ_NEWS_BULLETINS);
             b.send( VERSION);
             b.send( allMsgs);
 
@@ -2464,7 +2663,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_NEWS_BULLETINS);
+            sendMsgId(b, CANCEL_NEWS_BULLETINS);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -2488,7 +2687,7 @@ public abstract class EClient {
                 try {
                     Builder b = prepareBuffer(); 
 
-                    b.send( SET_SERVER_LOGLEVEL);
+                    sendMsgId(b, SET_SERVER_LOGLEVEL);
                     b.send( VERSION);
                     b.send( logLevel);
 
@@ -2513,7 +2712,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_AUTO_OPEN_ORDERS);
+            sendMsgId(b, REQ_AUTO_OPEN_ORDERS);
             b.send( VERSION);
             b.send( bAutoBind);
 
@@ -2538,7 +2737,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_ALL_OPEN_ORDERS);
+            sendMsgId(b, REQ_ALL_OPEN_ORDERS);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -2562,7 +2761,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_MANAGED_ACCTS);
+            sendMsgId(b, REQ_MANAGED_ACCTS);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -2595,7 +2794,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_FA );
+            sendMsgId(b, REQ_FA);
             b.send( VERSION);
             b.send( faDataType);
 
@@ -2629,7 +2828,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REPLACE_FA );
+            sendMsgId(b, REPLACE_FA);
             b.send( VERSION);
             b.send( faDataType);
             b.send( xml);
@@ -2667,7 +2866,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_CURRENT_TIME );
+            sendMsgId(b, REQ_CURRENT_TIME);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -2707,7 +2906,7 @@ public abstract class EClient {
             // send req fund data msg
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_FUNDAMENTAL_DATA);
+            sendMsgId(b, REQ_FUNDAMENTAL_DATA);
             b.send(VERSION);
             b.send(reqId);
 
@@ -2759,7 +2958,7 @@ public abstract class EClient {
             // send cancel fundamental data msg
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_FUNDAMENTAL_DATA);
+            sendMsgId(b, CANCEL_FUNDAMENTAL_DATA);
             b.send( VERSION);
             b.send( reqId);
 
@@ -2802,7 +3001,7 @@ public abstract class EClient {
             // send calculate implied volatility msg
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_CALC_IMPLIED_VOLAT);
+            sendMsgId(b, REQ_CALC_IMPLIED_VOLAT);
             b.send(VERSION);
             b.send(reqId);
 
@@ -2811,7 +3010,7 @@ public abstract class EClient {
             b.send(contract.symbol());
             b.send(contract.getSecType());
             b.send(contract.lastTradeDateOrContractMonth());
-            b.send(contract.strike());
+            b.sendMax(contract.strike());
             b.send(contract.getRight());
             b.send(contract.multiplier());
             b.send(contract.exchange());
@@ -2861,7 +3060,7 @@ public abstract class EClient {
             // send cancel calculate implied volatility msg
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_CALC_IMPLIED_VOLAT);
+            sendMsgId(b, CANCEL_CALC_IMPLIED_VOLAT);
             b.send( VERSION);
             b.send( reqId);
 
@@ -2904,7 +3103,7 @@ public abstract class EClient {
             // send calculate option price msg
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_CALC_OPTION_PRICE);
+            sendMsgId(b, REQ_CALC_OPTION_PRICE);
             b.send(VERSION);
             b.send(reqId);
 
@@ -2913,7 +3112,7 @@ public abstract class EClient {
             b.send(contract.symbol());
             b.send(contract.getSecType());
             b.send(contract.lastTradeDateOrContractMonth());
-            b.send(contract.strike());
+            b.sendMax(contract.strike());
             b.send(contract.getRight());
             b.send(contract.multiplier());
             b.send(contract.exchange());
@@ -2963,7 +3162,7 @@ public abstract class EClient {
             // send cancel calculate option price msg
             Builder b = prepareBuffer(); 
 
-            b.send( CANCEL_CALC_OPTION_PRICE);
+            sendMsgId(b, CANCEL_CALC_OPTION_PRICE);
             b.send( VERSION);
             b.send( reqId);
 
@@ -2975,7 +3174,37 @@ public abstract class EClient {
         }
     }
 
-    public synchronized void reqGlobalCancel() {
+    public synchronized void reqGlobalCancelProtoBuf(GlobalCancelRequestProto.GlobalCancelRequest globalCancelRequestProto) {
+        if (globalCancelRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_GLOBAL_CANCEL + PROTOBUF_MSG_ID);
+
+            byte[] byteArray = globalCancelRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQGLOBALCANCEL, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void reqGlobalCancel(OrderCancel orderCancel) {
+        if (useProtoBuf(REQ_GLOBAL_CANCEL)) {
+            reqGlobalCancelProtoBuf(EClientUtils.createGlobalCancelRequestProto(orderCancel));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2988,14 +3217,28 @@ public abstract class EClient {
             return;
         }
 
+        if (m_serverVersion < MIN_SERVER_VER_CME_TAGGING_FIELDS) {
+            if (!IsEmpty(orderCancel.extOperator()) || orderCancel.manualOrderIndicator() != Integer.MAX_VALUE) {
+                error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS, "  It does not support ext operator and manual order indicator parameters");
+                return;
+            }
+        }
+
         final int VERSION = 1;
 
         // send request global cancel msg
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_GLOBAL_CANCEL);
-            b.send( VERSION);
+            sendMsgId(b, REQ_GLOBAL_CANCEL);
+            if (m_serverVersion < MIN_SERVER_VER_CME_TAGGING_FIELDS) {
+                b.send( VERSION);
+            }
+
+            if (m_serverVersion >= MIN_SERVER_VER_CME_TAGGING_FIELDS) {
+                b.send(orderCancel.extOperator());
+                b.send(orderCancel.manualOrderIndicator());
+            }
 
             closeAndSend(b);
         }
@@ -3024,7 +3267,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send( REQ_MARKET_DATA_TYPE);
+            sendMsgId(b, REQ_MARKET_DATA_TYPE);
             b.send( VERSION);
             b.send( marketDataType);
 
@@ -3054,7 +3297,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( REQ_POSITIONS);
+            sendMsgId(b, REQ_POSITIONS);
             b.send( VERSION);
             closeAndSend(b);
         }
@@ -3080,7 +3323,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send(REQ_SEC_DEF_OPT_PARAMS);
+            sendMsgId(b, REQ_SEC_DEF_OPT_PARAMS);
             b.send(reqId);
             b.send(underlyingSymbol); 
             b.send(futFopExchange);
@@ -3112,7 +3355,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
         
         try {
-            b.send(REQ_SOFT_DOLLAR_TIERS);
+            sendMsgId(b, REQ_SOFT_DOLLAR_TIERS);
             b.send(reqId);
             closeAndSend(b);
         }
@@ -3139,7 +3382,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( CANCEL_POSITIONS);
+            sendMsgId(b, CANCEL_POSITIONS);
             b.send( VERSION);
             closeAndSend(b);
         }
@@ -3166,7 +3409,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( REQ_POSITIONS_MULTI);
+            sendMsgId(b, REQ_POSITIONS_MULTI);
             b.send( VERSION);
             b.send( reqId);
             b.send( account);
@@ -3200,7 +3443,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( CANCEL_POSITIONS_MULTI);
+            sendMsgId(b, CANCEL_POSITIONS_MULTI);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -3228,7 +3471,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( CANCEL_ACCOUNT_UPDATES_MULTI);
+            sendMsgId(b, CANCEL_ACCOUNT_UPDATES_MULTI);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -3256,7 +3499,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( REQ_ACCOUNT_UPDATES_MULTI);
+            sendMsgId(b, REQ_ACCOUNT_UPDATES_MULTI);
             b.send( VERSION);
             b.send( reqId);
             b.send( account);
@@ -3291,7 +3534,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( REQ_ACCOUNT_SUMMARY);
+            sendMsgId(b, REQ_ACCOUNT_SUMMARY);
             b.send( VERSION);
             b.send( reqId);
             b.send( group);
@@ -3325,7 +3568,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( CANCEL_ACCOUNT_SUMMARY);
+            sendMsgId(b, CANCEL_ACCOUNT_SUMMARY);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -3357,7 +3600,7 @@ public abstract class EClient {
 
         try {
             Builder b = prepareBuffer();
-            b.send( VERIFY_REQUEST);
+            sendMsgId(b, VERIFY_REQUEST);
             b.send( VERSION);
             b.send( apiName);
             b.send( apiVersion);
@@ -3390,7 +3633,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( VERIFY_MESSAGE);
+            sendMsgId(b, VERIFY_MESSAGE);
             b.send( VERSION);
             b.send( apiData);
             closeAndSend(b);
@@ -3428,7 +3671,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( VERIFY_AND_AUTH_REQUEST);
+            sendMsgId(b, VERIFY_AND_AUTH_REQUEST);
             b.send( VERSION);
             b.send( apiName);
             b.send( apiVersion);
@@ -3462,7 +3705,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( VERIFY_AND_AUTH_MESSAGE);
+            sendMsgId(b, VERIFY_AND_AUTH_MESSAGE);
             b.send( VERSION);
             b.send( apiData);
             b.send( xyzResponse);
@@ -3495,7 +3738,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( QUERY_DISPLAY_GROUPS);
+            sendMsgId(b, QUERY_DISPLAY_GROUPS);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -3523,7 +3766,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( SUBSCRIBE_TO_GROUP_EVENTS);
+            sendMsgId(b, SUBSCRIBE_TO_GROUP_EVENTS);
             b.send( VERSION);
             b.send( reqId);
             b.send( groupId);
@@ -3552,7 +3795,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( UPDATE_DISPLAY_GROUP);
+            sendMsgId(b, UPDATE_DISPLAY_GROUP);
             b.send( VERSION);
             b.send( reqId);
             b.send( contractInfo);
@@ -3585,7 +3828,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( UNSUBSCRIBE_FROM_GROUP_EVENTS);
+            sendMsgId(b, UNSUBSCRIBE_FROM_GROUP_EVENTS);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -3611,7 +3854,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( REQ_MATCHING_SYMBOLS);
+            sendMsgId(b, REQ_MATCHING_SYMBOLS);
             b.send( reqId);
             b.send( pattern);
             closeAndSend(b);
@@ -3641,7 +3884,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( REQ_FAMILY_CODES);
+            sendMsgId(b, REQ_FAMILY_CODES);
             closeAndSend(b);
         }
         catch (IOException e) {
@@ -3665,7 +3908,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( REQ_MKT_DEPTH_EXCHANGES);
+            sendMsgId(b, REQ_MKT_DEPTH_EXCHANGES);
             closeAndSend(b);
         }
         catch (IOException e) {
@@ -3689,7 +3932,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
         
         try {
-            b.send(REQ_SMART_COMPONENTS);
+            sendMsgId(b, REQ_SMART_COMPONENTS);
             b.send(reqId);
             b.send(bboExchange);
             closeAndSend(b);
@@ -3719,7 +3962,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send( REQ_NEWS_PROVIDERS);
+            sendMsgId(b, REQ_NEWS_PROVIDERS);
             closeAndSend(b);
         }
         catch (IOException e) {
@@ -3743,7 +3986,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send(REQ_NEWS_ARTICLE);
+            sendMsgId(b, REQ_NEWS_ARTICLE);
             b.send(requestId);
             b.send(providerCode);
             b.send(articleId);
@@ -3782,7 +4025,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            b.send(REQ_HISTORICAL_NEWS);
+            sendMsgId(b, REQ_HISTORICAL_NEWS);
             b.send(requestId);
             b.send(conId);
             b.send(providerCodes);
@@ -3823,7 +4066,7 @@ public abstract class EClient {
 
     		Builder b = prepareBuffer(); 
 
-    		b.send(REQ_HISTOGRAM_DATA);
+            sendMsgId(b, REQ_HISTOGRAM_DATA);
     		b.send(tickerId);
     		b.send(contract);
     		b.send(useRTH ? 1 : 0);
@@ -3857,7 +4100,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(CANCEL_HISTOGRAM_DATA);
+            sendMsgId(b, CANCEL_HISTOGRAM_DATA);
             b.send(tickerId);
 
             closeAndSend(b);
@@ -3885,7 +4128,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_MARKET_RULE);
+            sendMsgId(b, REQ_MARKET_RULE);
             b.send(marketRuleId);
 
             closeAndSend(b);
@@ -3911,7 +4154,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_PNL);
+            sendMsgId(b, REQ_PNL);
             b.send(reqId);
             b.send(account);
             b.send(modelCode);
@@ -3942,7 +4185,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(CANCEL_PNL);
+            sendMsgId(b, CANCEL_PNL);
             b.send(reqId);
 
             closeAndSend(b);
@@ -3968,7 +4211,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_PNL_SINGLE);
+            sendMsgId(b, REQ_PNL_SINGLE);
             b.send(reqId);
             b.send(account);
             b.send(modelCode);
@@ -4000,7 +4243,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(CANCEL_PNL_SINGLE);
+            sendMsgId(b, CANCEL_PNL_SINGLE);
             b.send(reqId);
 
             closeAndSend(b);
@@ -4027,7 +4270,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_HISTORICAL_TICKS);
+            sendMsgId(b, REQ_HISTORICAL_TICKS);
             b.send(reqId);
             b.send(contract);
             b.send(startDateTime);
@@ -4073,13 +4316,13 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_TICK_BY_TICK_DATA);
+            sendMsgId(b, REQ_TICK_BY_TICK_DATA);
             b.send(reqId);
             b.send(contract.conid());
             b.send(contract.symbol());
             b.send(contract.getSecType());
             b.send(contract.lastTradeDateOrContractMonth());
-            b.send(contract.strike());
+            b.sendMax(contract.strike());
             b.send(contract.getRight());
             b.send(contract.multiplier());
             b.send(contract.exchange());
@@ -4120,7 +4363,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(CANCEL_TICK_BY_TICK_DATA);
+            sendMsgId(b, CANCEL_TICK_BY_TICK_DATA);
             b.send(reqId);
 
             closeAndSend(b);
@@ -4148,7 +4391,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_COMPLETED_ORDERS);
+            sendMsgId(b, REQ_COMPLETED_ORDERS);
             b.send(apiOnly);
 
             closeAndSend(b);
@@ -4176,7 +4419,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_WSH_META_DATA);
+            sendMsgId(b, REQ_WSH_META_DATA);
             b.send(reqId);
 
             closeAndSend(b);
@@ -4204,7 +4447,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(CANCEL_WSH_META_DATA);
+            sendMsgId(b, CANCEL_WSH_META_DATA);
             b.send(reqId);
 
             closeAndSend(b);
@@ -4246,7 +4489,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_WSH_EVENT_DATA);
+            sendMsgId(b, REQ_WSH_EVENT_DATA);
             b.send(reqId);
             b.send(wshEventData.conId());
 
@@ -4291,7 +4534,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(CANCEL_WSH_EVENT_DATA);
+            sendMsgId(b, CANCEL_WSH_EVENT_DATA);
             b.send(reqId);
 
             closeAndSend(b);
@@ -4319,7 +4562,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            b.send(REQ_USER_INFO);
+            sendMsgId(b, REQ_USER_INFO);
             b.send(reqId);
 
             closeAndSend(b);
@@ -4330,6 +4573,28 @@ public abstract class EClient {
         }
     }    
     
+    public synchronized void reqCurrentTimeInMillis() {
+        // not connected?
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        if( m_serverVersion < MIN_SERVER_VER_CURRENT_TIME_IN_MILLIS) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS, "  It does not support current time in millis requests.");
+            return;
+        }
+
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_CURRENT_TIME_IN_MILLIS);
+            closeAndSend(b);
+        }
+        catch( Exception e) {
+            error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQCURRTIMEINMILLIS, e.toString());
+            close();
+        }
+    }    
     /**
      * @deprecated This method is never called.
      */
@@ -4339,7 +4604,7 @@ public abstract class EClient {
     }
 
     protected synchronized void error( int id, int errorCode, String errorMsg) {
-        m_eWrapper.error( id, errorCode, errorMsg, null);
+        m_eWrapper.error( id, Util.currentTimeMillis(), errorCode, errorMsg, null);
     }
 
     protected void close() {
@@ -4417,4 +4682,13 @@ public abstract class EClient {
             sendMsg(new EMessage(builder));
         }
 	}
+
+    private void sendMsgId(Builder b, int msgId) throws IOException {
+        if (m_serverVersion >= MIN_SERVER_VER_PROTOBUF) {
+            b.sendRawInt(msgId);
+        } else {
+            b.send(msgId);
+        }
+    }
+
 }

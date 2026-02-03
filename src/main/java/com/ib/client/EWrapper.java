@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.client;
@@ -6,6 +6,14 @@ package com.ib.client;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.ib.client.protobuf.ErrorMessageProto;
+import com.ib.client.protobuf.ExecutionDetailsEndProto;
+import com.ib.client.protobuf.ExecutionDetailsProto;
+import com.ib.client.protobuf.OpenOrderProto;
+import com.ib.client.protobuf.OpenOrdersEndProto;
+import com.ib.client.protobuf.OrderStatusProto;
+
 import java.util.Set;
 
 public interface EWrapper {
@@ -23,7 +31,7 @@ public interface EWrapper {
 			String formattedBasisPoints, double impliedFuture, int holdDays,
 			String futureLastTradeDate, double dividendImpact, double dividendsToLastTradeDate);
     void orderStatus( int orderId, String status, Decimal filled, Decimal remaining,
-            double avgFillPrice, int permId, int parentId, double lastFillPrice,
+            double avgFillPrice, long permId, int parentId, double lastFillPrice,
             int clientId, String whyHeld, double mktCapPrice);
     void openOrder( int orderId, Contract contract, Order order, OrderState orderState);
     void openOrderEnd();
@@ -55,7 +63,7 @@ public interface EWrapper {
     void deltaNeutralValidation(int reqId, DeltaNeutralContract deltaNeutralContract);
     void tickSnapshotEnd(int reqId);
     void marketDataType(int reqId, int marketDataType);
-    void commissionReport(CommissionReport commissionReport);
+    void commissionAndFeesReport(CommissionAndFeesReport commissionAndFeesReport);
     void position(String account, Contract contract, Decimal pos, double avgCost);
     void positionEnd();
     void accountSummary(int reqId, String account, String tag, String value, String currency);
@@ -68,7 +76,7 @@ public interface EWrapper {
     void displayGroupUpdated( int reqId, String contractInfo);
     void error( Exception e);
     void error( String str);
-    void error(int id, int errorCode, String errorMsg, String advancedOrderRejectJson);
+    void error(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson);
     void connectionClosed();
     void connectAck();
     void positionMulti( int reqId, String account, String modelCode, Contract contract, Decimal pos, double avgCost);
@@ -103,7 +111,7 @@ public interface EWrapper {
     void tickByTickAllLast(int reqId, int tickType, long time, double price, Decimal size, TickAttribLast tickAttribLast, String exchange, String specialConditions);
     void tickByTickBidAsk(int reqId, long time, double bidPrice, double askPrice, Decimal bidSize, Decimal askSize, TickAttribBidAsk tickAttribBidAsk);
     void tickByTickMidPoint(int reqId, long time, double midPoint);
-    void orderBound(long orderId, int apiClientId, int apiOrderId);
+    void orderBound(long permId, int clientId, int orderId);
     void completedOrder(Contract contract, Order order, OrderState orderState);
     void completedOrdersEnd();
     void replaceFAEnd(int reqId, String text);
@@ -111,5 +119,14 @@ public interface EWrapper {
 	void wshEventData(int reqId, String dataJson);
     void historicalSchedule(int reqId, String startDateTime, String endDateTime, String timeZone, List<HistoricalSession> sessions);
     void userInfo(int reqId, String whiteBrandingId);
+    void currentTimeInMillis(long timeInMillis);
+    
+    // protobuf
+    void orderStatusProtoBuf(OrderStatusProto.OrderStatus orderStatusProto);
+    void openOrderProtoBuf(OpenOrderProto.OpenOrder openOrderProto);
+    void openOrdersEndProtoBuf(OpenOrdersEndProto.OpenOrdersEnd openOrdersEnd);
+    void errorProtoBuf(ErrorMessageProto.ErrorMessage errorMessageProto);
+    void execDetailsProtoBuf(ExecutionDetailsProto.ExecutionDetails executionDetailsProto);
+    void execDetailsEndProtoBuf(ExecutionDetailsEndProto.ExecutionDetailsEnd executionDetailsEndProto);
 }
 

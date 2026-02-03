@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.client;
@@ -20,6 +20,12 @@ import java.util.Set;
 import com.ib.client.Types.FundAssetType;
 import com.ib.client.Types.FundDistributionPolicyIndicator;
 import com.ib.client.Types.SecType;
+import com.ib.client.protobuf.ErrorMessageProto;
+import com.ib.client.protobuf.ExecutionDetailsEndProto;
+import com.ib.client.protobuf.ExecutionDetailsProto;
+import com.ib.client.protobuf.OpenOrderProto;
+import com.ib.client.protobuf.OpenOrdersEndProto;
+import com.ib.client.protobuf.OrderStatusProto;
 
 class EDecoder implements ObjectInput {
     // incoming msg id's
@@ -58,7 +64,7 @@ class EDecoder implements ObjectInput {
     private static final int DELTA_NEUTRAL_VALIDATION = 56;
     private static final int TICK_SNAPSHOT_END = 57;
     private static final int MARKET_DATA_TYPE = 58;
-    private static final int COMMISSION_REPORT = 59;
+    private static final int COMMISSION_AND_FEES_REPORT = 59;
     private static final int POSITION = 61;
     private static final int POSITION_END = 62;
     private static final int ACCOUNT_SUMMARY = 63;
@@ -106,6 +112,8 @@ class EDecoder implements ObjectInput {
     private static final int WSH_EVENT_DATA = 105;
     private static final int HISTORICAL_SCHEDULE = 106;
     private static final int USER_INFO = 107;
+    private static final int HISTORICAL_DATA_END = 108;
+    private static final int CURRENT_TIME_IN_MILLIS = 109;
 
     static final int MAX_MSG_LENGTH = 0xffffff;
     private static final int REDIRECT_MSG_ID = -1;
@@ -172,343 +180,383 @@ class EDecoder implements ObjectInput {
     		return m_messageReader.msgLength();
     	}
     	
-    	int msgId = readInt();
+        int msgId = m_serverVersion >= EClient.MIN_SERVER_VER_PROTOBUF ? readRawInt() : readInt();
+        boolean useProtoBuf = false;
+        if (msgId > EClient.PROTOBUF_MSG_ID) {
+            useProtoBuf = true;
+            msgId -= EClient.PROTOBUF_MSG_ID;
+        }
+        
+        if (useProtoBuf) {
+            switch( msgId) {
+                case ORDER_STATUS:
+                    processOrderStatusMsgProtoBuf();
+                    break;
+                case ERR_MSG:
+                    processErrorMsgProtoBuf();
+                    break;
+                case OPEN_ORDER:
+                    processOpenOrderMsgProtoBuf();
+                    break;
+                case EXECUTION_DATA:
+                    processExecutionDataMsgProtoBuf();
+                    break;
+                case OPEN_ORDER_END:
+                    processOpenOrderEndMsgProtoBuf();
+                    break;
+                case EXECUTION_DATA_END:
+                    processExecutionDataEndMsgProtoBuf();
+                    break;
+                default: {
+                    m_EWrapper.error( EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.UNKNOWN_ID.code(), EClientErrors.UNKNOWN_ID.msg(), null);
+                    return 0;
+                }
+            }
+        } else {
+            switch( msgId) {
+                case END_CONN:
+                    return 0;
 
-        switch( msgId) {
-            case END_CONN:
-                return 0;
-                
-            case TICK_PRICE:
-                processTickPriceMsg();
-                break;
+                case TICK_PRICE:
+                    processTickPriceMsg();
+                    break;
 
-            case TICK_SIZE:
-                processTickSizeMsg();
-                break;
+                case TICK_SIZE:
+                    processTickSizeMsg();
+                    break;
 
-            case POSITION:
-                processPositionMsg();
-                break;
+                case POSITION:
+                    processPositionMsg();
+                    break;
 
-            case POSITION_END:
-                processPositionEndMsg();
-                break;
+                case POSITION_END:
+                    processPositionEndMsg();
+                    break;
 
-            case ACCOUNT_SUMMARY:
-                processAccountSummaryMsg();
-                break;
+                case ACCOUNT_SUMMARY:
+                    processAccountSummaryMsg();
+                    break;
 
-            case ACCOUNT_SUMMARY_END:
-                processAccountSummaryEndMsg();
-                break;
+                case ACCOUNT_SUMMARY_END:
+                    processAccountSummaryEndMsg();
+                    break;
 
-            case TICK_OPTION_COMPUTATION:
-                processTickOptionComputationMsg();
-            	break;
+                case TICK_OPTION_COMPUTATION:
+                    processTickOptionComputationMsg();
+                    break;
 
-            case TICK_GENERIC:
-                processTickGenericMsg();
-                break;
+                case TICK_GENERIC:
+                    processTickGenericMsg();
+                    break;
 
-            case TICK_STRING:
-                processTickStringMsg();
-                break;
+                case TICK_STRING:
+                    processTickStringMsg();
+                    break;
 
-            case TICK_EFP:
-                processTickEFPMsg();
-                break;
+                case TICK_EFP:
+                    processTickEFPMsg();
+                    break;
 
-            case ORDER_STATUS:
-                processOrderStatusMsg();
-                break;
+                case ORDER_STATUS:
+                    processOrderStatusMsg();
+                    break;
 
-            case ACCT_VALUE:
-                processAcctValueMsg();
-                break;
+                case ACCT_VALUE:
+                    processAcctValueMsg();
+                    break;
 
-            case PORTFOLIO_VALUE:
-                processPortfolioValueMsg();
-                break;
+                case PORTFOLIO_VALUE:
+                    processPortfolioValueMsg();
+                    break;
 
-            case ACCT_UPDATE_TIME:
-                processAcctUpdateTimeMsg();
-                break;
+                case ACCT_UPDATE_TIME:
+                    processAcctUpdateTimeMsg();
+                    break;
 
-            case ERR_MSG:
-                processErrMsgMsg();
-                break;
+                case ERR_MSG:
+                    processErrorMsg();
+                    break;
 
-            case OPEN_ORDER:
-                processOpenOrderMsg();
-                break;
+                case OPEN_ORDER:
+                    processOpenOrderMsg();
+                    break;
 
-            case NEXT_VALID_ID:
-                processNextValidIdMsg();
-                break;
+                case NEXT_VALID_ID:
+                    processNextValidIdMsg();
+                    break;
 
-            case SCANNER_DATA:
-                processScannerDataMsg();
-                break;
+                case SCANNER_DATA:
+                    processScannerDataMsg();
+                    break;
 
-            case CONTRACT_DATA:
-                processContractDataMsg();
-                break;
-           
-            case BOND_CONTRACT_DATA:
-                processBondContractDataMsg();
-                break;
-            
-            case EXECUTION_DATA:
-                processExecutionDataMsg();
-                break;
-            
-            case MARKET_DEPTH:
-                processMarketDepthMsg();
-                break;
-            
-            case MARKET_DEPTH_L2:
-                processMarketDepthL2Msg();
-                break;
-            
-            case NEWS_BULLETINS:
-                processNewsBulletinsMsg();
-                break;
-            
-            case MANAGED_ACCTS:
-                processManagedAcctsMsg();
-                break;
+                case CONTRACT_DATA:
+                    processContractDataMsg();
+                    break;
 
-            case RECEIVE_FA:
-                processReceiveFaMsg();
-                break;
-            
-            case HISTORICAL_DATA:
-                processHistoricalDataMsg();
-                break;
-            
-            case SCANNER_PARAMETERS:
-                processScannerParametersMsg();
-                break;
+                case BOND_CONTRACT_DATA:
+                    processBondContractDataMsg();
+                    break;
 
-            case CURRENT_TIME:
-                processCurrentTimeMsg();
-                break;
-            
-            case REAL_TIME_BARS:
-                processRealTimeBarsMsg();
-                break;
-            
-            case FUNDAMENTAL_DATA:
-                processFundamentalDataMsg();
-                break;
-            
-            case CONTRACT_DATA_END:
-                processContractDataEndMsg();
-                break;
-            
-            case OPEN_ORDER_END:
-                processOpenOrderEndMsg();
-                break;
-            
-            case ACCT_DOWNLOAD_END:
-                processAcctDownloadEndMsg();
-                break;
-            
-            case EXECUTION_DATA_END:
-                processExecutionDataEndMsg();
-                break;
-            
-            case DELTA_NEUTRAL_VALIDATION:
-                processDeltaNeutralValidationMsg();
-                break;
-            
-            case TICK_SNAPSHOT_END:
-                processTickSnapshotEndMsg();
-                break;
-            
-            case MARKET_DATA_TYPE:
-                processMarketDataTypeMsg();
-                break;
-            
-            case COMMISSION_REPORT:
-                processCommissionReportMsg();
-                break;
-            
-            case VERIFY_MESSAGE_API:
-                processVerifyMessageApiMsg();
-                break;
-            
-            case VERIFY_COMPLETED:
-                processVerifyCompletedMsg();
-                break;
-            
-            case DISPLAY_GROUP_LIST:
-                processDisplayGroupListMsg();
-                break;
-            
-            case DISPLAY_GROUP_UPDATED:
-                processDisplayGroupUpdatedMsg();
-                break;
-            
-            case VERIFY_AND_AUTH_MESSAGE_API:
-                processVerifyAndAuthMessageMsg();
-                break;
-            
-            case VERIFY_AND_AUTH_COMPLETED:
-                processVerifyAndAuthCompletedMsg();
-                break;
-            
-            case POSITION_MULTI:
-                processPositionMultiMsg();
-                break;
-            
-            case POSITION_MULTI_END:
-                processPositionMultiEndMsg();
-                break;
-            
-            case ACCOUNT_UPDATE_MULTI:
-                processAccountUpdateMultiMsg();
-                break;
-            
-            case ACCOUNT_UPDATE_MULTI_END:
-                processAccountUpdateMultiEndMsg();
-                break;            
-            
-            case SECURITY_DEFINITION_OPTION_PARAMETER:
-            	processSecurityDefinitionOptionalParameterMsg();
-            	break;
-            	
-            case SECURITY_DEFINITION_OPTION_PARAMETER_END:
-            	processSecurityDefinitionOptionalParameterEndMsg();
-            	break;
-            	
-            case SOFT_DOLLAR_TIERS:
-            	processSoftDollarTiersMsg();
-            	break;
+                case EXECUTION_DATA:
+                    processExecutionDataMsg();
+                    break;
 
-            case FAMILY_CODES:
-                processFamilyCodesMsg();
-                break;           	
-            	
-            case SMART_COMPONENTS:
-            	processSmartComponentsMsg();
-            	break;
-            	
-            case TICK_REQ_PARAMS:
-            	processTickReqParamsMsg();
-            	break;
+                case MARKET_DEPTH:
+                    processMarketDepthMsg();
+                    break;
 
-            case SYMBOL_SAMPLES:
-                processSymbolSamplesMsg();
-                break;
+                case MARKET_DEPTH_L2:
+                    processMarketDepthL2Msg();
+                    break;
 
-            case MKT_DEPTH_EXCHANGES:
-                processMktDepthExchangesMsg();
-                break;
-                
-            case HEAD_TIMESTAMP:
-            	processHeadTimestampMsg();
-            	break;
+                case NEWS_BULLETINS:
+                    processNewsBulletinsMsg();
+                    break;
 
-            case TICK_NEWS:
-                processTickNewsMsg();
-                break;
+                case MANAGED_ACCTS:
+                    processManagedAcctsMsg();
+                    break;
 
-            case NEWS_PROVIDERS:
-                processNewsProvidersMsg();
-                break;
+                case RECEIVE_FA:
+                    processReceiveFaMsg();
+                    break;
 
-            case NEWS_ARTICLE:
-                processNewsArticleMsg();
-                break;
+                case HISTORICAL_DATA:
+                    processHistoricalDataMsg();
+                    break;
 
-            case HISTORICAL_NEWS:
-                processHistoricalNewsMsg();
-                break;
+                case SCANNER_PARAMETERS:
+                    processScannerParametersMsg();
+                    break;
 
-            case HISTORICAL_NEWS_END:
-                processHistoricalNewsEndMsg();
-                break;
-                
-            case HISTOGRAM_DATA:
-            	processHistogramDataMsg();
-            	break;
-            	
-            case HISTORICAL_DATA_UPDATE:
-                processHistoricalDataUpdateMsg();
-                break;
+                case CURRENT_TIME:
+                    processCurrentTimeMsg();
+                    break;
 
-            case REROUTE_MKT_DATA_REQ:
-                processRerouteMktDataReq();
-                break;
+                case REAL_TIME_BARS:
+                    processRealTimeBarsMsg();
+                    break;
 
-            case REROUTE_MKT_DEPTH_REQ:
-                processRerouteMktDepthReq();
-                break;
+                case FUNDAMENTAL_DATA:
+                    processFundamentalDataMsg();
+                    break;
 
-            case MARKET_RULE:
-                processMarketRuleMsg();
-                break;
-                
-            case PNL:
-            	processPnLMsg();
-            	break;
-            	
-            case PNL_SINGLE:
-            	processPnLSingleMsg();
-            	break;
-            	
-            case HISTORICAL_TICKS:
-                processHistoricalTicks();
-                break;
-                
-            case HISTORICAL_TICKS_BID_ASK:
-                processHistoricalTicksBidAsk();
-                break;
-                
-            case HISTORICAL_TICKS_LAST:
-                processHistoricalTicksLast();
-                break;
+                case CONTRACT_DATA_END:
+                    processContractDataEndMsg();
+                    break;
 
-            case TICK_BY_TICK:
-                processTickByTickMsg();
-                break;
+                case OPEN_ORDER_END:
+                    processOpenOrderEndMsg();
+                    break;
 
-            case ORDER_BOUND:
-                processOrderBoundMsg();
-                break;
+                case ACCT_DOWNLOAD_END:
+                    processAcctDownloadEndMsg();
+                    break;
 
-            case COMPLETED_ORDER:
-                processCompletedOrderMsg();
-                break;
+                case EXECUTION_DATA_END:
+                    processExecutionDataEndMsg();
+                    break;
 
-            case COMPLETED_ORDERS_END:
-                processCompletedOrdersEndMsg();
-                break;
+                case DELTA_NEUTRAL_VALIDATION:
+                    processDeltaNeutralValidationMsg();
+                    break;
 
-            case REPLACE_FA_END:
-                processReplaceFAEndMsg();
-                break;
-                
-            case WSH_META_DATA:
-            	processWshMetaData();
-            	break;
-            	
-            case WSH_EVENT_DATA:
-            	processWshEventData();
-            	break;
+                case TICK_SNAPSHOT_END:
+                    processTickSnapshotEndMsg();
+                    break;
 
-            case HISTORICAL_SCHEDULE:
-                processHistoricalSchedule();
-                break;
+                case MARKET_DATA_TYPE:
+                    processMarketDataTypeMsg();
+                    break;
 
-            case USER_INFO:
-                processUserInfo();
-                break;
-                
-            default: {
-                m_EWrapper.error( EClientErrors.NO_VALID_ID, EClientErrors.UNKNOWN_ID.code(), EClientErrors.UNKNOWN_ID.msg(), null);
-                return 0;
+                case COMMISSION_AND_FEES_REPORT:
+                    processCommissionAndFeesReportMsg();
+                    break;
+
+                case VERIFY_MESSAGE_API:
+                    processVerifyMessageApiMsg();
+                    break;
+
+                case VERIFY_COMPLETED:
+                    processVerifyCompletedMsg();
+                    break;
+
+                case DISPLAY_GROUP_LIST:
+                    processDisplayGroupListMsg();
+                    break;
+
+                case DISPLAY_GROUP_UPDATED:
+                    processDisplayGroupUpdatedMsg();
+                    break;
+
+                case VERIFY_AND_AUTH_MESSAGE_API:
+                    processVerifyAndAuthMessageMsg();
+                    break;
+
+                case VERIFY_AND_AUTH_COMPLETED:
+                    processVerifyAndAuthCompletedMsg();
+                    break;
+
+                case POSITION_MULTI:
+                    processPositionMultiMsg();
+                    break;
+
+                case POSITION_MULTI_END:
+                    processPositionMultiEndMsg();
+                    break;
+
+                case ACCOUNT_UPDATE_MULTI:
+                    processAccountUpdateMultiMsg();
+                    break;
+
+                case ACCOUNT_UPDATE_MULTI_END:
+                    processAccountUpdateMultiEndMsg();
+                    break;
+
+                case SECURITY_DEFINITION_OPTION_PARAMETER:
+                    processSecurityDefinitionOptionalParameterMsg();
+                    break;
+
+                case SECURITY_DEFINITION_OPTION_PARAMETER_END:
+                    processSecurityDefinitionOptionalParameterEndMsg();
+                    break;
+
+                case SOFT_DOLLAR_TIERS:
+                    processSoftDollarTiersMsg();
+                    break;
+
+                case FAMILY_CODES:
+                    processFamilyCodesMsg();
+                    break;
+
+                case SMART_COMPONENTS:
+                    processSmartComponentsMsg();
+                    break;
+
+                case TICK_REQ_PARAMS:
+                    processTickReqParamsMsg();
+                    break;
+
+                case SYMBOL_SAMPLES:
+                    processSymbolSamplesMsg();
+                    break;
+
+                case MKT_DEPTH_EXCHANGES:
+                    processMktDepthExchangesMsg();
+                    break;
+
+                case HEAD_TIMESTAMP:
+                    processHeadTimestampMsg();
+                    break;
+
+                case TICK_NEWS:
+                    processTickNewsMsg();
+                    break;
+
+                case NEWS_PROVIDERS:
+                    processNewsProvidersMsg();
+                    break;
+
+                case NEWS_ARTICLE:
+                    processNewsArticleMsg();
+                    break;
+
+                case HISTORICAL_NEWS:
+                    processHistoricalNewsMsg();
+                    break;
+
+                case HISTORICAL_NEWS_END:
+                    processHistoricalNewsEndMsg();
+                    break;
+
+                case HISTOGRAM_DATA:
+                    processHistogramDataMsg();
+                    break;
+
+                case HISTORICAL_DATA_UPDATE:
+                    processHistoricalDataUpdateMsg();
+                    break;
+
+                case REROUTE_MKT_DATA_REQ:
+                    processRerouteMktDataReq();
+                    break;
+
+                case REROUTE_MKT_DEPTH_REQ:
+                    processRerouteMktDepthReq();
+                    break;
+
+                case MARKET_RULE:
+                    processMarketRuleMsg();
+                    break;
+
+                case PNL:
+                    processPnLMsg();
+                    break;
+
+                case PNL_SINGLE:
+                    processPnLSingleMsg();
+                    break;
+
+                case HISTORICAL_TICKS:
+                    processHistoricalTicks();
+                    break;
+
+                case HISTORICAL_TICKS_BID_ASK:
+                    processHistoricalTicksBidAsk();
+                    break;
+
+                case HISTORICAL_TICKS_LAST:
+                    processHistoricalTicksLast();
+                    break;
+
+                case TICK_BY_TICK:
+                    processTickByTickMsg();
+                    break;
+
+                case ORDER_BOUND:
+                    processOrderBoundMsg();
+                    break;
+
+                case COMPLETED_ORDER:
+                    processCompletedOrderMsg();
+                    break;
+
+                case COMPLETED_ORDERS_END:
+                    processCompletedOrdersEndMsg();
+                    break;
+
+                case REPLACE_FA_END:
+                    processReplaceFAEndMsg();
+                    break;
+
+                case WSH_META_DATA:
+                    processWshMetaData();
+                    break;
+
+                case WSH_EVENT_DATA:
+                    processWshEventData();
+                    break;
+
+                case HISTORICAL_SCHEDULE:
+                    processHistoricalSchedule();
+                    break;
+
+                case USER_INFO:
+                    processUserInfo();
+                    break;
+
+                case HISTORICAL_DATA_END:
+                    processHistoricalDataEndMsg();
+                    break;
+
+                case CURRENT_TIME_IN_MILLIS:
+                    processCurrentTimeInMillisMsg();
+                    break;
+
+                default: {
+                    m_EWrapper.error( EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.UNKNOWN_ID.code(), EClientErrors.UNKNOWN_ID.msg(), null);
+                    return 0;
+                }
             }
         }
         
@@ -912,18 +960,18 @@ class EDecoder implements ObjectInput {
 		m_EWrapper.verifyMessageAPI(apiData);
 	}
 
-	private void processCommissionReportMsg() throws IOException {
+	private void processCommissionAndFeesReportMsg() throws IOException {
 		/*int version =*/ readInt();
 
-		CommissionReport commissionReport = new CommissionReport();
-		commissionReport.execId(readStr());
-		commissionReport.commission(readDouble());
-		commissionReport.currency(readStr());
-		commissionReport.realizedPNL(readDouble());
-		commissionReport.yield(readDouble());
-		commissionReport.yieldRedemptionDate(readInt());
+		CommissionAndFeesReport commissionAndFeesReport = new CommissionAndFeesReport();
+		commissionAndFeesReport.execId(readStr());
+		commissionAndFeesReport.commissionAndFees(readDouble());
+		commissionAndFeesReport.currency(readStr());
+		commissionAndFeesReport.realizedPNL(readDouble());
+		commissionAndFeesReport.yield(readDouble());
+		commissionAndFeesReport.yieldRedemptionDate(readInt());
 
-		m_EWrapper.commissionReport( commissionReport);
+		m_EWrapper.commissionAndFeesReport( commissionAndFeesReport);
 	}
 
 	private void processMarketDataTypeMsg() throws IOException {
@@ -955,12 +1003,27 @@ class EDecoder implements ObjectInput {
 		m_EWrapper.execDetailsEnd( reqId);
 	}
 
+    private void processExecutionDataEndMsgProtoBuf() throws IOException {
+        byte[] byteArray = readByteArray();
+        ExecutionDetailsEndProto.ExecutionDetailsEnd executionDetailsEndProto = ExecutionDetailsEndProto.ExecutionDetailsEnd.parseFrom(byteArray);
+        m_EWrapper.execDetailsEndProtoBuf(executionDetailsEndProto);
+        int reqId = executionDetailsEndProto.hasReqId() ? executionDetailsEndProto.getReqId() : 0;
+        m_EWrapper.execDetailsEnd(reqId);
+    }
+
 	private void processAcctDownloadEndMsg() throws IOException {
 		/*int version =*/ readInt();
 		String accountName = readStr();
 		m_EWrapper.accountDownloadEnd( accountName);
 	}
 
+    private void processOpenOrderEndMsgProtoBuf() throws IOException {
+        byte[] byteArray = readByteArray();
+        OpenOrdersEndProto.OpenOrdersEnd openOrdersEndProto = OpenOrdersEndProto.OpenOrdersEnd.parseFrom(byteArray);
+        m_EWrapper.openOrdersEndProtoBuf(openOrdersEndProto);
+        m_EWrapper.openOrderEnd();
+    }
+	
 	private void processOpenOrderEndMsg() throws IOException {
 		/*int version =*/ readInt();
 		m_EWrapper.openOrderEnd();
@@ -1016,7 +1079,7 @@ class EDecoder implements ObjectInput {
 	    String startDateStr = "";
 	    String endDateStr = "";
 
-	    if (version >= 2) {
+	    if (version >= 2 && m_serverVersion < EClient.MIN_SERVER_VER_HISTORICAL_DATA_END) {
 	        startDateStr = readStr();
 	        endDateStr = readStr();
 	    }
@@ -1042,9 +1105,18 @@ class EDecoder implements ObjectInput {
 	        
 	        m_EWrapper.historicalData(reqId, new Bar(date, open, high, low, close, volume, barCount, WAP));
 	    }
-	    // send end of dataset marker
-	    m_EWrapper.historicalDataEnd(reqId, startDateStr, endDateStr);
+        if (m_serverVersion < EClient.MIN_SERVER_VER_HISTORICAL_DATA_END) {
+            // send end of dataset marker
+            m_EWrapper.historicalDataEnd(reqId, startDateStr, endDateStr);
+        }
 	}
+
+    private void processHistoricalDataEndMsg() throws IOException {
+        int reqId = readInt();
+        String startDateStr = readStr();
+        String endDateStr = readStr();
+        m_EWrapper.historicalDataEnd(reqId, startDateStr, endDateStr);
+    }
 
 	private void processReceiveFaMsg() throws IOException {
 	    /*int version =*/ readInt();
@@ -1105,6 +1177,29 @@ class EDecoder implements ObjectInput {
 		                side, price, size);
 	}
 
+    private void processExecutionDataMsgProtoBuf() throws IOException {
+        byte[] byteArray = readByteArray();
+        ExecutionDetailsProto.ExecutionDetails executionDetailsProto = ExecutionDetailsProto.ExecutionDetails.parseFrom(byteArray);
+
+        m_EWrapper.execDetailsProtoBuf(executionDetailsProto);
+
+        int reqId = executionDetailsProto.hasReqId() ? executionDetailsProto.getReqId() : 0;
+
+        // set contract fields
+        if (!executionDetailsProto.hasContract()) {
+            return;
+        }
+        Contract contract = EDecoderUtils.decodeContract(executionDetailsProto.getContract());
+
+        // set execution fields
+        if (!executionDetailsProto.hasExecution()) {
+            return;
+        }
+        Execution execution = EDecoderUtils.decodeExecution(executionDetailsProto.getExecution());
+
+        m_EWrapper.execDetails( reqId, contract, execution);
+    }
+
 	private void processExecutionDataMsg() throws IOException {
 		int version = m_serverVersion;
 		
@@ -1149,7 +1244,7 @@ class EDecoder implements ObjectInput {
 		exec.shares(readDecimal());
 		exec.price(readDouble());
 		if ( version >= 2 ) {
-		    exec.permId(readInt());
+		    exec.permId(readLong());
 		}
 		if ( version >= 3) {
 		    exec.clientId(readInt());
@@ -1180,6 +1275,9 @@ class EDecoder implements ObjectInput {
         	exec.pendingPriceRevision(readBoolFromInt());
         }
 
+        if (m_serverVersion >= EClient.MIN_SERVER_VER_SUBMITTER) {
+            exec.submitter(readStr());
+        }
 
 		m_EWrapper.execDetails( reqId, contract, exec);
 	}
@@ -1229,6 +1327,11 @@ class EDecoder implements ObjectInput {
 		}
 		if( version >= 4) {
 		   contract.longName(readStr());
+		}
+		if (m_serverVersion >= EClient.MIN_SERVER_VER_BOND_TRADING_HOURS) {
+		    contract.timeZoneId(readStr());
+		    contract.tradingHours(readStr());
+		    contract.liquidHours(readStr());
 		}
 		if ( version >= 6) {
 		    contract.evRule(readStr());
@@ -1427,6 +1530,33 @@ class EDecoder implements ObjectInput {
 		m_EWrapper.nextValidId( orderId);
 	}
 
+    private void processOpenOrderMsgProtoBuf() throws IOException {
+        byte[] byteArray = readByteArray();
+        OpenOrderProto.OpenOrder openOrderProto = OpenOrderProto.OpenOrder.parseFrom(byteArray);
+        m_EWrapper.openOrderProtoBuf(openOrderProto);
+
+        int orderId = openOrderProto.hasOrderId() ? openOrderProto.getOrderId() : 0;
+
+        // set contract fields
+        if (!openOrderProto.hasContract()) {
+            return;
+        }
+        Contract contract = EDecoderUtils.decodeContract(openOrderProto.getContract());
+
+        // set order fields
+        if (!openOrderProto.hasOrder()) {
+            return;
+        }
+        Order order  = EDecoderUtils.decodeOrder(openOrderProto.getContract(), openOrderProto.getOrder());
+        
+        // set order state fields
+        if (!openOrderProto.hasOrderState()) {
+            return;
+        }
+        OrderState orderState  = EDecoderUtils.decodeOrderState(openOrderProto.getOrderState());
+        m_EWrapper.openOrder(orderId, contract, order, orderState);
+    }
+	
     private void processOpenOrderMsg() throws IOException {
 
         // read version
@@ -1497,7 +1627,7 @@ class EDecoder implements ObjectInput {
         eOrderDecoder.readDeltaNeutral();
         eOrderDecoder.readAlgoParams();
         eOrderDecoder.readSolicited();
-        eOrderDecoder.readWhatIfInfoAndCommission();
+        eOrderDecoder.readWhatIfInfoAndCommissionAndFees();
         eOrderDecoder.readVolRandomizeFlags();
         eOrderDecoder.readPegToBenchParams();
         eOrderDecoder.readConditions();
@@ -1515,26 +1645,44 @@ class EDecoder implements ObjectInput {
         eOrderDecoder.readCustomerAccount();
         eOrderDecoder.readProfessionalCustomer();
         eOrderDecoder.readBondAccruedInterest();
+        eOrderDecoder.readIncludeOvernight();
+        eOrderDecoder.readCMETaggingFields();
+        eOrderDecoder.readSubmitter();
+        eOrderDecoder.readImbalanceOnly(EClient.MIN_SERVER_VER_IMBALANCE_ONLY);
 
         m_EWrapper.openOrder(order.orderId(), contract, order, orderState);
     }
 
-	private void processErrMsgMsg() throws IOException {
-		int version = readInt();
-		if(version < 2) {
-		    String msg = readStr();
-		    m_EWrapper.error( msg);
-		} else {
-		    int id = readInt();
-		    int errorCode   = readInt();
-		    String errorMsg = m_serverVersion >= EClient.MIN_SERVER_VER_ENCODE_MSG_ASCII7 ? decodeUnicodeEscapedString(readStr()) : readStr();
-		    String advancedOrderRejectJson = null;
-		    if (m_serverVersion >= EClient.MIN_SERVER_VER_ADVANCED_ORDER_REJECT) {
-		        advancedOrderRejectJson = decodeUnicodeEscapedString(readStr());
-		    }
-	        m_EWrapper.error(id, errorCode, errorMsg, advancedOrderRejectJson);
-		}
-	}
+    private void processErrorMsgProtoBuf() throws IOException {
+        byte[] byteArray = readByteArray();
+        ErrorMessageProto.ErrorMessage errorMessageProto = ErrorMessageProto.ErrorMessage.parseFrom(byteArray);
+        m_EWrapper.errorProtoBuf(errorMessageProto);
+
+        int id = errorMessageProto.hasId() ? errorMessageProto.getId() : 0;
+        int errorCode = errorMessageProto.hasErrorCode() ? errorMessageProto.getErrorCode() : 0;
+        String errorMsg = errorMessageProto.hasErrorMsg() ? errorMessageProto.getErrorMsg() : "";
+        String advancedOrderRejectJson = errorMessageProto.hasAdvancedOrderRejectJson() ? errorMessageProto.getAdvancedOrderRejectJson() : "";
+        long errorTime = errorMessageProto.hasErrorTime() ? errorMessageProto.getErrorTime() : 0;
+        m_EWrapper.error(id, errorTime, errorCode, errorMsg, advancedOrderRejectJson);
+    }
+
+    private void processErrorMsg() throws IOException {
+        if (m_serverVersion < EClient.MIN_SERVER_VER_ERROR_TIME) {
+            /*int version =*/ readInt();
+        }
+        int id = readInt();
+        int errorCode   = readInt();
+        String errorMsg = m_serverVersion >= EClient.MIN_SERVER_VER_ENCODE_MSG_ASCII7 ? decodeUnicodeEscapedString(readStr()) : readStr();
+        String advancedOrderRejectJson = null;
+        if (m_serverVersion >= EClient.MIN_SERVER_VER_ADVANCED_ORDER_REJECT) {
+            advancedOrderRejectJson = decodeUnicodeEscapedString(readStr());
+        }
+        long errorTime = 0;
+        if (m_serverVersion >= EClient.MIN_SERVER_VER_ERROR_TIME) {
+            errorTime = readLong();
+        }
+        m_EWrapper.error(id, errorTime, errorCode, errorMsg, advancedOrderRejectJson);
+    }
 
 	private void processAcctUpdateTimeMsg() throws IOException {
 		/*int version =*/ readInt();
@@ -1602,6 +1750,25 @@ class EDecoder implements ObjectInput {
 		m_EWrapper.updateAccountValue(key, val, cur, accountName);
 	}
 
+	private void processOrderStatusMsgProtoBuf() throws IOException {
+        byte[] byteArray = readByteArray();
+        OrderStatusProto.OrderStatus orderStatusProto = OrderStatusProto.OrderStatus.parseFrom(byteArray);
+        m_EWrapper.orderStatusProtoBuf(orderStatusProto);
+
+        int orderId = orderStatusProto.hasOrderId() ? orderStatusProto.getOrderId() : Integer.MAX_VALUE;
+        String status = orderStatusProto.hasStatus() ? orderStatusProto.getStatus() : "";
+        Decimal filled = orderStatusProto.hasFilled() ? Util.stringToDecimal(orderStatusProto.getFilled()) : Decimal.INVALID;
+        Decimal remaining = orderStatusProto.hasRemaining() ? Util.stringToDecimal(orderStatusProto.getRemaining()) : Decimal.INVALID;
+        double avgFillPrice = orderStatusProto.hasAvgFillPrice() ? orderStatusProto.getAvgFillPrice() : Double.MAX_VALUE;
+        long permId = orderStatusProto.hasPermId() ? orderStatusProto.getPermId() : Long.MAX_VALUE;
+        int parentId = orderStatusProto.hasParentId() ? orderStatusProto.getParentId() : Integer.MAX_VALUE;
+        double lastFillPrice = orderStatusProto.hasLastFillPrice() ? orderStatusProto.getLastFillPrice() : Double.MAX_VALUE;
+        int clientId = orderStatusProto.hasClientId() ? orderStatusProto.getClientId() : Integer.MAX_VALUE;
+        String whyHeld = orderStatusProto.hasWhyHeld() ? orderStatusProto.getWhyHeld() : "";
+        double mktCapPrice = orderStatusProto.hasMktCapPrice() ? orderStatusProto.getMktCapPrice() : Double.MAX_VALUE;
+        m_EWrapper.orderStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
+    }
+
 	private void processOrderStatusMsg() throws IOException {
 		int version = m_serverVersion >= EClient.MIN_SERVER_VER_MARKET_CAP_PRICE ? Integer.MAX_VALUE : readInt();
 		int id = readInt();
@@ -1610,9 +1777,9 @@ class EDecoder implements ObjectInput {
 		Decimal remaining = readDecimal();
 		double avgFillPrice = readDouble();
 
-		int permId = 0;
+		long permId = 0;
 		if( version >= 2) {
-		    permId = readInt();
+		    permId = readLong();
 		}
 
 		int parentId = 0;
@@ -1968,10 +2135,10 @@ class EDecoder implements ObjectInput {
     }
 
     private void processOrderBoundMsg() throws IOException {
-        long orderId = readLong();
-        int apiClientId = readInt();
-        int apiOrderId = readInt();
-        m_EWrapper.orderBound(orderId, apiClientId, apiOrderId);
+        long permId = readLong();
+        int clientId = readInt();
+        int orderId = readInt();
+        m_EWrapper.orderBound(permId, clientId, orderId);
     }
     
     private void processCompletedOrderMsg() throws IOException {
@@ -2048,6 +2215,7 @@ class EDecoder implements ObjectInput {
         eOrderDecoder.readPegBestPegMidOrderAttributes();
         eOrderDecoder.readCustomerAccount();
         eOrderDecoder.readProfessionalCustomer();
+        eOrderDecoder.readSubmitter();
 
         m_EWrapper.completedOrder(contract, order, orderState);
     }
@@ -2101,23 +2269,28 @@ class EDecoder implements ObjectInput {
 
         m_EWrapper.userInfo(reqId, whiteBrandingId);
     }
-    
+
+    private void processCurrentTimeInMillisMsg() throws IOException {
+        long timeInMillis = readLong();
+        m_EWrapper.currentTimeInMillis(timeInMillis);
+    }
+
     private void readLastTradeDate(ContractDetails contract, boolean isBond) throws IOException {
         String lastTradeDateOrContractMonth = readStr();
         if (lastTradeDateOrContractMonth != null) {
-            String[] splitted = lastTradeDateOrContractMonth.contains("-") ? lastTradeDateOrContractMonth.split("-") : lastTradeDateOrContractMonth.split("\\s+");
-            if (splitted.length > 0) {
+            String[] split = lastTradeDateOrContractMonth.contains("-") ? lastTradeDateOrContractMonth.split("-") : lastTradeDateOrContractMonth.split("\\s+");
+            if (split.length > 0) {
                 if (isBond) {
-                    contract.maturity(splitted[0]);
+                    contract.maturity(split[0]);
                 } else {
-                    contract.contract().lastTradeDateOrContractMonth(splitted[0]);
+                    contract.contract().lastTradeDateOrContractMonth(split[0]);
                 }
             }
-            if (splitted.length > 1) {
-                contract.lastTradeTime(splitted[1]);
+            if (split.length > 1) {
+                contract.lastTradeTime(split[1]);
             }
-            if (isBond && splitted.length > 2) {
-                contract.timeZoneId(splitted[2]);
+            if (isBond && split.length > 2) {
+                contract.timeZoneId(split[2]);
             }
         }
     }
@@ -2136,6 +2309,14 @@ class EDecoder implements ObjectInput {
         return str == null ? 0 : Integer.parseInt( str);
     }
 
+    public int readRawInt() throws IOException {
+        return m_messageReader.readInt();
+    }
+
+    public byte[] readByteArray() throws IOException {
+        return m_messageReader.readByteArray();
+    }
+    
     public int readIntMax() throws IOException {
         String str = readStr();
         return (str == null || str.length() == 0) ? Integer.MAX_VALUE
@@ -2160,16 +2341,15 @@ class EDecoder implements ObjectInput {
 
     public Decimal readDecimal() throws IOException {
         String str = readStr();
-        return (str == null || str.isEmpty() || 
-                str.equals(String.valueOf(Long.MAX_VALUE)) ||
-                str.equals(String.valueOf(Integer.MAX_VALUE)) ||
-                str.equals(String.valueOf(Double.MAX_VALUE))) ? Decimal.INVALID : Decimal.parse(str);
+        return Util.stringToDecimal(str);
     }
     
     /** Message reader interface */
     private interface IMessageReader extends Closeable {
     	String readStr() throws IOException;
     	int msgLength();
+        int readInt() throws IOException;
+        byte[] readByteArray() throws IOException;
     }
 
     private static class PreV100MessageReader implements IMessageReader {
@@ -2204,6 +2384,25 @@ class EDecoder implements ObjectInput {
  	        String str = sb.toString();
  	        return str.length() == 0 ? null : str;    
  	    }
+
+        @Override public int readInt() throws IOException {
+            byte[] byteArray = new byte[4];
+            byteArray[0] = (byte)m_din.read();
+            if (byteArray[0] == -1) {
+                throw new EOFException();
+            }
+            byteArray[1] = (byte)m_din.read();
+            byteArray[2] = (byte)m_din.read();
+            byteArray[3] = (byte)m_din.read();
+            m_msgLength += 4;
+            return Builder.bytesToInt(byteArray, 0);
+        }
+
+        @Override public byte[] readByteArray() throws IOException {
+            m_msgLength += m_din.available();
+            byte[] byteArray = m_din.readAllBytes();
+            return byteArray;
+        }
     	
     	@Override public void close() {
     	    /* noop in pre-v100 */

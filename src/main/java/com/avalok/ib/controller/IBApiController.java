@@ -209,7 +209,7 @@ public class IBApiController {
 	public void cancelAllOrders() {
 		twsAPIRateControl();
 		recordOperationHistory("cancelAllOrders");
-		_api.cancelAllOrders();
+		_api.cancelAllOrders(new OrderCancel());
 	}
 	public void reqContractDetails( Contract contract, final IContractDetailsHandler processor) {
 		twsAPIRateControl();

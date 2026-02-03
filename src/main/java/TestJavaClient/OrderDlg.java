@@ -62,7 +62,7 @@ public class OrderDlg extends JDialog {
     private JTextField 	m_symbol = new JTextField( "SPY");
     private JTextField 	m_secType = new JTextField( "STK");
     private JTextField 	m_lastTradeDateOrContractMonth = new JTextField();
-    private JTextField 	m_strike = new JTextField( "0");
+    private JTextField 	m_strike = new JTextField( "");
     private JTextField 	m_right = new JTextField();
     private JTextField 	m_multiplier = new JTextField("");
     private JTextField 	m_exchange = new JTextField( "SMART");
@@ -419,7 +419,7 @@ public class OrderDlg extends JDialog {
             m_contract.symbol(m_symbol.getText());
             m_contract.secType(m_secType.getText());
             m_contract.lastTradeDateOrContractMonth(m_lastTradeDateOrContractMonth.getText());
-           	m_contract.strike(ParseDouble(m_strike.getText(), 0.0));
+           	m_contract.strike(ParseDouble(m_strike.getText(), Double.MAX_VALUE));
             m_contract.right(m_right.getText());
             m_contract.multiplier(m_multiplier.getText());
             m_contract.exchange(m_exchange.getText());

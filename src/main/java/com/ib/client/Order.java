@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.client;
@@ -36,7 +36,7 @@ public class Order {
     // order id's
     private int  m_clientId;
     private int  m_orderId;
-    private int  m_permId;
+    private long  m_permId;
     private int  m_parentId; // Parent order Id, to associate Auto STP or TRAIL orders with the original order.
 
     // primary attributes
@@ -227,9 +227,9 @@ public class Order {
     private String  m_customerAccount;
     private boolean m_professionalCustomer;
     private String  m_bondAccruedInterest;
-
-    private String  m_externalUserId;
+    private boolean m_includeOvernight;
     private int     m_manualOrderIndicator;
+    private String  m_submitter;
 
 	// getters
     public Action  action()                         { return Action.get(m_action); }
@@ -281,7 +281,7 @@ public class Order {
     public int scalePriceAdjustInterval()           { return m_scalePriceAdjustInterval; }
     public int scaleSubsLevelSize()                 { return m_scaleSubsLevelSize; }
     public Decimal totalQuantity()                  { return m_totalQuantity; }
-    public int permId()                             { return m_permId; }
+    public long permId()                            { return m_permId; }
     public Method faMethod()                        { return Method.get(m_faMethod); }
     public String getFaMethod()                     { return m_faMethod; }
     public OcaType ocaType()                        { return OcaType.get(m_ocaType); }
@@ -382,8 +382,9 @@ public class Order {
     public String customerAccount()                 { return m_customerAccount; }
     public boolean professionalCustomer()           { return m_professionalCustomer; }
     public String bondAccruedInterest()             { return m_bondAccruedInterest; }
-    public String externalUserId()                  { return m_externalUserId; }
+    public boolean includeOvernight()               { return m_includeOvernight; }
     public int manualOrderIndicator()               { return m_manualOrderIndicator; }
+    public String submitter()                       { return m_submitter; }
   
 	// setters
 	public void referenceContractId(int m_referenceContractId)          { this.m_referenceContractId = m_referenceContractId; }
@@ -443,7 +444,7 @@ public class Order {
     public void exemptCode(int v)                                       { m_exemptCode = v; }
     public void parentId(int v)                                         { m_parentId = v; }
     public void percentOffset(double v)                                 { m_percentOffset = v; }
-    public void permId(int v)                                           { m_permId = v; }
+    public void permId(long v)                                          { m_permId = v; }
     public void referencePriceType(ReferencePriceType v)                { m_referencePriceType = ( v == null ) ? 0 : v.ordinal(); }
     public void referencePriceType(int v)                               { m_referencePriceType = v; }
     public void rule80A(Rule80A v)                                      { m_rule80A = ( v == null ) ? null : v.getApiString(); }
@@ -537,8 +538,9 @@ public class Order {
     public void customerAccount(String v)                               { m_customerAccount = v; }
     public void professionalCustomer(boolean v)                         { m_professionalCustomer = v; }
     public void bondAccruedInterest(String v)                           { m_bondAccruedInterest = v; }
-    public void externalUserId(String v)                                { m_externalUserId = v; }
+    public void includeOvernight(boolean v)                             { m_includeOvernight = v; }
     public void manualOrderIndicator(int v)                             { m_manualOrderIndicator = v; }
+    public void submitter(String v)                                     { m_submitter = v; }
 
 
     public Order() {
@@ -598,8 +600,9 @@ public class Order {
         m_customerAccount = EMPTY_STR;
         m_professionalCustomer = false;
         m_bondAccruedInterest = EMPTY_STR;
-        m_externalUserId = EMPTY_STR;
+        m_includeOvernight = false;
         m_manualOrderIndicator = Integer.MAX_VALUE;
+        m_submitter = EMPTY_STR;
     }
 
     public List<TagValue> algoParams() {
@@ -709,6 +712,7 @@ public class Order {
             || m_midOffsetAtWhole != l_theOther.m_midOffsetAtWhole
             || m_midOffsetAtHalf != l_theOther.m_midOffsetAtHalf
             || m_professionalCustomer != l_theOther.m_professionalCustomer
+            || m_includeOvernight != l_theOther.m_includeOvernight
             || m_manualOrderIndicator != l_theOther.m_manualOrderIndicator
             ) {
         	return false;
@@ -757,7 +761,7 @@ public class Order {
             || Util.StringCompare(m_manualOrderTime, l_theOther.m_manualOrderTime) != 0 
             || Util.StringCompare(m_customerAccount, l_theOther.m_customerAccount) != 0 
             || Util.StringCompare(m_bondAccruedInterest, l_theOther.m_bondAccruedInterest) != 0 
-            || Util.StringCompare(m_externalUserId, l_theOther.m_externalUserId) != 0 
+            || Util.StringCompare(m_submitter, l_theOther.m_submitter) != 0 
             ) {
         	return false;
         }

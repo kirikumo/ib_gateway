@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package TestJavaClient;
@@ -123,9 +123,10 @@ public class ExtOrdDlg extends JDialog {
     private JTextField  m_midOffsetAtHalf = new JTextField();
     private JTextField  m_customerAccount = new JTextField();
     private JCheckBox   m_professionalCustomer = new JCheckBox("Professional Customer", false);
+    private JCheckBox   m_includeOvernight = new JCheckBox("Include Overnight", false);
     private JTextField  m_extOperator = new JTextField();
-    private JTextField  m_externalUserId = new JTextField();
-    private JTextField  m_manualOrderIndicator = new JTextField();
+    private UpperField  m_manualOrderIndicator = new UpperField();
+    private JCheckBox   m_imbalanceOnly = new JCheckBox("Imbalance Only", false);
 
     ExtOrdDlg( OrderDlg owner) {
         super( owner, true);
@@ -319,12 +320,12 @@ public class ExtOrdDlg extends JDialog {
         extOrderDetailsPanel.add(new JLabel("Mid Offset At Half"));
         extOrderDetailsPanel.add(m_midOffsetAtHalf);
         extOrderDetailsPanel.add(m_professionalCustomer);
+        extOrderDetailsPanel.add(m_includeOvernight);
+        extOrderDetailsPanel.add(m_imbalanceOnly);
         extOrderDetailsPanel.add( new JLabel(""));
         extOrderDetailsPanel.add(new JLabel("Ext Operator"));
         extOrderDetailsPanel.add(m_extOperator);
-        extOrderDetailsPanel.add(new JLabel("External User Id"));
-        extOrderDetailsPanel.add(m_externalUserId);
-        extOrderDetailsPanel.add(new JLabel("ManualOrderIndicator"));
+        extOrderDetailsPanel.add(new JLabel("Manual Order Indicator"));
         extOrderDetailsPanel.add(m_manualOrderIndicator);
         
         // add listeners
@@ -455,13 +456,13 @@ public class ExtOrdDlg extends JDialog {
             m_order.midOffsetAtHalf(parseMaxDouble(m_midOffsetAtHalf));
             m_order.customerAccount(m_customerAccount.getText());
             m_order.professionalCustomer(m_professionalCustomer.isSelected());
+            m_order.includeOvernight(m_includeOvernight.isSelected());
             m_order.extOperator(m_extOperator.getText());
-            m_order.externalUserId(m_externalUserId.getText());
             m_order.manualOrderIndicator(parseMaxInt(m_manualOrderIndicator));
+            m_order.imbalanceOnly(m_imbalanceOnly.isSelected());
 
             m_orderCancel.manualOrderCancelTime(m_manualOrderCancelTime.getText());
             m_orderCancel.extOperator(m_extOperator.getText());
-            m_orderCancel.externalUserId(m_externalUserId.getText());
             m_orderCancel.manualOrderIndicator(parseMaxInt(m_manualOrderIndicator));
         }
         catch( Exception e) {

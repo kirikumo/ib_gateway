@@ -11,19 +11,16 @@
 	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 </properties>
-<build>  
+<build>
 	<plugins>
 		<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-compiler-plugin</artifactId>
-			<version>3.3</version>
+			<version>3.7.0</version>
 			<configuration>
-				<!-- Target JDK 1.8 -->
 				<source>1.8</source>
 				<target>1.8</target>
-					<!-- Do incremental compilation only -->
-				<staleMillis>0</staleMillis>
-				<useIncrementalCompilation>true</useIncrementalCompilation>
+				<includes>com/**</includes>
 			</configuration>
 		</plugin>
 		<plugin>
@@ -46,9 +43,9 @@
 				</execution>
 			</executions>
 		</plugin>
-		<plugin>  
-			<groupId>org.codehaus.mojo</groupId>  
-			<artifactId>exec-maven-plugin</artifactId>  
+		<plugin>
+			<groupId>org.codehaus.mojo</groupId>
+			<artifactId>exec-maven-plugin</artifactId>
 			<version>1.2.1</version>
 			<configuration>
 				<mainClass>com.avalok.App</mainClass>
@@ -60,9 +57,39 @@
 					<argument>arg1</argument>
 				</arguments>
 			</configuration>
-		</plugin>  
-	</plugins>  
-</build> 
+		</plugin>
+
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-source-plugin</artifactId>
+			<version>3.0.1</version>
+			<configuration>
+				<includes>com/**</includes>
+			</configuration>
+			<executions>
+				<execution>
+					<id>attach-sources</id>
+					<goals>
+						<goal>jar-no-fork</goal>
+					</goals>
+				</execution>
+			</executions>
+		</plugin>
+		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-jar-plugin</artifactId>
+			<version>3.3.0</version>
+			<configuration>
+				<archive>
+					<manifestEntries>
+						<Automatic-Module-Name>com.interactivebrokers.twsapi</Automatic-Module-Name>
+					</manifestEntries>
+				</archive>
+			</configuration>
+		</plugin>
+
+	</plugins>
+</build>
 <dependencies>
 	<dependency>
 		<groupId>com.alibaba</groupId>
@@ -79,6 +106,11 @@
 		<artifactId>jedis</artifactId>
 		<version>3.5.2</version>
 		<type>jar</type>
+	</dependency>
+	<dependency>
+		<groupId>com.google.protobuf</groupId>
+		<artifactId>protobuf-java</artifactId>
+		<version>4.29.3</version>
 	</dependency>
 </dependencies>
 </project>

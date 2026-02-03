@@ -124,7 +124,7 @@ public class EClientSocket extends EClient implements EClientMsgSink  {
 	public synchronized void redirect(String newAddress) {
 	    if( m_useV100Plus ) {
 	    	if (!m_allowRedirect) {
-	    		m_eWrapper.error(EClientErrors.NO_VALID_ID, EClientErrors.CONNECT_FAIL.code(), EClientErrors.CONNECT_FAIL.msg(), null);
+	    		m_eWrapper.error(EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.CONNECT_FAIL.code(), EClientErrors.CONNECT_FAIL.msg(), null);
 	    		return;
 	    	}
 	    	
@@ -153,13 +153,13 @@ public class EClientSocket extends EClient implements EClientMsgSink  {
 		
 		if( m_useV100Plus && (m_serverVersion < MIN_VERSION || m_serverVersion > MAX_VERSION) ) {
 			eDisconnect();
-			m_eWrapper.error(EClientErrors.NO_VALID_ID, EClientErrors.UNSUPPORTED_VERSION.code(), EClientErrors.UNSUPPORTED_VERSION.msg(), null);
+			m_eWrapper.error(EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.UNSUPPORTED_VERSION.code(), EClientErrors.UNSUPPORTED_VERSION.msg(), null);
 			return;
 		}
 		
 	    if( m_serverVersion < MIN_SERVER_VER_SUPPORTED) {
 	    	eDisconnect();
-	        m_eWrapper.error( EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS.code(), EClientErrors.UPDATE_TWS.msg(), null);
+	        m_eWrapper.error( EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.UPDATE_TWS.code(), EClientErrors.UPDATE_TWS.msg(), null);
 	        return;
 	    }
 
@@ -237,10 +237,16 @@ public class EClientSocket extends EClient implements EClientMsgSink  {
 	}
 
 	public int read(byte[] buf, int off, int len) throws IOException {
+        if (m_dis == null) {
+            throw new EClientException(EClientErrors.FAIL_READ_MESSAGE, "");
+        }
 		return m_dis.read(buf, off, len);
 	}
 
 	public int readInt() throws IOException {
+        if (m_dis == null) {
+            throw new EClientException(EClientErrors.FAIL_READ_MESSAGE, "");
+        }
 		return m_dis.readInt();
 	}
 

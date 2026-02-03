@@ -89,7 +89,7 @@ public class Contract implements Cloneable {
 
     public Contract() {
     	m_conid = 0;
-        m_strike = 0;
+        m_strike = Double.MAX_VALUE;
         m_includeExpired = false;
     }
 
@@ -245,10 +245,7 @@ public class Contract implements Cloneable {
 
             app( sb, m_lastTradeDateOrContractMonth);
             app( sb, m_lastTradeDate);
-
-            if (m_strike != 0) {
-                app( sb, m_strike);
-            }
+            app( sb, m_strike);
 
             if( !Util.StringIsEmpty(m_right) && !m_right.equals("?") ) {
                 app( sb, m_right);

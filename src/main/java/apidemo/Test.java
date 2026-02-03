@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package apidemo;
@@ -12,6 +12,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import com.ib.client.*;
+import com.ib.client.protobuf.ErrorMessageProto;
+import com.ib.client.protobuf.ExecutionDetailsEndProto;
+import com.ib.client.protobuf.ExecutionDetailsProto;
+import com.ib.client.protobuf.OpenOrderProto;
+import com.ib.client.protobuf.OpenOrdersEndProto;
+import com.ib.client.protobuf.OrderStatusProto;
 
 import javax.swing.*;
 
@@ -72,8 +78,8 @@ public class Test implements EWrapper {
 		System.out.println(EWrapperMsgGenerator.error(e));
 	}
 
-	@Override public void error(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
-		System.out.println(EWrapperMsgGenerator.error(id, errorCode, errorMsg, advancedOrderRejectJson));
+	@Override public void error(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+		System.out.println(EWrapperMsgGenerator.error(id, errorTime, errorCode, errorMsg, advancedOrderRejectJson));
 	}
 
 	@Override public void connectionClosed() {
@@ -109,7 +115,7 @@ public class Test implements EWrapper {
 		System.out.println(EWrapperMsgGenerator.tickEFP( tickerId, tickType, basisPoints, formattedBasisPoints, impliedFuture, holdDays, futureLastTradeDate, dividendImpact, dividendsToLastTradeDate));
 	}
 
-	@Override public void orderStatus(int orderId, String status, Decimal filled, Decimal remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
+	@Override public void orderStatus(int orderId, String status, Decimal filled, Decimal remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
 		System.out.println(EWrapperMsgGenerator.orderStatus( orderId,  status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice));
 	}
 
@@ -217,8 +223,8 @@ public class Test implements EWrapper {
 		System.out.println(EWrapperMsgGenerator.marketDataType( reqId, marketDataType));
 	}
 
-	@Override public void commissionReport(CommissionReport commissionReport) {
-		System.out.println(EWrapperMsgGenerator.commissionReport( commissionReport));
+	@Override public void commissionAndFeesReport(CommissionAndFeesReport commissionAndFeesReport) {
+		System.out.println(EWrapperMsgGenerator.commissionAndFeesReport( commissionAndFeesReport));
 	}
 
 	@Override public void position(String account, Contract contract, Decimal pos, double avgCost) {
@@ -427,8 +433,8 @@ public class Test implements EWrapper {
     }
 
     @Override
-    public void orderBound(long orderId, int apiClientId, int apiOrderId) {
-        System.out.println(EWrapperMsgGenerator.orderBound(orderId, apiClientId, apiOrderId));
+    public void orderBound(long permId, int clientId, int orderId) {
+        System.out.println(EWrapperMsgGenerator.orderBound(permId, clientId, orderId));
     }
 
     @Override
@@ -465,4 +471,16 @@ public class Test implements EWrapper {
     public void userInfo(int reqId, String whiteBrandingId) {
         System.out.println(EWrapperMsgGenerator.userInfo(reqId, whiteBrandingId));
     }
+
+    @Override public void currentTimeInMillis(long timeInMillis) {
+    	System.out.println(EWrapperMsgGenerator.currentTimeInMillis(timeInMillis));
+    }
+    
+    // ---------------------------------------------- Protobuf ---------------------------------------------
+    @Override public void orderStatusProtoBuf(OrderStatusProto.OrderStatus orderStatusProto) { }
+    @Override public void openOrderProtoBuf(OpenOrderProto.OpenOrder openOrderProto) { }
+    @Override public void openOrdersEndProtoBuf(OpenOrdersEndProto.OpenOrdersEnd openOrdersEnd) { }
+    @Override public void errorProtoBuf(ErrorMessageProto.ErrorMessage errorMessageProto) { }
+    @Override public void execDetailsProtoBuf(ExecutionDetailsProto.ExecutionDetails executionDetailsProto) { }
+    @Override public void execDetailsEndProtoBuf(ExecutionDetailsEndProto.ExecutionDetailsEnd executionDetailsEndProto) { }
 }

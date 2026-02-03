@@ -131,7 +131,7 @@ public class IBOrder {
 	
 	
 	public int orderId() { return order.orderId(); }
-	public int permId() { return order.permId(); }
+	public long permId() { return order.permId(); }
 	public String account() { return order.account(); }
 	
 	// Updated from AllOrderHandler.orderStatus();
@@ -141,7 +141,7 @@ public class IBOrder {
 	public void setStatus(
 			int _orderId, OrderStatus _status, Decimal _filled,
 			Decimal _remaining, double _avgFillPrice,
-			int _permId, int _parentId, double _lastFillPrice,
+			long _permId, int _parentId, double _lastFillPrice,
 			int _clientId, String _whyHeld, double _mktCapPrice) {
 		if(_orderId != order.orderId())
 			err("setStatus() orderId not coinsistent " + _orderId + "," + order.orderId());
@@ -150,7 +150,7 @@ public class IBOrder {
 	public void setStatus(
 			OrderStatus _status, Decimal _filled,
 			Decimal _remaining, double _avgFillPrice,
-			int _permId, int _parentId, double _lastFillPrice,
+			long _permId, int _parentId, double _lastFillPrice,
 			int _clientId, String _whyHeld, double _mktCapPrice) {
 		if(order.permId() != 0 && _permId != order.permId())
 			err("setStatus() permId not coinsistent " + _permId + "," + order.permId());
@@ -307,11 +307,11 @@ public class IBOrder {
 		j.put("tif", order.tif());
 		j.put("whatIf", order.whatIf());
 		j.put("secType", contract.secType());
-		if (orderState.commission() == Double.MAX_VALUE) {
+		if (orderState.commissionAndFees() == Double.MAX_VALUE) {
 			j.put("commission", 0);
 		}
 		else
-			j.put("commission", orderState.commission());
+			j.put("commission", orderState.commissionAndFees());
 
 		j.put("extMsg", extMsg);
 		return j;

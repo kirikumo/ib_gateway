@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package TestJavaClient;
@@ -23,6 +23,12 @@ import java.util.concurrent.ExecutionException;
 import javax.swing.*;
 
 import com.ib.client.*;
+import com.ib.client.protobuf.ErrorMessageProto;
+import com.ib.client.protobuf.ExecutionDetailsEndProto;
+import com.ib.client.protobuf.ExecutionDetailsProto;
+import com.ib.client.protobuf.OpenOrderProto;
+import com.ib.client.protobuf.OpenOrdersEndProto;
+import com.ib.client.protobuf.OrderStatusProto;
 
 class SampleFrame extends JFrame implements EWrapper {
     private static final int NOT_AN_FA_ACCOUNT_ERROR = 321 ;
@@ -156,6 +162,8 @@ class SampleFrame extends JFrame implements EWrapper {
         butCancelRealTimeBars.addActionListener(e -> onCancelRealTimeBars());
         JButton butCurrentTime = new JButton( "Req Current Time");
         butCurrentTime.addActionListener(e -> onReqCurrentTime());
+        JButton butCurrentTimeInMillis = new JButton( "Req Current Time In Millis");
+        butCurrentTimeInMillis.addActionListener(e -> onReqCurrentTimeInMillis());
         JButton butScanner = new JButton( "Market Scanner");
         butScanner.addActionListener(e -> onScanner());
         JButton butOpenOrders = new JButton( "Req Open Orders");
@@ -288,7 +296,8 @@ class SampleFrame extends JFrame implements EWrapper {
         pairSlot.add(butFundamentalData, butCancelFundamentalData);
         pairSlot.add(butRealTimeBars, butCancelRealTimeBars);
         pairSlot.add(butRealTimeBars, butCancelRealTimeBars);
-        pairSlot.add(butScanner, butCurrentTime);
+        pairSlot.add(butCurrentTime, butCurrentTimeInMillis);
+        pairSlot.add(butScanner, butGlobalCancel);
         pairSlot.add(butCalculateImpliedVolatility, butCancelCalculateImpliedVolatility);
         pairSlot.add(butCalculateOptionPrice, butCancelCalculateOptionPrice);
 
@@ -309,7 +318,6 @@ class SampleFrame extends JFrame implements EWrapper {
         buttonPanel.add( butServerLogging );
         buttonPanel.add( butManagedAccts );
         buttonPanel.add( butFinancialAdvisor ) ;
-        buttonPanel.add( butGlobalCancel ) ;
         buttonPanel.add( butReqMarketDataType ) ;
 
         pairSlot.add(butRequestPositions, butCancelPositions);
@@ -633,6 +641,10 @@ class SampleFrame extends JFrame implements EWrapper {
     private void onReqCurrentTime() {
     	m_client.reqCurrentTime();
 	}
+
+    private void onReqCurrentTimeInMillis() {
+        m_client.reqCurrentTimeInMillis();
+    }
 
     private void onHeadTimestamp() {
 
@@ -992,7 +1004,7 @@ class SampleFrame extends JFrame implements EWrapper {
     }
 
     private void onGlobalCancel() {
-        m_client.reqGlobalCancel();
+        m_client.reqGlobalCancel(m_orderDlg.m_orderCancel);
     }
 
     private void onReqMarketDataType() {
@@ -1203,7 +1215,7 @@ class SampleFrame extends JFrame implements EWrapper {
     }
 
     public void orderStatus( int orderId, String status, Decimal filled, Decimal remaining,
-    						 double avgFillPrice, int permId, int parentId,
+    						 double avgFillPrice, long permId, int parentId,
     						 double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
         // received order status
     	String msg = EWrapperMsgGenerator.orderStatus( orderId, status, filled, remaining,
@@ -1331,7 +1343,7 @@ class SampleFrame extends JFrame implements EWrapper {
         m_errors.add( msg);
     }
 
-    public void error( int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+    public void error( int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson) {
         // received error
         final ContractDetailsCallback callback;
         synchronized (m_callbackMap) {
@@ -1350,7 +1362,7 @@ class SampleFrame extends JFrame implements EWrapper {
             }
     	}
     	
-    	String msg = EWrapperMsgGenerator.error(id, errorCode, errorMsg, advancedOrderRejectJson);
+    	String msg = EWrapperMsgGenerator.error(id, errorTime, errorCode, errorMsg, advancedOrderRejectJson);
         m_errors.add( msg);
         for (int faErrorCode : faErrorCodes) {
             faError |= (errorCode == faErrorCode);
@@ -1428,6 +1440,12 @@ class SampleFrame extends JFrame implements EWrapper {
 		String msg = EWrapperMsgGenerator.currentTime(time);
     	m_TWS.add(msg);
 	}
+
+    public void currentTimeInMillis(long timeInMillis) {
+        String msg = EWrapperMsgGenerator.currentTimeInMillis(timeInMillis);
+        m_TWS.add(msg);
+    }
+
 	public void fundamentalData(int reqId, String data) {
 		String msg = EWrapperMsgGenerator.fundamentalData(reqId, data);
 		m_tickers.add(msg);
@@ -1477,8 +1495,8 @@ class SampleFrame extends JFrame implements EWrapper {
         m_tickers.add(msg);
     }
 
-    public void commissionReport(CommissionReport commissionReport) {
-        String msg = EWrapperMsgGenerator.commissionReport(commissionReport);
+    public void commissionAndFeesReport(CommissionAndFeesReport commissionAndFeesReport) {
+        String msg = EWrapperMsgGenerator.commissionAndFeesReport(commissionAndFeesReport);
         m_TWS.add(msg);
     }
 
@@ -1574,17 +1592,15 @@ class SampleFrame extends JFrame implements EWrapper {
         destOrder.midOffsetAtHalf(srcOrder.midOffsetAtHalf());
         destOrder.customerAccount(srcOrder.customerAccount());
         destOrder.professionalCustomer(srcOrder.professionalCustomer());
-        
-        destOrder.professionalCustomer(srcOrder.professionalCustomer());
         destOrder.extOperator(srcOrder.extOperator());
-        destOrder.externalUserId(srcOrder.externalUserId());
+        destOrder.includeOvernight(srcOrder.includeOvernight());
         destOrder.manualOrderIndicator(srcOrder.manualOrderIndicator());
+        destOrder.imbalanceOnly(srcOrder.imbalanceOnly());
     }
 
     private static void copyExtendedOrderCancelDetails(OrderCancel destOrderCancel, OrderCancel srcOrderCancel) {
         destOrderCancel.manualOrderCancelTime(srcOrderCancel.manualOrderCancelTime());
         destOrderCancel.extOperator(srcOrderCancel.extOperator());
-        destOrderCancel.externalUserId(srcOrderCancel.externalUserId());
         destOrderCancel.manualOrderIndicator(srcOrderCancel.manualOrderIndicator());
     }
 
@@ -1857,8 +1873,8 @@ class SampleFrame extends JFrame implements EWrapper {
     }
 
 	@Override
-	public void orderBound(long orderId, int apiClientId, int apiOrderId) {
-        String msg = EWrapperMsgGenerator.orderBound(orderId, apiClientId, apiOrderId);
+	public void orderBound(long permId, int clientId, int orderId) {
+        String msg = EWrapperMsgGenerator.orderBound(permId, clientId, orderId);
 
         m_TWS.add(msg);
 	}
@@ -1904,4 +1920,12 @@ class SampleFrame extends JFrame implements EWrapper {
         String msg = EWrapperMsgGenerator.userInfo(reqId, whiteBrandingId);
         m_TWS.add(msg);
     }
+    
+    // ---------------------------------------------- Protobuf ---------------------------------------------
+    @Override public void orderStatusProtoBuf(OrderStatusProto.OrderStatus orderStatusProto) { }
+    @Override public void openOrderProtoBuf(OpenOrderProto.OpenOrder openOrderProto) { }
+    @Override public void openOrdersEndProtoBuf(OpenOrdersEndProto.OpenOrdersEnd openOrdersEnd) { }
+    @Override public void errorProtoBuf(ErrorMessageProto.ErrorMessage errorMessageProto) { }
+    @Override public void execDetailsProtoBuf(ExecutionDetailsProto.ExecutionDetails executionDetailsProto) { }
+    @Override public void execDetailsEndProtoBuf(ExecutionDetailsEndProto.ExecutionDetailsEnd executionDetailsEndProto) { }
 }

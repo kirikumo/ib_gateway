@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package samples.testbed.orders;
@@ -805,7 +805,15 @@ public class OrderSamples {
         // ! [limitorderwithcustomeraccount]
         return order;
     }
-    
+
+    public static Order LimitOrderWithIncludeOvernight(String action, Decimal quantity, double limitPrice) {
+        // ! [limitorderwithincludeovernight]
+        Order order = OrderSamples.LimitOrder(action, quantity, limitPrice);
+        order.includeOvernight(true);
+        // ! [limitorderwithincludeovernight]
+        return order;
+    }
+
     public static OrderCancel OrderCancelEmpty() {
         // ! [ordercancelempty]
         OrderCancel orderCancel = new OrderCancel();
@@ -821,30 +829,34 @@ public class OrderSamples {
         return orderCancel;
     }
 
-    public static Order Rfq() {
-        // ! [rfq]
-        Order order = OrderSamples.RfqEmpty();
-        order.extOperator("Ext Operator 1");
-        order.externalUserId("External User Id 1");
-        order.manualOrderIndicator(1);
-        // ! [rfq]
+    public static Order LimitOrderWithCmeTaggingFields(String action, Decimal quantity, double limitPrice, String extOperator, int manualOrderIndicator) {
+        // ! [limit_order_with_cme_tagging_fields]
+        Order order = OrderSamples.LimitOrder(action, quantity, limitPrice);
+        order.extOperator(extOperator);
+        order.manualOrderIndicator(manualOrderIndicator);
+        // ! [limit_order_with_cme_tagging_fields]
         return order;
     }
 
-    public static Order RfqEmpty() {
-        // ! [rfq_empty]
-        Order order = new Order();
-        order.orderType("QUOTE");
-        order.totalQuantity(Decimal.ONE);
-        // ! [rfq_empty]
-        return order;
-    }
-
-    public static OrderCancel RfqCancel() {
-        // ! [rfq_cancel]
-        OrderCancel orderCancel = new OrderCancel("", "Ext Operator 2", "External User Id 2", 1);
-        // ! [rfq_cancel]
+    public static OrderCancel OrderCancelWithCmeTaggingFields(String extOperator, int manualOrderIndicator) {
+        // ! [order_cancel_with_cme_tagging_fields]
+        OrderCancel orderCancel = new OrderCancel();
+        orderCancel.extOperator(extOperator);
+        orderCancel.manualOrderIndicator(manualOrderIndicator);
+        // ! [order_cancel_with_cme_tagging_fields]
         return orderCancel;
     }
 
+    public static Order LimitOnCloseOrderWithImbalance(String action, Decimal quantity, double limitPrice) {
+        // ! [limitoncloseorderwithimbalanceonly]
+        Order order = new Order();
+        order.action(action);
+        order.orderType("LOC");
+        order.totalQuantity(quantity);
+        order.lmtPrice(limitPrice);
+        order.tif(TimeInForce.DAY);
+        order.imbalanceOnly(true);
+        // ! [limitoncloseorderwithimbalanceonly]
+        return order;
+    }
 }

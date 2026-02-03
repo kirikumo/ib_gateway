@@ -949,7 +949,7 @@ public class GatewayController extends BaseIBController {
 	// TWS Message processing
 	////////////////////////////////////////////////////////////////
 	@Override
-	public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+	public void message(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 		log("id:" + id + ", code:" + errorCode + ", msg:" + errorMsg + ", advancedOrderRejectJson:"
 				+ advancedOrderRejectJson);
 		JSONObject j = new JSONObject();
@@ -1009,7 +1009,7 @@ public class GatewayController extends BaseIBController {
 			warn("Unhandled Message: id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
 			break;
 		default:
-			super.message(id, errorCode, errorMsg, advancedOrderRejectJson);
+			super.message(id, errorTime, errorCode, errorMsg, advancedOrderRejectJson);
 			if (super.latestMsgIsOkay == false)
 				Redis.pub(ackChannel, j);
 			break;

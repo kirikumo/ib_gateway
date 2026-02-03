@@ -50,12 +50,13 @@ public abstract class BaseIBController implements IConnectionHandler {
 				}
 				BaseIBController.this.error(e);
 			}
-			public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+
+			public void message(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 				if (this != _activeIBConnectionHandler) {
 					log("Ignore obsolete IBConnectionHandler event: message -> " + advancedOrderRejectJson);
 					return;
 				}
-				BaseIBController.this.message(id, errorCode, errorMsg, advancedOrderRejectJson);
+				BaseIBController.this.message(id, errorTime, errorCode, errorMsg, advancedOrderRejectJson);
 			}
 			public void show(String string) {
 				if (this != _activeIBConnectionHandler) {
@@ -321,7 +322,7 @@ public abstract class BaseIBController implements IConnectionHandler {
 	public String lastAckErrorMsg = "";
 	public boolean latestMsgIsOkay = false;
 	@Override
-	public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+	public void message(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 		latestMsgIsOkay = false;
 		switch (errorCode) {
 			case 200: // No security definition has been found for the request

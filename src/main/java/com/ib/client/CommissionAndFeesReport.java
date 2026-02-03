@@ -1,19 +1,19 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.client;
 
-public class CommissionReport {
+public class CommissionAndFeesReport {
 
     private String m_execId;
-    private double m_commission;
+    private double m_commissionAndFees;
     private String m_currency;
     private double m_realizedPNL;
     private double m_yield;
     private int    m_yieldRedemptionDate; // YYYYMMDD format
 
-    public CommissionReport() {
-        m_commission = 0;
+    public CommissionAndFeesReport() {
+        m_commissionAndFees = 0;
         m_realizedPNL = 0;
         m_yield = 0;
         m_yieldRedemptionDate = 0;
@@ -24,10 +24,10 @@ public class CommissionReport {
         if (this == p_other) {
             return true;
         }
-        if (!(p_other instanceof CommissionReport)) {
+        if (!(p_other instanceof CommissionAndFeesReport)) {
             return false;
         }
-        CommissionReport l_theOther = (CommissionReport)p_other;
+        CommissionAndFeesReport l_theOther = (CommissionAndFeesReport)p_other;
         return m_execId.equals(l_theOther.m_execId);
     }
 
@@ -45,12 +45,12 @@ public class CommissionReport {
 		this.m_execId = execId;
 	}
 
-	public double commission() {
-		return m_commission;
+	public double commissionAndFees() {
+		return m_commissionAndFees;
 	}
 
-	public void commission(double commission) {
-		this.m_commission = commission;
+	public void commissionAndFees(double commissionAndFees) {
+		this.m_commissionAndFees = commissionAndFees;
 	}
 
 	public String currency() {

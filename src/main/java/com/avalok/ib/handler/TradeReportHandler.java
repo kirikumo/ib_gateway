@@ -2,7 +2,7 @@ package com.avalok.ib.handler;
 
 import com.alibaba.fastjson.JSONObject;
 import com.bitex.util.Redis;
-import com.ib.client.CommissionReport;
+import com.ib.client.CommissionAndFeesReport;
 import com.ib.client.Contract;
 import com.ib.client.Execution;
 import com.ib.controller.ApiController;
@@ -104,13 +104,13 @@ public class TradeReportHandler implements ApiController.ITradeReportHandler {
     }
 
     @Override
-    public void commissionReport(String tradeKey, CommissionReport commissionReport) {
+    public void commissionAndFeesReport(String tradeKey, CommissionAndFeesReport commissionReport) {
 //        log("tradeKey: " + tradeKey + " commissionReport: " + commissionReport);
         if (!result.containsKey(tradeKey)) {
             result.put(tradeKey, new JSONObject());
         }
         JSONObject j = result.get(tradeKey);
-        j.put("commission", commissionReport.commission());
+        j.put("commission", commissionReport.commissionAndFees());
         j.put("execId", commissionReport.execId());
         j.put("currency", commissionReport.currency());
         j.put("realizedPNL", commissionReport.realizedPNL());

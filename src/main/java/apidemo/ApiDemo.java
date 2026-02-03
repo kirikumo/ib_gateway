@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package apidemo;
@@ -14,6 +14,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 import com.ib.controller.ApiConnection.ILogger;
+import com.ib.client.Util;
 import com.ib.controller.ApiController;
 import com.ib.controller.ApiController.IConnectionHandler;
 import com.ib.controller.Formats;
@@ -122,7 +123,7 @@ public class ApiDemo implements IConnectionHandler {
 		show( "connected");
 		m_connectionPanel.m_status.setText( "connected");
 		
-		controller().reqCurrentTime(time -> show( "Server date/time is " + Formats.fmtDate(time * 1000) ));
+        controller().reqCurrentTimeInMillis(timeInMillis -> show( "Server date/time is " + Util.UnixMillisecondsToString(timeInMillis, "MMM dd, yyyy HH:mm:ss.SSS") ));
 		
 		controller().reqBulletins( true, (msgId, newsType, message, exchange) -> {
             String str = String.format( "Received bulletin:  type=%s  exchange=%s", newsType, exchange);
@@ -156,8 +157,9 @@ public class ApiDemo implements IConnectionHandler {
 		show( e.toString() );
 	}
 	
-	@Override public void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
-		String error = id + " " + errorCode + " " + errorMsg;
+	@Override public void message(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+		String errorTimeStr = errorTime != 0 ? Util.UnixMillisecondsToString(errorTime, "yyyyMMdd-HH:mm:ss") + " " : ""; 
+		String error = id + " " + errorTimeStr + errorCode + " " + errorMsg;
 		if (advancedOrderRejectJson != null) {
 			error += (" " + advancedOrderRejectJson);
 		}
@@ -245,7 +247,7 @@ public class ApiDemo implements IConnectionHandler {
 // more dn work, e.g. deltaNeutralValidation
 // add a "newAPI" signature
 // probably should not send F..A position updates to listeners, at least not to API; also probably not send FX positions; or maybe we should support that?; filter out models or include it 
-// finish or remove strat panel
+// finish or remove start panel
 // check all ps
 // must allow normal summary and ledger at the same time
 // you could create an enum for normal account events and pass segment as a separate field

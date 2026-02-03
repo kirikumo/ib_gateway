@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package samples.testbed;
@@ -13,6 +13,8 @@ import samples.testbed.orders.OrderSamples;
 import samples.testbed.scanner.ScannerSubscriptionSamples;
 
 import com.ib.client.Types.FADataType;
+import com.ib.client.protobuf.ExecutionFilterProto;
+import com.ib.client.protobuf.ExecutionRequestProto;
 
 public class Testbed {
 
@@ -51,7 +53,7 @@ public class Testbed {
 		//tickDataOperations(wrapper.getClient());
 		//tickOptionComputations(wrapper.getClient());
 		//optionsOperations(wrapper.getClient());
-		//orderOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
+		orderOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
 		//contractOperations(wrapper.getClient());
 		//hedgeSample(wrapper.getClient(), wrapper.getCurrentOrderId());
 		//testAlgoSamples(wrapper.getClient(), wrapper.getCurrentOrderId());
@@ -76,7 +78,7 @@ public class Testbed {
 		//financialAdvisorOperations(wrapper.getClient());
 		//realTimeBars(wrapper.getClient());    
 		//wshCalendarOperations(wrapper.getClient());
-		rfqOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
+		//miscellaneous(wrapper.getClient());
 
 		Thread.sleep(100000);
 		m_client.eDisconnect();
@@ -189,8 +191,28 @@ public class Testbed {
         //client.placeOrder(nextOrderId++, ContractSamples.USStock(), OrderSamples.Discretionary("SELL", 1, 45, 0.5));
 		
         //! [reqexecutions]
-        client.reqExecutions(10001, new ExecutionFilter());
+        ExecutionFilter executionFilter1 = new ExecutionFilter();
+        executionFilter1.lastNDays(7);
+        client.reqExecutions(10001, executionFilter1);
+        ExecutionFilter executionFilter2 = new ExecutionFilter();
+        executionFilter2.specificDates(Arrays.asList(20250221, 20250220));
+        client.reqExecutions(10002, executionFilter2);
         //! [reqexecutions]
+
+        //! [reqexecutions_protobuf]
+        ExecutionFilterProto.ExecutionFilter.Builder executionFilterBuilder1 = ExecutionFilterProto.ExecutionFilter.newBuilder();
+        executionFilterBuilder1.setLastNDays(7);
+        ExecutionRequestProto.ExecutionRequest.Builder executionRequestBuilder1 = ExecutionRequestProto.ExecutionRequest.newBuilder();
+        executionRequestBuilder1.setReqId(10003);
+        executionRequestBuilder1.setExecutionFilter(executionFilterBuilder1.build());
+        client.reqExecutionsProtoBuf(executionRequestBuilder1.build());
+        ExecutionFilterProto.ExecutionFilter.Builder executionFilterBuilder2 = ExecutionFilterProto.ExecutionFilter.newBuilder();
+        executionFilterBuilder2.addAllSpecificDates(Arrays.asList(20250512, 20250513, 20250514));
+        ExecutionRequestProto.ExecutionRequest.Builder executionRequestBuilder2 = ExecutionRequestProto.ExecutionRequest.newBuilder();
+        executionRequestBuilder2.setReqId(10004);
+        executionRequestBuilder2.setExecutionFilter(executionFilterBuilder2.build());
+        client.reqExecutionsProtoBuf(executionRequestBuilder2.build());
+        //! [reqexecutions_protobuf]
 
 		int cancelID = nextOrderId -1;
 		//! [cancelorder]
@@ -198,7 +220,7 @@ public class Testbed {
 		//! [cancelorder]
 
 		//! [reqglobalcancel]
-		client.reqGlobalCancel();
+		client.reqGlobalCancel(OrderSamples.OrderCancelEmpty());
 		//! [reqglobalcancel]
 		
         /*** Completed orders ***/
@@ -214,9 +236,13 @@ public class Testbed {
         client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), OrderSamples.LimitOrderWithManualOrderTime("BUY", Decimal.get(100), 111.11, "20220314-13:00:00"));
         //! [manual_order_time]
         
+        //! [include_overnight]
+        client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), OrderSamples.LimitOrderWithIncludeOvernight("BUY", Decimal.get(100), 110.11));
+        //! [include_overnight]
+        
         //! [manual_order_cancel_time]
         cancelID = nextOrderId - 1;
-        client.cancelOrder(cancelID, new OrderCancel("20220314-19:00:00"));
+        client.cancelOrder(cancelID,  OrderSamples.OrderCancelWithManualTime("20220314-19:00:00"));
         //! [manual_order_cancel_time]
 
         //! [pegbest_up_to_mid_order_submission]
@@ -234,6 +260,25 @@ public class Testbed {
         //! [customer_account]
         client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), OrderSamples.LimitOrderWithCustomerAccount("BUY", Decimal.get(100), 111.11, "CustAcct"));
         //! [customer_account]
+
+        //! [cme_tagging_fields]
+        client.placeOrder(nextOrderId++, ContractSamples.SimpleFuture(), OrderSamples.LimitOrderWithCmeTaggingFields("BUY", Decimal.get(1), 5333, "ABCD", 1));
+        Thread.sleep(5000);
+        cancelID = nextOrderId - 1;
+        client.cancelOrder(cancelID, OrderSamples.OrderCancelWithCmeTaggingFields("BCDE", 0));
+        Thread.sleep(2000);
+        client.placeOrder(nextOrderId++, ContractSamples.SimpleFuture(), OrderSamples.LimitOrderWithCmeTaggingFields("BUY", Decimal.get(1), 5444, "CDEF", 0));
+        Thread.sleep(5000);
+        client.reqGlobalCancel(OrderSamples.OrderCancelWithCmeTaggingFields("DEFG", 1));
+        //! [cme_tagging_fields]
+
+        //! [imbalance_only]
+        client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), OrderSamples.LimitOnCloseOrderWithImbalance("BUY", Decimal.get(100), 44.44));
+        //! [imbalance_only]
+
+        //! [zero_strike_opt_order]
+        client.placeOrder(nextOrderId++, ContractSamples.OptForecastxZeroStrike(), OrderSamples.LimitOrder("BUY", Decimal.get(1), 0.05));
+        //! [zero_strike_opt_order]
 
         Thread.sleep(10000);
         
@@ -583,6 +628,8 @@ public class Testbed {
 		client.reqContractDetails(217, ContractSamples.ByIssuerId());
 		client.reqContractDetails(218, ContractSamples.Fund());
 		client.reqContractDetails(219, ContractSamples.USStock());
+		client.reqContractDetails(220, ContractSamples.OptForecastx());
+		client.reqContractDetails(221, ContractSamples.OptForecastxZeroStrike());
 		//! [reqcontractdetails]
 
 		//! [reqmatchingsymbols]
@@ -960,10 +1007,7 @@ public class Testbed {
 
 		/*** Requesting historical data for continuous futures ***/
 		//! [reqhistoricaldatacontfut]
-		Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-		SimpleDateFormat form = new SimpleDateFormat("yyyyMMdd-HH:mm:ss");
-		String formatted = form.format(cal.getTime());
-		client.reqHistoricalData(18002, ContractSamples.ContFut(), formatted, "1 Y", "1 month", "TRADES", 0, 1, false, null);
+		client.reqHistoricalData(18002, ContractSamples.ContFut(), "", "1 Y", "1 month", "TRADES", 0, 1, false, null);
 		Thread.sleep(10000);
 		/*** Canceling historical data request for continuous futures ***/
 		client.cancelHistoricalData(18002);
@@ -1023,23 +1067,17 @@ public class Testbed {
 		//! [ibkratssubmit]
 		
 	}
+	
+    private static void miscellaneous(EClientSocket client) throws InterruptedException {
 
-    private static void rfqOperations(EClientSocket client, int nextOrderId) throws InterruptedException {
-        //! [rfq_submission]
-        client.placeOrder(nextOrderId++, ContractSamples.BondWithCusip(), OrderSamples.RfqEmpty());
-        //! [rfq_submission]
-
-        Thread.sleep(5000);
-
-        int cancelID = nextOrderId - 1;
-        //! [rfq_cancel]
-        client.cancelOrder(cancelID, OrderSamples.RfqCancel());
-        //! [rfq_cancel]
+        //! [reqcurrenttime]
+        client.reqCurrentTime();
+        //! [reqcurrenttime]
 
         Thread.sleep(1000);
 
-        //! [rfq_submission]
-        client.placeOrder(nextOrderId++, ContractSamples.BondWithCusip(), OrderSamples.Rfq());
-        //! [rfq_submission]
+        //! [reqcurrenttimeinmillis]
+        client.reqCurrentTimeInMillis();
+        //! [reqcurrenttimeinmillis]
     }
 }

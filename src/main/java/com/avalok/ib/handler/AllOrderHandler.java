@@ -231,12 +231,13 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 
 		log("<-- tradeReportEnd");
 	}
-	public void commissionReport(String tradeKey, CommissionReport commissionReport) {
+
+	public void commissionAndFeesReport(String tradeKey, CommissionAndFeesReport commissionReport) {
         if (!result.containsKey(tradeKey)) {
             result.put(tradeKey, new JSONObject());
         }
         JSONObject j = result.get(tradeKey);
-        j.put("commission", commissionReport.commission());
+        j.put("commission", commissionReport.commissionAndFees());
         j.put("execId", commissionReport.execId());
         j.put("currency", commissionReport.currency());
         j.put("realizedPNL", commissionReport.realizedPNL());
@@ -293,7 +294,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	public void orderStatus(
 			int orderId, OrderStatus status, Decimal filled,
 			Decimal remaining, double avgFillPrice,
-			int permId, int parentId, double lastFillPrice, 
+			long permId, int parentId, double lastFillPrice,
 			int clientId, String whyHeld, double mktCapPrice) {
 		if (_processingOrderId != null &&_processingOrderId == orderId) {
 			log("<-- orderStatus() _processingOrder orderId " + orderId + " permId " + permId);
@@ -405,6 +406,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 //		if (!_omsInit && _deadOrderInit) initOMS();
 		if (!_omsInit) initOMS();
 	}
+
 
 	////////////////////////////////////////////////////////////////
 	// initOMS, normally do this when TWS is connected or reconnected

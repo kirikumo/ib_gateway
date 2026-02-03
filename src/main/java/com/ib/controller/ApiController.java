@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.controller;
@@ -24,8 +24,13 @@ import com.ib.client.Types.FADataType;
 import com.ib.client.Types.FundamentalType;
 import com.ib.client.Types.NewsType;
 import com.ib.client.Types.WhatToShow;
+import com.ib.client.protobuf.ErrorMessageProto;
+import com.ib.client.protobuf.ExecutionDetailsEndProto;
+import com.ib.client.protobuf.ExecutionDetailsProto;
+import com.ib.client.protobuf.OpenOrderProto;
+import com.ib.client.protobuf.OpenOrdersEndProto;
+import com.ib.client.protobuf.OrderStatusProto;
 import com.ib.controller.ApiConnection.ILogger;
-import java.util.GregorianCalendar;
 
 public class ApiController implements EWrapper {
 	private ApiConnection m_client;
@@ -40,6 +45,7 @@ public class ApiController implements EWrapper {
 	private IAdvisorHandler m_advisorHandler;
 	private IScannerHandler m_scannerHandler;
 	private ITimeHandler m_timeHandler;
+	private ITimeInMillisHandler m_timeInMillisHandlerIn;
 	private IBulletinHandler m_bulletinHandler;
 	private IUserInfoHandler m_userInfoHandler;
 	private final Map<Integer,IInternalHandler> m_contractDetailsMap = new HashMap<>();
@@ -90,7 +96,7 @@ public class ApiController implements EWrapper {
 		void disconnected();
 		void accountList(List<String> list);
 		void error(Exception e);
-		void message(int id, int errorCode, String errorMsg, String advancedOrderRejectJson);
+		void message(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson);
 		void show(String string);
 	}
 
@@ -165,7 +171,7 @@ public class ApiController implements EWrapper {
 		m_connectionHandler.error( e);
 	}
 
-	@Override public void error(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+	@Override public void error(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 		IOrderHandler handler = m_orderHandlers.get( id);
 		if (handler != null) {
 			handler.handle( errorCode, errorMsg);
@@ -180,15 +186,12 @@ public class ApiController implements EWrapper {
 			liveHandler.handle( id, errorCode, errorMsg);
 		}
 
-		// "no sec def found" response?
-		if (errorCode == 200) {
-			IInternalHandler hand = m_contractDetailsMap.remove( id);
-			if (hand != null) {
-				hand.contractDetailsEnd();
-			}
+		IInternalHandler hand = m_contractDetailsMap.remove( id);
+		if (hand != null) {
+			hand.contractDetailsEnd();
 		}
 
-		m_connectionHandler.message( id, errorCode, errorMsg, advancedOrderRejectJson);
+		m_connectionHandler.message( id, errorTime, errorCode, errorMsg, advancedOrderRejectJson);
 		recEOM();
 	}
 
@@ -429,27 +432,12 @@ public class ApiController implements EWrapper {
 		void contractDetailsEnd();
 	}
 
-	private void internalReqContractDetails( Contract contract, final IInternalHandler processor) {
+	private int internalReqContractDetails( Contract contract, final IInternalHandler processor) {
 		int reqId = m_reqId++;
 		m_contractDetailsMap.put( reqId, processor);
-		m_orderHandlers.put(reqId, new IOrderHandler() { public void handle(int errorCode, String errorMsg) { processor.contractDetailsEnd();}
-
-		@Override
-		public void orderState(OrderState orderState, Order order) {
-			// TODO Auto-generated method stub
-			
-		}
-
-		@Override
-		public void orderStatus(OrderStatus status, Decimal filled,
-				Decimal remaining, double avgFillPrice, int permId,
-				int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
-			// TODO Auto-generated method stub
-			
-		} });
-		
 		m_client.reqContractDetails(reqId, contract);
 		sendEOM();
+		return reqId;
 	}
 
 	@Override public void contractDetails(int reqId, ContractDetails contractDetails) {
@@ -747,7 +735,7 @@ public class ApiController implements EWrapper {
 	public interface ITradeReportHandler {
 		void tradeReport(String tradeKey, Contract contract, Execution execution);
 		void tradeReportEnd();
-		void commissionReport(String tradeKey, CommissionReport commissionReport);
+		void commissionAndFeesReport(String tradeKey, CommissionAndFeesReport commissionAndFeesReport);
 	}
 
     public void reqExecutions( ExecutionFilter filter, ITradeReportHandler handler) {
@@ -761,6 +749,9 @@ public class ApiController implements EWrapper {
 
 	@Override public void execDetails(int reqId, Contract contract, Execution execution) {
 		if (m_tradeReportHandler != null) {
+			if (execution.execId() == null) {
+				return;
+			}
 			int i = execution.execId().lastIndexOf( '.');
 			String tradeKey = execution.execId().substring( 0, i);
 			m_tradeReportHandler.tradeReport( tradeKey, contract, execution);
@@ -775,11 +766,11 @@ public class ApiController implements EWrapper {
 		recEOM();
 	}
 
-	@Override public void commissionReport(CommissionReport commissionReport) {
+	@Override public void commissionAndFeesReport(CommissionAndFeesReport commissionAndFeesReport) {
 		if (m_tradeReportHandler != null) {
-			int i = commissionReport.execId().lastIndexOf( '.');
-			String tradeKey = commissionReport.execId().substring( 0, i);
-			m_tradeReportHandler.commissionReport( tradeKey, commissionReport);
+			int i = commissionAndFeesReport.execId().lastIndexOf( '.');
+			String tradeKey = commissionAndFeesReport.execId().substring( 0, i);
+			m_tradeReportHandler.commissionAndFeesReport( tradeKey, commissionAndFeesReport);
 		}
 		recEOM();
 	}
@@ -850,7 +841,7 @@ public class ApiController implements EWrapper {
 	 *  Compare to ILiveOrderHandler. */
 	public interface IOrderHandler {
 		void orderState(OrderState orderState, Order order);
-		void orderStatus(OrderStatus status, Decimal filled, Decimal remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice);
+		void orderStatus(OrderStatus status, Decimal filled, Decimal remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice);
 		void handle(int errorCode, String errorMsg);
 	}
 
@@ -866,9 +857,9 @@ public class ApiController implements EWrapper {
 		// when placing new order, assign new order id
 		if (order.orderId() == 0) {
 			order.orderId( m_orderId++);
-			if (handler != null) {
-				m_orderHandlers.put( order.orderId(), handler);
-			}
+		}
+		if (handler != null) {
+			m_orderHandlers.put( order.orderId(), handler);
 		}
 
 		m_client.placeOrder( contract, order);
@@ -887,11 +878,11 @@ public class ApiController implements EWrapper {
 		sendEOM();
 	}
 
-	public void cancelAllOrders() {
+	public void cancelAllOrders(OrderCancel orderCancel) {
 		if (!checkConnection())
 			return;
 		
-		m_client.reqGlobalCancel();
+		m_client.reqGlobalCancel(orderCancel);
 		sendEOM();
 	}
 
@@ -917,7 +908,7 @@ public class ApiController implements EWrapper {
 	public interface ILiveOrderHandler {
 		void openOrder(Contract contract, Order order, OrderState orderState);
 		void openOrderEnd();
-		void orderStatus(int orderId, OrderStatus status, Decimal filled, Decimal remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice);
+		void orderStatus(int orderId, OrderStatus status, Decimal filled, Decimal remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice);
 		void handle(int orderId, int errorCode, String errorMsg);  // add permId?
 	}
 
@@ -973,7 +964,7 @@ public class ApiController implements EWrapper {
 		recEOM();
 	}
 
-	@Override public void orderStatus(int orderId, String status, Decimal filled, Decimal remaining, double avgFillPrice, int permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
+	@Override public void orderStatus(int orderId, String status, Decimal filled, Decimal remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
 		IOrderHandler handler = m_orderHandlers.get( orderId);
 		if (handler != null) {
 			handler.orderStatus( OrderStatus.valueOf( status), filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
@@ -1082,20 +1073,6 @@ public class ApiController implements EWrapper {
     	}
     }
 
-	// @Override public void historicalData(int reqId, com.ib.client.Bar bar) {
-	// 	IHistoricalDataHandler handler = m_historicalDataMap.get( reqId);
-	// 	if (handler != null) {
-	// 		if (bar.time().startsWith( "finished")) {
-	// 			handler.historicalDataEnd();
-	// 		}
-	// 		else {
-	// 			Bar bar2 = new Bar( bar.time(), bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
-	// 			handler.historicalData(bar2);
-	// 		}
-	// 	}
-	// 	recEOM();
-	// }
-
 	@Override public void historicalData(int reqId, com.ib.client.Bar bar) {
 		IHistoricalDataHandler handler = m_historicalDataMap.get( reqId);
 		if (handler != null) {
@@ -1103,22 +1080,13 @@ public class ApiController implements EWrapper {
 				handler.historicalDataEnd();
 			}
 			else {
-				long longDate;
-				if (bar.time().length() == 8) {
-					int year = Integer.parseInt( bar.time().substring( 0, 4) );
-					int month = Integer.parseInt( bar.time().substring( 4, 6) );
-					int day = Integer.parseInt( bar.time().substring( 6) );
-					longDate = new GregorianCalendar( year, month - 1, day).getTimeInMillis() / 1000;
-				}
-				else {
-					longDate = Long.parseLong( bar.time());
-				}
-				Bar bar2 = new Bar( longDate, bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
+				Bar bar2 = new Bar( bar.time(), bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
 				handler.historicalData(bar2);
 			}
 		}
 		recEOM();
 	}
+
 
 	//----------------------------------------- Real-time bars --------------------------------------
 	public interface IRealTimeBarHandler {
@@ -1195,7 +1163,7 @@ public class ApiController implements EWrapper {
 
 	protected boolean checkConnection() {
 		if (!isConnected()) {
-			error(EClientErrors.NO_VALID_ID, EClientErrors.NOT_CONNECTED.code(), EClientErrors.NOT_CONNECTED.msg(), null);
+			error(EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.NOT_CONNECTED.code(), EClientErrors.NOT_CONNECTED.msg(), null);
 			return false;
 		}
 		
@@ -1206,6 +1174,25 @@ public class ApiController implements EWrapper {
 		m_timeHandler.currentTime(time);
 		recEOM();
 	}
+
+	// ---------------------------------------- Time In Millis handling ------------------------------
+	public interface ITimeInMillisHandler {
+		void currentTimeInMillis(long timeInMillis);
+	}
+
+	public void reqCurrentTimeInMillis(ITimeInMillisHandler handler) {
+		if (!checkConnection())
+			return;
+
+		m_timeInMillisHandlerIn = handler;
+		m_client.reqCurrentTimeInMillis();
+		sendEOM();
+	}
+
+	@Override public void currentTimeInMillis(long timeInMillis) {
+		m_timeInMillisHandlerIn.currentTimeInMillis(timeInMillis);
+		recEOM();
+	}	
 
 	// ---------------------------------------- Bulletins handling ----------------------------------------
 	public interface IBulletinHandler {
@@ -1969,8 +1956,8 @@ public class ApiController implements EWrapper {
     }
 
     @Override
-    public void orderBound(long orderId, int apiClientId, int apiOrderId) {
-        show( "Order bound. OrderId: " + orderId + ", apiClientId: " + apiClientId + ", apiOrderId: " + apiOrderId);
+    public void orderBound(long permId, int clientId, int orderId) {
+        show( "Order bound. PermId: " + permId + ", clientId: " + clientId + ", orderId: " + orderId);
     }
 
     // ---------------------------------------- Completed orders ----------------------------------------
@@ -2135,4 +2122,12 @@ public class ApiController implements EWrapper {
         m_userInfoHandler.userInfo(reqId, whiteBrandingId);
         recEOM();
     }
+
+    // ---------------------------------------------- Protobuf ---------------------------------------------
+    @Override public void orderStatusProtoBuf(OrderStatusProto.OrderStatus orderStatusProto) { }
+    @Override public void openOrderProtoBuf(OpenOrderProto.OpenOrder openOrderProto) { }
+    @Override public void openOrdersEndProtoBuf(OpenOrdersEndProto.OpenOrdersEnd openOrdersEnd) { }
+    @Override public void errorProtoBuf(ErrorMessageProto.ErrorMessage errorMessageProto) { }
+    @Override public void execDetailsProtoBuf(ExecutionDetailsProto.ExecutionDetails executionDetailsProto) { }
+    @Override public void execDetailsEndProtoBuf(ExecutionDetailsEndProto.ExecutionDetailsEnd executionDetailsEndProto) { }
 }

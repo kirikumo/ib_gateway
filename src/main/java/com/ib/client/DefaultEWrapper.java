@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.client;
@@ -6,6 +6,14 @@ package com.ib.client;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import com.ib.client.protobuf.ErrorMessageProto;
+import com.ib.client.protobuf.ExecutionDetailsEndProto;
+import com.ib.client.protobuf.ExecutionDetailsProto;
+import com.ib.client.protobuf.OpenOrderProto;
+import com.ib.client.protobuf.OpenOrdersEndProto;
+import com.ib.client.protobuf.OrderStatusProto;
+
 import java.util.Set;
 
 public class DefaultEWrapper implements EWrapper {
@@ -54,7 +62,7 @@ public class DefaultEWrapper implements EWrapper {
 
 	@Override
 	public void orderStatus(int orderId, String status, Decimal filled,
-			Decimal remaining, double avgFillPrice, int permId, int parentId,
+			Decimal remaining, double avgFillPrice, long permId, int parentId,
 			double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) {
 		// TODO Auto-generated method stub
 		
@@ -233,7 +241,7 @@ public class DefaultEWrapper implements EWrapper {
 	}
 
 	@Override
-	public void commissionReport(CommissionReport commissionReport) {
+	public void commissionAndFeesReport(CommissionAndFeesReport commissionAndFeesReport) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -313,7 +321,7 @@ public class DefaultEWrapper implements EWrapper {
 	}
 
 	@Override
-	public void error(int id, int errorCode, String errorMsg, String advancedOrderRejectJson) {
+	public void error(int id, long errorTime, int errorCode, String errorMsg, String advancedOrderRejectJson) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -525,7 +533,7 @@ public class DefaultEWrapper implements EWrapper {
     }
 
     @Override
-    public void orderBound(long orderId, int apiClientId, int apiOrderId) {
+    public void orderBound(long permId, int clientId, int orderId) {
         // TODO Auto-generated method stub
     }
 
@@ -568,4 +576,18 @@ public class DefaultEWrapper implements EWrapper {
 		// TODO Auto-generated method stub
 		
 	}
+
+	@Override
+	public void currentTimeInMillis(long timeInMillis) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+    // ---------------------------------------------- Protobuf ---------------------------------------------
+    @Override public void orderStatusProtoBuf(OrderStatusProto.OrderStatus orderStatusProto) { }
+    @Override public void openOrderProtoBuf(OpenOrderProto.OpenOrder openOrderProto) { }
+    @Override public void openOrdersEndProtoBuf(OpenOrdersEndProto.OpenOrdersEnd openOrdersEnd) { }
+    @Override public void errorProtoBuf(ErrorMessageProto.ErrorMessage errorMessageProto) { }
+    @Override public void execDetailsProtoBuf(ExecutionDetailsProto.ExecutionDetails executionDetailsProto) { }
+    @Override public void execDetailsEndProtoBuf(ExecutionDetailsEndProto.ExecutionDetailsEnd executionDetailsEndProto) { }
 }

@@ -51,7 +51,7 @@ public class SingleOrderHandler implements IOrderHandler, IOrderCancelHandler {
 	public void orderStatus(
 			OrderStatus status, Decimal filled,
 			Decimal remaining, double avgFillPrice,
-			int permId, int parentId, double lastFillPrice, 
+			long permId, int parentId, double lastFillPrice,
 			int clientId, String whyHeld, double mktCapPrice) {
 		log("<-- SingleOrder udpate orderStatus: filled " + filled + " remaining:" + remaining + " permId:" + permId);
 		_order.setStatus(status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);

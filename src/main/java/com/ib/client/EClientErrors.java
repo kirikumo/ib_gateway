@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package com.ib.client;
@@ -94,6 +94,9 @@ public class EClientErrors {
     static final CodeMsgPair FAIL_SEND_CAN_WSH_EVENT_DATA = new CodeMsgPair(583, "Cancel WSH Event Data Sending Error - ");
     static final CodeMsgPair FAIL_SEND_REQ_USER_INFO = new CodeMsgPair(584, "Request User Info Sending Error - ");
     static final CodeMsgPair FA_PROFILE_NOT_SUPPORTED = new CodeMsgPair(585, "FA Profile is not supported anymore, use FA Group instead - ");
+    static final CodeMsgPair FAIL_READ_MESSAGE = new CodeMsgPair(586, "Failed to read message because not connected");
+    static final CodeMsgPair FAIL_SEND_REQCURRTIMEINMILLIS = new CodeMsgPair(587, "Request Current Time In Millis Sending Error - ");
+    static final CodeMsgPair ERROR_ENCODING_PROTOBUF = new CodeMsgPair(588, "Error encoding protobuf - ");
 
     public EClientErrors() {
     }
