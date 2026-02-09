@@ -293,6 +293,6 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		//			log(jsonArray.toString());
 		String key = "IBGateway:ReqIdContract:" + id;
 		log("Redis -> " + key);
-		Redis.setex(key, 30, JSON.toJSONString(array));
+		Redis.setex(key, 300, JSON.toJSONString(array));
 	}
 }

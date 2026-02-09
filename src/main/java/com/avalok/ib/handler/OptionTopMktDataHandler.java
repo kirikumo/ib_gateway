@@ -24,6 +24,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
     protected double marketDataSizeMultiplier;
     protected final String publishODBKChannel; // Publish odbk to universal system
     protected final String publishTickChannel; // Publish odbk to universal system
+    protected final String setexTickChannel; // Publish odbk to universal system
     protected final JSONArray topDataSnapshot = new JSONArray();
     protected final JSONObject[] topAsks = new JSONObject[] {new JSONObject()};
     protected final JSONObject[] topBids = new JSONObject[] {new JSONObject()};
@@ -31,6 +32,8 @@ public class OptionTopMktDataHandler implements IOptHandler{
 
     protected final JSONArray newTicksData = new JSONArray();
     protected final JSONArray newTicks = new JSONArray();
+    protected final JSONArray cacheTicksData = new JSONArray();
+    protected final JSONArray cacheTicks = new JSONArray();
     // Wait until tickSnapshotEnd(), This function suddenly does not work any more. 20200514
     // protected boolean tickDataInited = false;
     protected boolean tickDataInited = true;
@@ -38,7 +41,8 @@ public class OptionTopMktDataHandler implements IOptHandler{
 
     private Consumer<Jedis> broadcastTopLambda;
     private Consumer<Jedis> broadcastTickLambda;;
-    
+    private Consumer<Jedis> cacheTickLambda;
+
     public Double lastGamma;
     public Double lastVega;
     public Double lastTheta;
@@ -49,6 +53,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
         _contract = contract;
         publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
         publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel";
+        setexTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":tick_expire";
 //        publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
 //        publishTickChannel = "URANUS:"+contract.pair()+":full_tick_channel";
         if (contract.multiplier() == null)
@@ -104,6 +109,10 @@ public class OptionTopMktDataHandler implements IOptHandler{
         newTicks.add(new JSONObject());
         newTicksData.add(newTicks);
         newTicksData.add(0); // Timestamp
+
+        cacheTicks.add(new JSONObject());
+        cacheTicksData.add(cacheTicks);
+        cacheTicksData.add(0); // Timestamp
         // Pre-build broadcast lambda.
         if (broadcastTop) {
             broadcastTickLambda = new Consumer<Jedis>() {
@@ -112,6 +121,15 @@ public class OptionTopMktDataHandler implements IOptHandler{
                     if (_debug)
                         warn("Publish to " + publishTickChannel);
                     t.publish(publishTickChannel, JSON.toJSONString(newTicksData));
+                }
+            };
+
+            cacheTickLambda = new Consumer<Jedis>() {
+                @Override
+                public void accept(Jedis t) {
+                    if (_debug)
+                        warn("Setex to " + setexTickChannel);
+                    t.setex(setexTickChannel,300, JSON.toJSONString(cacheTicksData));
                 }
             };
         }
@@ -134,7 +152,9 @@ public class OptionTopMktDataHandler implements IOptHandler{
     private Long lastTickTime = 0l;
     public Double lastTickPrice = null;
     private Double lastTickSize = null;
+    private Double lastTickVolume = 0.0;
     private JSONObject lastTrade;
+    private JSONObject cacheTrade;
 
 
     @java.lang.Override
@@ -227,6 +247,8 @@ public class OptionTopMktDataHandler implements IOptHandler{
                 recordLastTrade();
                 break;
             case VOLUME:
+                lastTickVolume = size;
+                cacheLastTrade();
                 break;
             case OPEN:
                 break;
@@ -258,6 +280,8 @@ public class OptionTopMktDataHandler implements IOptHandler{
                 // info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
                 break;
             case DELAYED_VOLUME:
+                lastTickVolume = size;
+                cacheLastTrade();
                 break;
             case DELAYED_OPEN:
                 break;
@@ -417,10 +441,46 @@ public class OptionTopMktDataHandler implements IOptHandler{
             lastTrade.put("T", "BUY");
         lastTrade.put("p", lastTickPrice);
         lastTrade.put("s", lastTickSize);
+        lastTrade.put("v", lastTickVolume);
         lastTrade.put("t", lastTickTime);
         newTicks.set(0, lastTrade);
         newTicksData.set(1, System.currentTimeMillis());
         if (broadcastTickLambda != null)
             Redis.exec(broadcastTickLambda);
+        cacheLastTrade();
+    }
+
+    private void cacheLastTrade() {
+        if (tickDataInited == false) return;
+
+        double lastPrice;
+        double lastSize;
+        if (lastTickPrice == null || lastTickPrice <= 0 )
+            lastPrice = 0.0;
+        else lastPrice = lastTickPrice;
+
+        if (lastTickSize == null || lastTickSize <= 0)
+            lastSize = 0.0;
+        else lastSize = lastTickSize;
+
+        cacheTrade = new JSONObject();
+        // Guess last trade side by price difference.
+        if (bidPrice != null && askPrice != null) {
+            if (Math.abs(bidPrice-lastPrice) < Math.abs(askPrice-lastPrice))
+                cacheTrade.put("T", "SELL");
+            else
+                cacheTrade.put("T", "BUY");
+        } else
+            cacheTrade.put("T", "BUY");
+
+        cacheTrade.put("p", lastPrice);
+        cacheTrade.put("s", lastSize);
+        cacheTrade.put("v", lastTickVolume);
+        cacheTrade.put("t", lastTickTime);
+        cacheTicks.set(0, cacheTrade);
+        cacheTicksData.set(1, System.currentTimeMillis());
+
+        if (cacheTickLambda != null)
+            Redis.exec(cacheTickLambda);
     }
 }

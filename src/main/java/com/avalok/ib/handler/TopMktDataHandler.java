@@ -37,6 +37,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 
 	protected final JSONArray newTicksData = new JSONArray();
 	protected final JSONArray newTicks = new JSONArray();
+	protected final JSONArray cacheTicksData = new JSONArray();
+	protected final JSONArray cacheTicks = new JSONArray();
 	// Wait until tickSnapshotEnd(), This function suddenly does not work any more. 20200514
 	// protected boolean tickDataInited = false;
 	protected boolean tickDataInited = true;
@@ -44,6 +46,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 
 	private Consumer<Jedis> broadcastTopLambda;
 	private Consumer<Jedis> broadcastTickLambda;
+	private Consumer<Jedis> cacheTickLambda;
 	public TopMktDataHandler(IBContract contract, boolean broadcastTop, boolean broadcastTick) {
 		_contract = contract;
 		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
@@ -104,6 +107,10 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		newTicks.add(new JSONObject());
 		newTicksData.add(newTicks);
 		newTicksData.add(0); // Timestamp
+
+		cacheTicks.add(new JSONObject());
+		cacheTicksData.add(cacheTicks);
+		cacheTicksData.add(0); // Timestamp
 		// Pre-build broadcast lambda.
 		if (broadcastTop) {
 			broadcastTickLambda = new Consumer<Jedis>() {
@@ -112,7 +119,16 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 					if (_debug)
 						warn("Publish to " + publishTickChannel);
 					t.publish(publishTickChannel, JSON.toJSONString(newTicksData));
-					t.setex(setexTickChannel,300, JSON.toJSONString(newTicksData));
+//					t.setex(setexTickChannel,300, JSON.toJSONString(newTicksData));
+				}
+			};
+
+			cacheTickLambda = new Consumer<Jedis>() {
+				@Override
+				public void accept(Jedis t) {
+					if (_debug)
+						warn("Setex to " + setexTickChannel);
+					t.setex(setexTickChannel,300, JSON.toJSONString(cacheTicksData));
 				}
 			};
 		}
@@ -224,6 +240,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			recordLastTrade();
 			break;
 		case VOLUME:
+			lastTickVolume = size;
+			cacheLastTrade();
 			break;
 		case OPEN:
 			break;
@@ -251,6 +269,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			// info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
 			break;
 		case DELAYED_VOLUME:
+			lastTickVolume = size;
+			cacheLastTrade();
 			break;
 		default:
 			info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
@@ -270,6 +290,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	private Long lastTickTime = 0l;
 	public Double lastTickPrice = null;
 	private Double lastTickSize = null;
+	private Double lastTickVolume = 0.0;
 	private JSONObject lastTrade;
 
 	
@@ -292,11 +313,44 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			lastTrade.put("T", "BUY");
 		lastTrade.put("p", lastTickPrice);
 		lastTrade.put("s", lastTickSize);
+		lastTrade.put("v", lastTickVolume);
 		lastTrade.put("t", lastTickTime);
 		newTicks.set(0, lastTrade);
 		newTicksData.set(1, System.currentTimeMillis());
 		if (broadcastTickLambda != null)
 			Redis.exec(broadcastTickLambda);
+		cacheLastTrade();
+	}
+
+	private void cacheLastTrade() {
+		if (tickDataInited == false) return;
+
+		double lastPrice = lastTickPrice;
+		double lastSize = lastTickSize;
+		if (lastTickPrice <= 0)
+			lastPrice = 0;
+		if (lastTickSize == null || lastTickSize < 0)
+			lastSize = 0;
+
+		lastTrade = new JSONObject();
+		// Guess last trade side by price difference.
+		if (bidPrice != null && askPrice != null) {
+			if (Math.abs(bidPrice-lastPrice) < Math.abs(askPrice-lastPrice))
+				lastTrade.put("T", "SELL");
+			else
+				lastTrade.put("T", "BUY");
+		} else
+			lastTrade.put("T", "BUY");
+
+		lastTrade.put("p", lastPrice);
+		lastTrade.put("s", lastSize);
+		lastTrade.put("v", lastTickVolume);
+		lastTrade.put("t", lastTickTime);
+		cacheTicks.set(0, lastTrade);
+		cacheTicksData.set(1, System.currentTimeMillis());
+
+		if (cacheTickLambda != null)
+			Redis.exec(cacheTickLambda);
 	}
 
 	@Override
