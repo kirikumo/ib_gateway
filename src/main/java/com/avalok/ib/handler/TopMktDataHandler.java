@@ -292,6 +292,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	private Double lastTickSize = null;
 	private Double lastTickVolume = 0.0;
 	private JSONObject lastTrade;
+	private JSONObject cacheTrade;
 
 	
 	private void recordLastTrade() {
@@ -325,28 +326,31 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	private void cacheLastTrade() {
 		if (tickDataInited == false) return;
 
-		double lastPrice = lastTickPrice;
-		double lastSize = lastTickSize;
-		if (lastTickPrice <= 0)
-			lastPrice = 0;
-		if (lastTickSize == null || lastTickSize < 0)
-			lastSize = 0;
+		double lastPrice;
+		double lastSize;
+		if (lastTickPrice == null || lastTickPrice <= 0 )
+			lastPrice = 0.0;
+		else lastPrice = lastTickPrice;
 
-		lastTrade = new JSONObject();
+		if (lastTickSize == null || lastTickSize <= 0)
+			lastSize = 0.0;
+		else lastSize = lastTickSize;
+
+		cacheTrade = new JSONObject();
 		// Guess last trade side by price difference.
 		if (bidPrice != null && askPrice != null) {
 			if (Math.abs(bidPrice-lastPrice) < Math.abs(askPrice-lastPrice))
-				lastTrade.put("T", "SELL");
+				cacheTrade.put("T", "SELL");
 			else
-				lastTrade.put("T", "BUY");
+				cacheTrade.put("T", "BUY");
 		} else
-			lastTrade.put("T", "BUY");
+			cacheTrade.put("T", "BUY");
 
-		lastTrade.put("p", lastPrice);
-		lastTrade.put("s", lastSize);
-		lastTrade.put("v", lastTickVolume);
-		lastTrade.put("t", lastTickTime);
-		cacheTicks.set(0, lastTrade);
+		cacheTrade.put("p", lastPrice);
+		cacheTrade.put("s", lastSize);
+		cacheTrade.put("v", lastTickVolume);
+		cacheTrade.put("t", lastTickTime);
+		cacheTicks.set(0, cacheTrade);
 		cacheTicksData.set(1, System.currentTimeMillis());
 
 		if (cacheTickLambda != null)
