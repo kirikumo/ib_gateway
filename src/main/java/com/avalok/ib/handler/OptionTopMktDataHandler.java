@@ -40,7 +40,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
 	protected String cacheKey = "Unknown";
 
     private Consumer<Jedis> broadcastTopLambda;
-    private Consumer<Jedis> broadcastTickLambda;;
+    private Consumer<Jedis> broadcastTickLambda;
     private Consumer<Jedis> cacheTickLambda;
 
     public Double lastGamma;
