@@ -5,6 +5,7 @@ import static com.bitex.util.DebugUtil.*;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.alibaba.fastjson.JSON;
@@ -68,33 +69,33 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		return null;
 	}
 
-	public static boolean fillSmartIBContract(IBContract ibc, int aggGroup) {
-		// Aggregated group Indicates the smart-routing group to which a contract belongs.
-		// contracts which cannot be smart-routed have aggGroup = -1.
-		if (aggGroup == -1) return fillIBContract(ibc);
+	// public static boolean fillSmartIBContract(IBContract ibc, int aggGroup) {
+	// 	// Aggregated group Indicates the smart-routing group to which a contract belongs.
+	// 	// contracts which cannot be smart-routed have aggGroup = -1.
+	// 	if (aggGroup == -1) return fillIBContract(ibc);
 
-		Collection<IBContract> contracts = KNOWN_CONTRACTS.values();
-		IBContract result = null;
-		for (IBContract _ibc : contracts) {
-			Integer _knowAggGroup = (int) KNOWN_CONTRACT_DETAILS.get(_ibc.shownName()).get("aggGroup");
-			// Don't fill with those SMART exchange contract
-			if ( _knowAggGroup == aggGroup && _ibc.exchange().equals("SMART") == false && ibc.matchFullDetails(_ibc)) {
-				if (result == null)
-					result = _ibc;
-				else if (ibc.shownName() == null)
-					warn("Multiple results matches:" + ibc.shownName());
-				else
-					warn("Multiple results matches:" + ibc);
+	// 	Collection<IBContract> contracts = KNOWN_CONTRACTS.values();
+	// 	IBContract result = null;
+	// 	for (IBContract _ibc : contracts) {
+	// 		Integer _knowAggGroup = (int) KNOWN_CONTRACT_DETAILS.get(_ibc.shownName()).get("aggGroup");
+	// 		// Don't fill with those SMART exchange contract
+	// 		if ( _knowAggGroup == aggGroup && _ibc.exchange().equals("SMART") == false && ibc.matchFullDetails(_ibc)) {
+	// 			if (result == null)
+	// 				result = _ibc;
+	// 			else if (ibc.shownName() == null)
+	// 				warn("Multiple results matches:" + ibc.shownName());
+	// 			else
+	// 				warn("Multiple results matches:" + ibc);
 
-				if (result.exchange().equals("NYSE")) break;
-			}
-		}
-		if (result != null) {
-			ibc.copyFrom(result);
-			return true;
-		}
-		return false;
-	}
+	// 			if (result.exchange().equals("NYSE")) break;
+	// 		}
+	// 	}
+	// 	if (result != null) {
+	// 		ibc.copyFrom(result);
+	// 		return true;
+	// 	}
+	// 	return false;
+	// }
 
 	protected static void queryDetails(IBContract ibc) {
 		String key = ibc.shownName();
@@ -294,5 +295,10 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		String key = "IBGateway:ReqIdContract:" + id;
 		log("Redis -> " + key);
 		Redis.setex(key, 300, JSON.toJSONString(array));
+	}
+
+	public static void retainNeededContracts(Set<String> neededShownNameSet) {
+		KNOWN_CONTRACTS.keySet().retainAll(neededShownNameSet);
+		KNOWN_CONTRACT_DETAILS.keySet().retainAll(neededShownNameSet);
 	}
 }

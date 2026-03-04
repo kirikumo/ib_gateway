@@ -59,28 +59,44 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		else
 			multiplier = Double.parseDouble(contract.multiplier());
 		Long t0 = System.currentTimeMillis();
-		while (true) {
-			JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
-			if (contractDetail != null) {
-				marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
-				break;
-			}
+		new Thread(() -> {
+            try {
+                while (true) {
+					JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
+					if (contractDetail != null) {
+						marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
+						break;
+					}
+					log("wait for contract details " + publishODBKChannel);
+                    Thread.sleep(1000);
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
 
-			if (t0 < System.currentTimeMillis() - 2000) {
-				Contract c = contract;
-				c.exchange("SMART");
-				IBContract smartIbc = new IBContract(c);
-				JSONObject smartContractDetail = ContractDetailsHandler.findDetails(smartIbc);
-				if (smartContractDetail != null) {
-					info("WARNING!! FIX _contract.exchange FROM"+ _contract.exchange() + " to SMART");
-					_contract = smartIbc;
-					marketDataSizeMultiplier = smartContractDetail.getIntValue("suggestedSizeIncrement");
-					break;
-				}
-			}
-			log("wait for contract details " + publishODBKChannel);
-			sleep(200);
-		}
+		// while (true) {
+		// 	JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
+		// 	if (contractDetail != null) {
+		// 		marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
+		// 		break;
+		// 	}
+
+		// 	if (t0 < System.currentTimeMillis() - 2000) {
+		// 		Contract c = contract;
+		// 		c.exchange("SMART");
+		// 		IBContract smartIbc = new IBContract(c);
+		// 		JSONObject smartContractDetail = ContractDetailsHandler.findDetails(smartIbc);
+		// 		if (smartContractDetail != null) {
+		// 			info("WARNING!! FIX _contract.exchange FROM"+ _contract.exchange() + " to SMART");
+		// 			_contract = smartIbc;
+		// 			marketDataSizeMultiplier = smartContractDetail.getIntValue("suggestedSizeIncrement");
+		// 			break;
+		// 		}
+		// 	}
+		// 	log("wait for contract details " + publishODBKChannel);
+		// 	sleep(1000);
+		// }
 		// Pre-build snapshot
 		topDataSnapshot.add(topBids);
 		topDataSnapshot.add(topAsks);
@@ -204,6 +220,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			break;
 		case DELAYED_HIGH:
 			break;
+		case DELAYED_HALTED:
+			break;
 		default:
 			info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
 			break;
@@ -271,6 +289,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		case DELAYED_VOLUME:
 			lastTickVolume = size;
 			cacheLastTrade();
+			break;
+		case DELAYED_HALTED:
 			break;
 		default:
 			info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);

@@ -386,24 +386,29 @@ public class GatewayController extends BaseIBController {
 	}
 
 	private void restartMarketData() {
+		Set<String> shownNameSet = new HashSet<>();
 		info("Re-subscribe all depth data");
 		DeepMktDataHandler[] handlers1 = _depthTasks.values().toArray(new DeepMktDataHandler[0]);
 		for (DeepMktDataHandler h : handlers1) {
 			unsubscribeDepthData(h.contract());
 			subscribeDepthData(h.contract());
+			shownNameSet.add(h.contract().shownName());
 		}
 		info("Re-subscribe all top data");
 		TopMktDataHandler[] handlers2 = _topTasks.values().toArray(new TopMktDataHandler[0]);
 		for (TopMktDataHandler h : handlers2) {
 			unsubscribeTopData(h.contract());
 			subscribeTopData(h.contract());
+			shownNameSet.add(h.contract().shownName());
 		}
 		info("Re-subscribe all option top data");
 		OptionTopMktDataHandler[] handlers3 = _optionTopTasks.values().toArray(new OptionTopMktDataHandler[0]);
 		for (OptionTopMktDataHandler h : handlers3) {
 			unsubscribeTopData(h.contract());
 			subscribeTopData(h.contract());
+			shownNameSet.add(h.contract().shownName());
 		}
+		ContractDetailsHandler.retainNeededContracts(shownNameSet);
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -724,9 +729,9 @@ public class GatewayController extends BaseIBController {
 		orderCacheHandler.resetStatus();
 
 		// Then subscribe market data.
-//		if (_apiController == null) _connect();
-		subscribeTradeReport();
-		restartMarketData();
+		// if (_apiController == null) _connect();
+		// subscribeTradeReport();
+		// restartMarketData();
 
 		log("_postConnected delay 3 seconds to subscribe MV and refresh orders");
 
@@ -745,6 +750,8 @@ public class GatewayController extends BaseIBController {
 						break;
 					}
 					if (isConnected() && accList != null && _apiController != null) {
+						subscribeTradeReport();
+						restartMarketData();
 						subscribeAccountMV();
 						log("_postConnected : refresh alive and completed orders");
 						refreshLiveOrders();
