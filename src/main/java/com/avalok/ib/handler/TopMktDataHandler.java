@@ -144,7 +144,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 				public void accept(Jedis t) {
 					if (_debug)
 						warn("Setex to " + setexTickChannel);
-					t.setex(setexTickChannel,300, JSON.toJSONString(cacheTicksData));
+					t.setex(setexTickChannel,3600, JSON.toJSONString(cacheTicksData));
 				}
 			};
 		}

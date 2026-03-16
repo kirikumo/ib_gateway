@@ -581,8 +581,25 @@ public class GatewayController extends BaseIBController {
 		IBContract contract = new IBContract(j.getJSONObject("contract"));
 
 		HistoricalDataHandler handler = new HistoricalDataHandler(id);
-		_apiController.reqHistoricalData(contract, endDateTime, duration, DurationUnit.DAY, BarSize._1_day,
-				WhatToShow.TRADES, false, false, handler);
+		BarSize barSize = BarSize._1_day;
+		if (j.containsKey("barSize")) {
+			try {
+				barSize = BarSize.valueOf(j.getString("barSize"));
+			} catch (Exception e) {
+				err("Invalid bar size " + j.getString("barSize") + ", use default 1 day");
+			}
+		}
+		WhatToShow whatToShow = WhatToShow.TRADES;
+		if (j.containsKey("whatToShow")) {
+			try {
+				whatToShow = WhatToShow.valueOf(j.getString("whatToShow"));
+			} catch (Exception e) {
+				err("Invalid whatToShow " + j.getString("whatToShow") + ", use default TRADES");
+			}
+		}
+
+		_apiController.reqHistoricalData(contract, endDateTime, duration, DurationUnit.DAY, barSize,
+				whatToShow, false, false, handler);
 		return _apiController.lastReqId();
 	}
 
