@@ -73,7 +73,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			for (String acc : _ibController.accountList()) {
 				String k = "URANUS:"+ex+":"+acc+":OMS";
 				info("Mark OMS started " + k);
-				Redis.set(k, "1");
+				Redis.setex(k, 2764800, "1");
 			}
 		}
 		_allOrders.recOrder(o);
@@ -306,7 +306,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 
 		if (changed) {
 			String setexAliveOidKey =  "IBGateway:" + _ibController.name() + ":AliveOid";
-			Redis.set(setexAliveOidKey, JSON.toJSONString(_aliveOids.toArray()));
+			Redis.setex(setexAliveOidKey, 2764800, JSON.toJSONString(_aliveOids.toArray()));
 		}
 	}
 
@@ -476,7 +476,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 					for (String ex: exchanges) {
 						String k = "URANUS:"+ex+":"+acc+":OMS";
 						info("Mark OMS running " + k);
-						Redis.set(k, "1");
+						Redis.setex(k, 2764800, "1");
 					}
 				}
 			}

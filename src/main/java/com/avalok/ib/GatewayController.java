@@ -55,7 +55,7 @@ public class GatewayController extends BaseIBController {
 				j.put("type", "heartbeat");
 				j.put("status", isConnected());
 				j.put("t", System.currentTimeMillis());
-				Redis.set(liveStatusKey, j);
+				Redis.setex(liveStatusKey, 2764800, j);
 				Redis.pub(ackChannel, j);
 				if (isRealConnected()) {
 					Redis.setex(name() + "_CONNECTION", 2, "Not None");
@@ -390,23 +390,32 @@ public class GatewayController extends BaseIBController {
 		info("Re-subscribe all depth data");
 		DeepMktDataHandler[] handlers1 = _depthTasks.values().toArray(new DeepMktDataHandler[0]);
 		for (DeepMktDataHandler h : handlers1) {
-			unsubscribeDepthData(h.contract());
-			subscribeDepthData(h.contract());
-			shownNameSet.add(h.contract().shownName());
+			IBContract contract = h.contract();
+			unsubscribeDepthData(contract);
+			subscribeDepthData(contract);
+			shownNameSet.add(contract.shownName());
+			String jobKey = contract.exchange() + ":" + contract.pair();
+			cacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey, "1");
 		}
 		info("Re-subscribe all top data");
 		TopMktDataHandler[] handlers2 = _topTasks.values().toArray(new TopMktDataHandler[0]);
 		for (TopMktDataHandler h : handlers2) {
-			unsubscribeTopData(h.contract());
-			subscribeTopData(h.contract());
-			shownNameSet.add(h.contract().shownName());
+			IBContract contract = h.contract();
+			unsubscribeTopData(contract);
+			subscribeTopData(contract);
+			shownNameSet.add(contract.shownName());
+			String jobKey = contract.exchange() + ":" + contract.pair();
+			cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
 		}
 		info("Re-subscribe all option top data");
 		OptionTopMktDataHandler[] handlers3 = _optionTopTasks.values().toArray(new OptionTopMktDataHandler[0]);
 		for (OptionTopMktDataHandler h : handlers3) {
-			unsubscribeTopData(h.contract());
-			subscribeTopData(h.contract());
-			shownNameSet.add(h.contract().shownName());
+			IBContract contract = h.contract();
+			unsubscribeTopData(contract);
+			subscribeTopData(contract);
+			shownNameSet.add(contract.shownName());
+			String jobKey = contract.exchange() + ":" + contract.pair();
+			cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
 		}
 		ContractDetailsHandler.retainNeededContracts(shownNameSet);
 	}
@@ -773,13 +782,13 @@ public class GatewayController extends BaseIBController {
 						log("_postConnected : refresh alive and completed orders");
 						refreshLiveOrders();
 						refreshCompletedOrders();
-						cleanCacheSubPair();
 //						if (TEST_REDIS_TRADE) listenRedis();
 						connectTimerTask = null;
 						retryConnectCount = 0;
 						break;
 					} else {
 						log("_postConnected : isConnected " + isConnected() + " accList not null? " + (accList != null) + " retryConnectCount: " + retryConnectCount);
+						cleanCacheSubPair();
 						if (retryConnectCount >= 60) {
 							log("retryConnectCount >= 60, call _connect");
 							_connect();

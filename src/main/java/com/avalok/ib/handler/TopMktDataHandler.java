@@ -144,7 +144,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 				public void accept(Jedis t) {
 					if (_debug)
 						warn("Setex to " + setexTickChannel);
-					t.setex(setexTickChannel,3600, JSON.toJSONString(cacheTicksData));
+					t.setex(setexTickChannel,86400, JSON.toJSONString(cacheTicksData));
 				}
 			};
 		}
@@ -423,7 +423,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			info(_contract.shownName() + " marketDataType() " + marketDataType);
 		else
 			warn(_contract.shownName() + " marketDataType() " + marketDataType);
-		Redis.setex(cacheKey, 3600, String.valueOf(marketDataType));
+		Redis.setex(cacheKey, 86400, String.valueOf(marketDataType));
 	}
 
 	public void setMktCacheKey(String key) {

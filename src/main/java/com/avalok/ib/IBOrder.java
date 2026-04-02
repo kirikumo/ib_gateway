@@ -105,9 +105,9 @@ public class IBOrder {
 			order.orderType("LMT"); // Only place limit order
 		if (oj.getString("tif") != null) // Default: DAY
 			order.tif(oj.getString("tif"));
-		if (oj.getString("orderRef") != null) // Default: DAY
+		if (oj.getString("orderRef") != null)
 			order.orderRef(oj.getString("orderRef"));
-		if (oj.getString("outsideRth") != null) // Default: DAY
+		if (oj.getBoolean("outsideRth") != null)
 			order.outsideRth(oj.getBoolean("outsideRth"));
 
 		if (oj.getString("algo") != null) {

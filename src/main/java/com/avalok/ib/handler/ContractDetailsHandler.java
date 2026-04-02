@@ -221,7 +221,7 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 //		j.put("lastPrice", "");
 
 		log(">>> Redis " + key);
-		Redis.set(key, j);
+		Redis.setex(key, 2764800, j);
 		return j;
 	}
 
