@@ -24,8 +24,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	protected boolean _debug = false;
 	public final int max_depth = 1;
 	protected IBContract _contract;
-	protected final double multiplier;
-	protected double marketDataSizeMultiplier;
+	public final double multiplier;
+	protected final long marketDataSizeMultiplier;
 	protected final String publishODBKChannel; // Publish odbk to universal system
 	protected final String publishTickChannel; // Publish odbk to universal system
 	protected final String setexTickChannel;
@@ -47,33 +47,35 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	private Consumer<Jedis> broadcastTopLambda;
 	private Consumer<Jedis> broadcastTickLambda;
 	private Consumer<Jedis> cacheTickLambda;
-	public TopMktDataHandler(IBContract contract, boolean broadcastTop, boolean broadcastTick) {
+	public TopMktDataHandler(IBContract contract, long sizeMultiplier, boolean broadcastTop, boolean broadcastTick) {
 		_contract = contract;
 		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
 		publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel";
 		setexTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":tick:expire";
 //		publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
 //		publishTickChannel = "URANUS:"+contract.pair()+":full_tick_channel";
+		marketDataSizeMultiplier = sizeMultiplier;
+
 		if (contract.multiplier() == null)
 			multiplier = 1;
 		else
 			multiplier = Double.parseDouble(contract.multiplier());
-		Long t0 = System.currentTimeMillis();
-		new Thread(() -> {
-            try {
-                while (true) {
-					JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
-					if (contractDetail != null) {
-						marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
-						break;
-					}
-					log("wait for contract details " + publishODBKChannel);
-                    Thread.sleep(1000);
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).start();
+//		Long t0 = System.currentTimeMillis();
+//		new Thread(() -> {
+//            try {
+//                while (true) {
+//					JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
+//					if (contractDetail != null) {
+//						marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
+//						break;
+//					}
+//					log("wait for contract details " + publishODBKChannel);
+//                    Thread.sleep(1000);
+//                }
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        }).start();
 
 		// while (true) {
 		// 	JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
@@ -433,6 +435,10 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	@Override
 	public void tickReqParams(int tickerId, double minTick, String bboExchange, int snapshotPermissions) {
 		info(_contract.shownName() + " tickReqParams() tickerId " + tickerId + " minTick " + minTick + " bboExchange " + bboExchange + " snapshotPermissions " + snapshotPermissions);
+	}
+
+	public long getSizeMultiplier() {
+		return marketDataSizeMultiplier;
 	}
 
 }

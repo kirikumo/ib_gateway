@@ -157,7 +157,6 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		}
 
 		IBContract ibc = new IBContract(contract);
-//		log(execution.acctNumber());
         if (!result.containsKey(tradeKey)) {
             result.put(tradeKey, new JSONObject());
         }
