@@ -31,6 +31,7 @@ import com.ib.client.protobuf.OpenOrderProto;
 import com.ib.client.protobuf.OpenOrdersEndProto;
 import com.ib.client.protobuf.OrderStatusProto;
 import com.ib.controller.ApiConnection.ILogger;
+import java.util.GregorianCalendar;
 
 public class ApiController implements EWrapper {
 	private ApiConnection m_client;
