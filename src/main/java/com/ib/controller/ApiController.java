@@ -1080,7 +1080,31 @@ public class ApiController implements EWrapper {
 				handler.historicalDataEnd();
 			}
 			else {
-				Bar bar2 = new Bar( bar.time(), bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
+				long longDate;
+				String timeStr = bar.time();
+				if (bar.time().length() == 8) {
+					int year = Integer.parseInt( bar.time().substring( 0, 4) );
+					int month = Integer.parseInt( bar.time().substring( 4, 6) );
+					int day = Integer.parseInt( bar.time().substring( 6) );
+					longDate = new GregorianCalendar( year, month - 1, day).getTimeInMillis() / 1000;
+				}
+				else if (timeStr.contains(" ")) { // "20260308 17:00:00 US/Central"
+					try {
+						java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss z");
+						if (!timeStr.contains("/")) { // handle time zone like "EST"
+							fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss z");
+						} else { // handle time zone like "US/Central"
+							fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss VV");
+						}
+						longDate = java.time.ZonedDateTime.parse(timeStr, fmt).toEpochSecond();
+					} catch (Exception e) {
+						longDate = Long.parseLong(timeStr);
+					}
+				}
+				else {
+					longDate = Long.parseLong( bar.time());
+				}
+				Bar bar2 = new Bar( longDate, bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
 				handler.historicalData(bar2);
 			}
 		}

@@ -137,7 +137,7 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
             String key = "IBGateway:Summary:" + account;
             j.put("data", v);
             j.put("updateTime", System.currentTimeMillis());
-            Redis.set(key, j.toJSONString());
+            Redis.setex(key, 2764800, j.toJSONString());
             log("Redis -> " + key);
         });
     }

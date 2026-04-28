@@ -53,6 +53,6 @@ public class MarketRuleHandler implements IMarketRuleHandler {
 	private void writeRules(int marketRuleId, JSONArray rules) {
 		String key = "IBGateway:MarketRule:" + marketRuleId;
 		log(">>> Redis " + key);
-		Redis.set(key, rules);
+		Redis.setex(key, 2764800, rules);
 	}
 }

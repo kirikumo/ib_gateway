@@ -1,17 +1,16 @@
 package com.avalok.ib;
 
+import com.alibaba.fastjson.JSONArray;
 import com.avalok.ib.handler.ContractDetailsHandler;
 import static com.bitex.util.DebugUtil.*;
 
+import com.ib.client.*;
 import org.apache.commons.lang3.StringUtils;
 import com.alibaba.fastjson.JSONObject;
 
-import com.ib.client.Contract;
-import com.ib.client.Order;
-import com.ib.client.OrderState;
-import com.ib.client.OrderStatus;
 import com.ib.client.Types.Action;
-import com.ib.client.Decimal;
+
+import java.util.ArrayList;
 
 public class IBOrder {
 	public IBContract contract;
@@ -106,8 +105,25 @@ public class IBOrder {
 			order.orderType("LMT"); // Only place limit order
 		if (oj.getString("tif") != null) // Default: DAY
 			order.tif(oj.getString("tif"));
-		if (oj.getString("orderRef") != null) // Default: DAY
+		if (oj.getString("orderRef") != null)
 			order.orderRef(oj.getString("orderRef"));
+		if (oj.getBoolean("outsideRth") != null)
+			order.outsideRth(oj.getBoolean("outsideRth"));
+
+		if (oj.getString("algo") != null) {
+//			https://interactivebrokers.github.io/tws-api/ibalgos.html
+			order.algoStrategy(oj.getString("algo")); // Adaptive
+
+			JSONArray algoParams = oj.getJSONArray("algoParams");
+			if (algoParams != null) {
+				order.algoParams(new ArrayList<>());
+				for (int i = 0; i < algoParams.size(); i++) {
+					JSONObject param = algoParams.getJSONObject(i);
+					order.algoParams().add(new TagValue(param.getString("tag"), param.getString("value")));
+				}
+			}
+		}
+
 		toBePlaced = true;
 	}
 	/**

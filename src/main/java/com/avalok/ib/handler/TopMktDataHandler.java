@@ -24,8 +24,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	protected boolean _debug = false;
 	public final int max_depth = 1;
 	protected IBContract _contract;
-	protected final double multiplier;
-	protected double marketDataSizeMultiplier;
+	public final double multiplier;
+	protected final long marketDataSizeMultiplier;
 	protected final String publishODBKChannel; // Publish odbk to universal system
 	protected final String publishTickChannel; // Publish odbk to universal system
 	protected final String setexTickChannel;
@@ -37,6 +37,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 
 	protected final JSONArray newTicksData = new JSONArray();
 	protected final JSONArray newTicks = new JSONArray();
+	protected final JSONArray cacheTicksData = new JSONArray();
+	protected final JSONArray cacheTicks = new JSONArray();
 	// Wait until tickSnapshotEnd(), This function suddenly does not work any more. 20200514
 	// protected boolean tickDataInited = false;
 	protected boolean tickDataInited = true;
@@ -44,40 +46,59 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 
 	private Consumer<Jedis> broadcastTopLambda;
 	private Consumer<Jedis> broadcastTickLambda;
-	public TopMktDataHandler(IBContract contract, boolean broadcastTop, boolean broadcastTick) {
+	private Consumer<Jedis> cacheTickLambda;
+	public TopMktDataHandler(IBContract contract, long sizeMultiplier, boolean broadcastTop, boolean broadcastTick) {
 		_contract = contract;
 		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
 		publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel";
-		setexTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel:expire";
+		setexTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":tick:expire";
 //		publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
 //		publishTickChannel = "URANUS:"+contract.pair()+":full_tick_channel";
+		marketDataSizeMultiplier = sizeMultiplier;
+
 		if (contract.multiplier() == null)
 			multiplier = 1;
 		else
 			multiplier = Double.parseDouble(contract.multiplier());
-		Long t0 = System.currentTimeMillis();
-		while (true) {
-			JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
-			if (contractDetail != null) {
-				marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
-				break;
-			}
+//		Long t0 = System.currentTimeMillis();
+//		new Thread(() -> {
+//            try {
+//                while (true) {
+//					JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
+//					if (contractDetail != null) {
+//						marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
+//						break;
+//					}
+//					log("wait for contract details " + publishODBKChannel);
+//                    Thread.sleep(1000);
+//                }
+//            } catch (InterruptedException e) {
+//                e.printStackTrace();
+//            }
+//        }).start();
 
-			if (t0 < System.currentTimeMillis() - 2000) {
-				Contract c = contract;
-				c.exchange("SMART");
-				IBContract smartIbc = new IBContract(c);
-				JSONObject smartContractDetail = ContractDetailsHandler.findDetails(smartIbc);
-				if (smartContractDetail != null) {
-					info("WARNING!! FIX _contract.exchange FROM"+ _contract.exchange() + " to SMART");
-					_contract = smartIbc;
-					marketDataSizeMultiplier = smartContractDetail.getIntValue("suggestedSizeIncrement");
-					break;
-				}
-			}
-			log("wait for contract details " + publishODBKChannel);
-			sleep(200);
-		}
+		// while (true) {
+		// 	JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
+		// 	if (contractDetail != null) {
+		// 		marketDataSizeMultiplier = contractDetail.getIntValue("suggestedSizeIncrement");
+		// 		break;
+		// 	}
+
+		// 	if (t0 < System.currentTimeMillis() - 2000) {
+		// 		Contract c = contract;
+		// 		c.exchange("SMART");
+		// 		IBContract smartIbc = new IBContract(c);
+		// 		JSONObject smartContractDetail = ContractDetailsHandler.findDetails(smartIbc);
+		// 		if (smartContractDetail != null) {
+		// 			info("WARNING!! FIX _contract.exchange FROM"+ _contract.exchange() + " to SMART");
+		// 			_contract = smartIbc;
+		// 			marketDataSizeMultiplier = smartContractDetail.getIntValue("suggestedSizeIncrement");
+		// 			break;
+		// 		}
+		// 	}
+		// 	log("wait for contract details " + publishODBKChannel);
+		// 	sleep(1000);
+		// }
 		// Pre-build snapshot
 		topDataSnapshot.add(topBids);
 		topDataSnapshot.add(topAsks);
@@ -104,6 +125,10 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		newTicks.add(new JSONObject());
 		newTicksData.add(newTicks);
 		newTicksData.add(0); // Timestamp
+
+		cacheTicks.add(new JSONObject());
+		cacheTicksData.add(cacheTicks);
+		cacheTicksData.add(0); // Timestamp
 		// Pre-build broadcast lambda.
 		if (broadcastTop) {
 			broadcastTickLambda = new Consumer<Jedis>() {
@@ -112,7 +137,16 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 					if (_debug)
 						warn("Publish to " + publishTickChannel);
 					t.publish(publishTickChannel, JSON.toJSONString(newTicksData));
-					t.setex(setexTickChannel,300, JSON.toJSONString(newTicksData));
+//					t.setex(setexTickChannel,300, JSON.toJSONString(newTicksData));
+				}
+			};
+
+			cacheTickLambda = new Consumer<Jedis>() {
+				@Override
+				public void accept(Jedis t) {
+					if (_debug)
+						warn("Setex to " + setexTickChannel);
+					t.setex(setexTickChannel,86400, JSON.toJSONString(cacheTicksData));
 				}
 			};
 		}
@@ -188,6 +222,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			break;
 		case DELAYED_HIGH:
 			break;
+		case DELAYED_HALTED:
+			break;
 		default:
 			info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
 			break;
@@ -224,6 +260,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			recordLastTrade();
 			break;
 		case VOLUME:
+			lastTickVolume = size;
+			cacheLastTrade();
 			break;
 		case OPEN:
 			break;
@@ -251,6 +289,10 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			// info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
 			break;
 		case DELAYED_VOLUME:
+			lastTickVolume = size;
+			cacheLastTrade();
+			break;
+		case DELAYED_HALTED:
 			break;
 		default:
 			info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
@@ -270,7 +312,9 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	private Long lastTickTime = 0l;
 	public Double lastTickPrice = null;
 	private Double lastTickSize = null;
+	private Double lastTickVolume = 0.0;
 	private JSONObject lastTrade;
+	private JSONObject cacheTrade;
 
 	
 	private void recordLastTrade() {
@@ -292,11 +336,47 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			lastTrade.put("T", "BUY");
 		lastTrade.put("p", lastTickPrice);
 		lastTrade.put("s", lastTickSize);
+		lastTrade.put("v", lastTickVolume);
 		lastTrade.put("t", lastTickTime);
 		newTicks.set(0, lastTrade);
 		newTicksData.set(1, System.currentTimeMillis());
 		if (broadcastTickLambda != null)
 			Redis.exec(broadcastTickLambda);
+		cacheLastTrade();
+	}
+
+	private void cacheLastTrade() {
+		if (tickDataInited == false) return;
+
+		double lastPrice;
+		double lastSize;
+		if (lastTickPrice == null || lastTickPrice <= 0 )
+			lastPrice = 0.0;
+		else lastPrice = lastTickPrice;
+
+		if (lastTickSize == null || lastTickSize <= 0)
+			lastSize = 0.0;
+		else lastSize = lastTickSize;
+
+		cacheTrade = new JSONObject();
+		// Guess last trade side by price difference.
+		if (bidPrice != null && askPrice != null) {
+			if (Math.abs(bidPrice-lastPrice) < Math.abs(askPrice-lastPrice))
+				cacheTrade.put("T", "SELL");
+			else
+				cacheTrade.put("T", "BUY");
+		} else
+			cacheTrade.put("T", "BUY");
+
+		cacheTrade.put("p", lastPrice);
+		cacheTrade.put("s", lastSize);
+		cacheTrade.put("v", lastTickVolume);
+		cacheTrade.put("t", lastTickTime);
+		cacheTicks.set(0, cacheTrade);
+		cacheTicksData.set(1, System.currentTimeMillis());
+
+		if (cacheTickLambda != null)
+			Redis.exec(cacheTickLambda);
 	}
 
 	@Override
@@ -345,7 +425,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			info(_contract.shownName() + " marketDataType() " + marketDataType);
 		else
 			warn(_contract.shownName() + " marketDataType() " + marketDataType);
-		Redis.setex(cacheKey, 3600, String.valueOf(marketDataType));
+		Redis.setex(cacheKey, 86400, String.valueOf(marketDataType));
 	}
 
 	public void setMktCacheKey(String key) {
@@ -355,6 +435,10 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	@Override
 	public void tickReqParams(int tickerId, double minTick, String bboExchange, int snapshotPermissions) {
 		info(_contract.shownName() + " tickReqParams() tickerId " + tickerId + " minTick " + minTick + " bboExchange " + bboExchange + " snapshotPermissions " + snapshotPermissions);
+	}
+
+	public long getSizeMultiplier() {
+		return marketDataSizeMultiplier;
 	}
 
 }

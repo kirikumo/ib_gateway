@@ -68,20 +68,22 @@ public class IBApiController {
 	protected final ConcurrentLinkedQueue<Long> _apiRecs = new ConcurrentLinkedQueue<>();
 
 	protected void twsAPIRateControl() {
-		synchronized(_apiRecs) {
-			if (_apiRecs.size() >= MAX_IB_API_RATE) {
-				long oldestTime = _apiRecs.poll();
-				while (_apiRecs.size() >= MAX_IB_API_RATE)
-					_apiRecs.poll();
-				// Wait until 1s after the oldestTime
-				long waitTime = 1000 - (System.currentTimeMillis() - oldestTime);
-				if (waitTime > 0) {
-					log("TWS api rate reached: " + MAX_IB_API_RATE + "/s, halt for " + waitTime + "ms");
-					sleep(waitTime);
-				}
-			}
-			_apiRecs.add(System.currentTimeMillis());
-		}
+		// NOTE: In BaseIbController, newController.connect uses '+PACEAPI' connection option to let TWS pace API calls by itself, so we can skip manual control here.
+		//
+		// synchronized(_apiRecs) {
+		// 	if (_apiRecs.size() >= MAX_IB_API_RATE) {
+		// 		long oldestTime = _apiRecs.poll();
+		// 		while (_apiRecs.size() >= MAX_IB_API_RATE)
+		// 			_apiRecs.poll();
+		// 		// Wait until 1s after the oldestTime
+		// 		long waitTime = 1000 - (System.currentTimeMillis() - oldestTime);
+		// 		if (waitTime > 0) {
+		// 			log("TWS api rate reached: " + MAX_IB_API_RATE + "/s, halt for " + waitTime + "ms");
+		// 			sleep(waitTime);
+		// 		}
+		// 	}
+		// 	_apiRecs.add(System.currentTimeMillis());
+		// }
 	}
 
 	////////////////////////////////////////////////////////////////

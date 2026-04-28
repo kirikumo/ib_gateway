@@ -118,7 +118,7 @@ public class AccountMVHandler implements IAccountHandler {
 			Map<String, JSONObject> pos = _data.get(acc);
 			if (pos == null) continue;
 			log(">>> Redis " + key);
-			Redis.set(key, pos);
+			Redis.setex(key, 2764800, pos);
 		}
 	}
 

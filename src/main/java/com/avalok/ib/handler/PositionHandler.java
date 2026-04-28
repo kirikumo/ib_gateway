@@ -60,7 +60,7 @@ public class PositionHandler implements IPositionMultiHandler{
 			Redis.exec(new Consumer<Jedis>() {
 				@Override
 				public void accept(Jedis t) {
-					t.set(key, posStr);
+					t.setex(key, 2764800, posStr);
 				}
 			});
 		}

@@ -73,7 +73,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			for (String acc : _ibController.accountList()) {
 				String k = "URANUS:"+ex+":"+acc+":OMS";
 				info("Mark OMS started " + k);
-				Redis.set(k, "1");
+				Redis.setex(k, 2764800, "1");
 			}
 		}
 		_allOrders.recOrder(o);
@@ -85,6 +85,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			@Override
 			public void accept(Jedis r) { writeOMS(r, o); }
 		});
+		cacheAliveOrderId(o);
 	}
 	
 	/**
@@ -156,7 +157,6 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		}
 
 		IBContract ibc = new IBContract(contract);
-//		log(execution.acctNumber());
         if (!result.containsKey(tradeKey)) {
             result.put(tradeKey, new JSONObject());
         }
@@ -278,6 +278,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 //	private OrderCache _aliveOrders = new OrderCache();
 	private Integer _processingOrderId = null;
 	private IBOrder _processingOrder = null; // Cross validation
+	private Set<String> _aliveOids = new HashSet<>();
 	@Override
 	public void openOrder(Contract contract, Order order, OrderState orderState) {
 		IBOrder o = new IBOrder(contract, order, orderState);
@@ -288,6 +289,25 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		_processingOrder = o;
 		// Don't record this order now, not enough detail yet.
 		// leave job to orderStatus()
+		cacheAliveOrderId(o);
+	}
+
+	private void cacheAliveOrderId(IBOrder o) {
+		boolean changed;
+		Boolean isAlive = o.isAlive();
+
+		if (isAlive == null || isAlive) {
+			_aliveOids.add(o.omsClientOID());
+			changed = true;
+		}
+		else {
+			changed = _aliveOids.remove(o.omsClientOID());
+		}
+
+		if (changed) {
+			String setexAliveOidKey =  "IBGateway:" + _ibController.name() + ":AliveOid";
+			Redis.setex(setexAliveOidKey, 2764800, JSON.toJSONString(_aliveOids.toArray()));
+		}
 	}
 
 	@Override
@@ -457,7 +477,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 					for (String ex: exchanges) {
 						String k = "URANUS:"+ex+":"+acc+":OMS";
 						info("Mark OMS running " + k);
-						Redis.set(k, "1");
+						Redis.setex(k, 2764800, "1");
 					}
 				}
 			}
