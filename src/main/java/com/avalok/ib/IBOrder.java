@@ -311,8 +311,12 @@ public class IBOrder {
 			j.put("avg_price", order.lmtPrice());
 		else
 			j.put("avg_price", avgFillPrice);
-		j.put("executed_qty", order.filledQuantity().longValue());
-		j.put("remained_qty", order.totalQuantity().longValue()-order.filledQuantity().longValue());
+		long execQty = 0;
+		if (order.filledQuantity().longValue() != Long.MAX_VALUE) {
+			execQty = order.filledQuantity().longValue();
+		}
+		j.put("executed_qty", execQty);
+		j.put("remained_qty", order.totalQuantity().longValue()-execQty);
 		j.put("status", extStatus == null ? orderState.status().toString() : extStatus);
 		// created time missing, default 2000-01-01 00:00:00
 		// suggest using orderRef to store client_oid+timestamp when created.

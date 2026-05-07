@@ -277,6 +277,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	private ConcurrentLinkedQueue<IBOrder> _recvOpenOrders = new ConcurrentLinkedQueue<>();
 //	private OrderCache _aliveOrders = new OrderCache();
 	private Integer _processingOrderId = null;
+	private Long _processingPermId = null;
 	private IBOrder _processingOrder = null; // Cross validation
 	private Set<String> _aliveOids = new HashSet<>();
 	@Override
@@ -286,6 +287,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		// log("<-- openOrder:\n" + o);
 		log("<-- openOrder: " + o.permId());
 		_processingOrderId = o.orderId();
+		_processingPermId = o.permId();
 		_processingOrder = o;
 		// Don't record this order now, not enough detail yet.
 		// leave job to orderStatus()
@@ -316,8 +318,12 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			Decimal remaining, double avgFillPrice,
 			long permId, int parentId, double lastFillPrice,
 			int clientId, String whyHeld, double mktCapPrice) {
-		if (_processingOrderId != null &&_processingOrderId == orderId) {
+		if (_processingPermId != null &&_processingPermId == permId) {
 			log("<-- orderStatus() _processingOrder orderId " + orderId + " permId " + permId);
+			if (_processingOrder.orderId() == 0) {
+				// GTC order orderId on openOrder() will init to 0
+				_processingOrder.order.orderId(orderId);
+			}
 			// full log in setStatus() already.
 			_processingOrder.setStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
 			_recvOpenOrders.add(_processingOrder);
