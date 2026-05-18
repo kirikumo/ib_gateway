@@ -958,6 +958,9 @@ public class GatewayController extends BaseIBController {
 				case "REQ_EXECUTIONS":
 					_apiController.reqExecutions(new ExecutionFilter(), new TradeReportHandler());
 					break;
+				case "LOG_CONNECTION":
+					log("_apiConnected: " + _apiConnected + " _twsConnected: " + _twsConnected);
+					break;
 				case "TEST_DISCONNECT":
 					log("isConnected: " + isConnected());
 					disconnected();

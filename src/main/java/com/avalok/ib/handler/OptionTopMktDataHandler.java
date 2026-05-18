@@ -38,6 +38,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
     // protected boolean tickDataInited = false;
     protected boolean tickDataInited = true;
 	protected String cacheKey = "Unknown";
+    private Integer nowMarketDataType = null;
 
     private Consumer<Jedis> broadcastTopLambda;
     private Consumer<Jedis> broadcastTickLambda;
@@ -109,12 +110,14 @@ public class OptionTopMktDataHandler implements IOptHandler{
         topDataSnapshot.add(topBids);
         topDataSnapshot.add(topAsks);
         topDataSnapshot.add(0); // Timestamp
+		topDataSnapshot.add(null); // data delay ms
         // Pre-build broadcast lambda.
         if (broadcastTop) {
             broadcastTopLambda = new Consumer<Jedis> () {
                 @Override
                 public void accept(Jedis t) {
                     topDataSnapshot.set(2, System.currentTimeMillis());
+					topDataSnapshot.set(3, delayMs);
                     // Dont do this when same depth handler is working.
                     Long depthT = DeepMktDataHandler.CHANNEL_TIME.get(publishODBKChannel);
                     if (depthT == null || depthT < System.currentTimeMillis() - 1000) {
@@ -131,10 +134,12 @@ public class OptionTopMktDataHandler implements IOptHandler{
         newTicks.add(new JSONObject());
         newTicksData.add(newTicks);
         newTicksData.add(0); // Timestamp
+		newTicksData.add(null); // data delay ms
 
         cacheTicks.add(new JSONObject());
         cacheTicksData.add(cacheTicks);
         cacheTicksData.add(0); // Timestamp
+		cacheTicksData.add(null); // data delay ms
         // Pre-build broadcast lambda.
         if (broadcastTop) {
             broadcastTickLambda = new Consumer<Jedis>() {
@@ -177,7 +182,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
     private Double lastTickVolume = 0.0;
     private JSONObject lastTrade;
     private JSONObject cacheTrade;
-
+	private Long delayMs = null;
 
     @java.lang.Override
     public void tickPrice(TickType tickType, double price, TickAttrib attribs) {
@@ -187,14 +192,14 @@ public class OptionTopMktDataHandler implements IOptHandler{
             case BID:
                 bidPrice = price;
                 topBids[0].put("p", price);
-                if (topBids[0].getDouble("s") == null) break;
-                if (tickDataInited) broadcastTop(false);
+                // if (topBids[0].getDouble("s") == null) break;
+                // if (tickDataInited) broadcastTop(false);
                 break;
             case ASK:
                 askPrice = price;
                 topAsks[0].put("p", price);
-                if (topAsks[0].getDouble("s") == null) break;
-                if (tickDataInited) broadcastTop(false);
+                // if (topAsks[0].getDouble("s") == null) break;
+                // if (tickDataInited) broadcastTop(false);
                 break;
             case LAST:
                 lastTickPrice = price;
@@ -215,14 +220,14 @@ public class OptionTopMktDataHandler implements IOptHandler{
             case DELAYED_BID:
                 bidPrice = price;
                 topBids[0].put("p", price);
-                if (topBids[0].getDouble("s") == null) break;
-                if (tickDataInited) broadcastTop(false);
+                // if (topBids[0].getDouble("s") == null) break;
+                // if (tickDataInited) broadcastTop(false);
                 break;
             case DELAYED_ASK:
                 askPrice = price;
                 topAsks[0].put("p", price);
-                if (topAsks[0].getDouble("s") == null) break;
-                if (tickDataInited) broadcastTop(false);
+                // if (topAsks[0].getDouble("s") == null) break;
+                // if (tickDataInited) broadcastTop(false);
                 break;
             case DELAYED_LAST:
                 // if have market data subscription only type LAST, don't have type DELAYED_LAST
@@ -270,7 +275,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
                 break;
             case LAST_SIZE:
                 lastTickSize = size;
-                recordLastTrade();
+                // recordLastTrade();
                 break;
             case VOLUME:
                 lastTickVolume = size;
@@ -302,7 +307,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
             case DELAYED_LAST_SIZE:
                 // if have market data subscription only type LAST, don't have type DELAYED_LAST_SIZE
                 lastTickSize = size;
-                recordLastTrade();
+                // recordLastTrade();
                 // info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
                 break;
             case DELAYED_VOLUME:
@@ -331,16 +336,28 @@ public class OptionTopMktDataHandler implements IOptHandler{
             info(_contract.shownName() + " tickString() tickType " + tickType + " VALUE: " + value);
         switch (tickType) {
             case LAST_TIMESTAMP:
-                lastTickTime = Long.parseLong(value + "000");
+				lastTickTime = Long.parseLong(value) * 1000;
                 // lastTickPrice = null; // Could be reused by next tick
-                lastTickSize = null;
+				if (delayMs == null || delayMs != 0L)
+					delayMs = 0L;
+				if (lastTickSize != null)
+					recordLastTrade();
+                lastTickSize = null; // <- maybe no need
                 break;
             // Refer https://interactivebrokers.github.io/tws-api/market_data_type.html
             // If live data is available a request for delayed data would be ignored by TWS
             // DELAYED types
             case DELAYED_LAST_TIMESTAMP:
-                lastTickTime = Long.parseLong(value + "000");
-                lastTickSize = null;
+				lastTickTime = Long.parseLong(value) * 1000;
+
+				long exchangeTimeMs = Long.parseLong(value) * 1000L;
+				long currentTimeMs = System.currentTimeMillis();
+				long tmpDelayMs = ((currentTimeMs - exchangeTimeMs) / 60000) * 60000;
+				if (delayMs == null || tmpDelayMs < delayMs)
+					delayMs = tmpDelayMs;
+				if (lastTickSize != null)
+					recordLastTrade();
+                lastTickSize = null; // <- maybe no need
                 break;
             default:
                 info(_contract.shownName() + " tickString() tickType " + tickType + " VALUE: " + value);
@@ -360,10 +377,15 @@ public class OptionTopMktDataHandler implements IOptHandler{
     public void marketDataType(int marketDataType) {
         // https://interactivebrokers.github.io/tws-api/market_data_type.html
         // Switch to live (1) frozen (2) delayed (3) or delayed frozen (4)
-        if (marketDataType == 1)
+        if (marketDataType == 1) {
             info(_contract.shownName() + " marketDataType() " + marketDataType);
-        else
+			delayMs = 0L;
+        } else{
             warn(_contract.shownName() + " marketDataType() " + marketDataType);
+            if (nowMarketDataType == null || nowMarketDataType != marketDataType) {
+                delayMs = null;
+            }
+        }
 		Redis.setex(cacheKey, 86400, String.valueOf(marketDataType));
 	}
 
@@ -473,6 +495,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
         lastTrade.put("t", lastTickTime);
         newTicks.set(0, lastTrade);
         newTicksData.set(1, System.currentTimeMillis());
+		newTicksData.set(2, delayMs);
         if (broadcastTickLambda != null)
             Redis.exec(broadcastTickLambda);
         cacheLastTrade();
@@ -507,6 +530,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
         cacheTrade.put("t", lastTickTime);
         cacheTicks.set(0, cacheTrade);
         cacheTicksData.set(1, System.currentTimeMillis());
+		cacheTicksData.set(2, delayMs);
 
         if (cacheTickLambda != null)
             Redis.exec(cacheTickLambda);
