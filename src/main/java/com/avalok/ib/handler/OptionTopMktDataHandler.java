@@ -39,7 +39,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
     // protected boolean tickDataInited = false;
     protected boolean tickDataInited = true;
 	protected String cacheKey = "Unknown";
-	private Integer nowMarketDataType = null;
+    private Integer nowMarketDataType = null;
 
     private Consumer<Jedis> broadcastTopLambda;
     private Consumer<Jedis> broadcastTickLambda;
@@ -51,12 +51,12 @@ public class OptionTopMktDataHandler implements IOptHandler{
     public Double lastDeltaDollars;
     public boolean isLive;
 
-    public OptionTopMktDataHandler(IBContract contract, boolean broadcastTop, boolean broadcastTick) {
+    public OptionTopMktDataHandler(IBContract contract, String gwName, boolean broadcastTop, boolean broadcastTick) {
         _contract = contract;
-        publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
-        publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_tick_channel";
-        setexTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":tick:expire";
-        computationPrefixKey = "URANUS:"+contract.exchange()+":"+contract.pair();
+        publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":full_odbk_channel";
+        publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":full_tick_channel";
+        setexTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":tick:expire";
+        computationPrefixKey = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName;
 
         // publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
         // publishTickChannel = "URANUS:"+contract.pair()+":full_tick_channel";

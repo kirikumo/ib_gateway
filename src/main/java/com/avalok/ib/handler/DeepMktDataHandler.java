@@ -40,9 +40,9 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 	protected boolean askDepthInited = true;
 
 	private Consumer<Jedis> broadcastLambda;
-	public DeepMktDataHandler(IBContract contract, long sizeMultiplier, boolean broadcast) {
+	public DeepMktDataHandler(IBContract contract, String gwName, long sizeMultiplier, boolean broadcast) {
 		_contract = contract;
-		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":full_odbk_channel";
+		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":full_odbk_channel";
 //		publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
 		marketDataSizeMultiplier = sizeMultiplier;
 

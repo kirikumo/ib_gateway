@@ -161,7 +161,7 @@ public class GatewayController extends BaseIBController {
 
 		log("Subscribe depth data for " + jobKey + ", exchange: " + contract.exchange());
 		int numOfRows = 10;
-		DeepMktDataHandler handler = new DeepMktDataHandler(contract, sizeMultiplier, true);
+		DeepMktDataHandler handler = new DeepMktDataHandler(contract, _name, sizeMultiplier, true);
 		_apiController.reqDeepMktData(contract, numOfRows, isSmartDepth, handler);
 		int qid = _apiController.lastReqId();
 		_depthTaskByReqID.put(qid, jobKey); // reference for error msg
@@ -283,7 +283,7 @@ public class GatewayController extends BaseIBController {
 		if (isOptType) {
 			log("Subscribe option top data for " + jobKey + ", exchange: " + contract.exchange());
 			boolean broadcastTop = true, broadcastTick = true;
-			OptionTopMktDataHandler handler = new OptionTopMktDataHandler(contract, broadcastTop, broadcastTick);
+			OptionTopMktDataHandler handler = new OptionTopMktDataHandler(contract, _name, broadcastTop, broadcastTick);
 			handler.setMktCacheKey(CACHE_SUB_TOP_KEY + ":" + contract.exchange() + ":" + contract.pair() + ":mkt");
 			String genericTickList = "";
 
@@ -297,7 +297,7 @@ public class GatewayController extends BaseIBController {
 		} else {
 			log("Subscribe top data for " + jobKey + ", exchange: " + contract.exchange());
 			boolean broadcastTop = true, broadcastTick = true;
-			TopMktDataHandler handler = new TopMktDataHandler(contract, sizeMultiplier, broadcastTop, broadcastTick);
+			TopMktDataHandler handler = new TopMktDataHandler(contract, _name, sizeMultiplier, broadcastTop, broadcastTick);
 			handler.setMktCacheKey(CACHE_SUB_TOP_KEY + ":" + contract.exchange() + ":" + contract.pair() + ":mkt");
 			// See <Generic tick required> at
 			// https://interactivebrokers.github.io/tws-api/tick_types.html
