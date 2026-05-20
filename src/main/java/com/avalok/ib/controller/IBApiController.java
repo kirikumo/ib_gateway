@@ -143,6 +143,11 @@ public class IBApiController {
 		recordOperationHistory("cancelTopMktData");
 		_api.cancelTopMktData(handler);
     }
+	public void cancelOptionTopMktData( IOptHandler handler) {
+		twsAPIRateControl();
+		recordOperationHistory("cancelOptionTopMktData");
+		_api.cancelOptionMktData(handler);
+	}
 	public void reqExecutions(ExecutionFilter filter, ITradeReportHandler handler) {
 		twsAPIRateControl();
 		recordOperationHistory("reqExecutions");

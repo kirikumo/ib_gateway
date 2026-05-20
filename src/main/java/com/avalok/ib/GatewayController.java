@@ -241,7 +241,7 @@ public class GatewayController extends BaseIBController {
 		if (subDataDepthKeyMap.containsKey(jobKey)) {
 			SubData data = subDataDepthKeyMap.get(jobKey);
 			apiIdReqDataMap.remove(data.apiId);
-			subDataDepthKeyMap.remove((jobKey));
+			subDataDepthKeyMap.remove(jobKey);
 		}
 
 		int qid = 0;
@@ -282,18 +282,23 @@ public class GatewayController extends BaseIBController {
 
 		if (isOptType) {
 			log("Subscribe option top data for " + jobKey + ", exchange: " + contract.exchange());
+			String genericTickList = "";
 			boolean broadcastTop = true, broadcastTick = true;
 			OptionTopMktDataHandler handler = new OptionTopMktDataHandler(contract, _name, broadcastTop, broadcastTick);
 			handler.setMktCacheKey(CACHE_SUB_TOP_KEY + ":" + contract.exchange() + ":" + contract.pair() + ":mkt");
-			String genericTickList = "";
 
 			// Request snapshot, then updates
 			boolean snapshot = true, regulatorySnapshot = false;
 			_apiController.reqOptionMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
+
 			snapshot = false;
 			regulatorySnapshot = false;
-			_apiController.reqOptionMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
-			_optionTopTasks.put(jobKey, handler);
+			// Unsubscribe logic uses handlers and unique reqIds (ticker IDs).
+			// Since reqId increments per request, different requests utilize different handlers.
+			OptionTopMktDataHandler handler2 = new OptionTopMktDataHandler(contract, _name, broadcastTop, broadcastTick);
+			handler2.setMktCacheKey(CACHE_SUB_TOP_KEY + ":" + contract.exchange() + ":" + contract.pair() + ":mkt");
+			_optionTopTasks.put(jobKey, handler2);
+			_apiController.reqOptionMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler2);
 		} else {
 			log("Subscribe top data for " + jobKey + ", exchange: " + contract.exchange());
 			boolean broadcastTop = true, broadcastTick = true;
@@ -306,10 +311,15 @@ public class GatewayController extends BaseIBController {
 			// Request snapshot, then updates
 			boolean snapshot = true, regulatorySnapshot = false;
 			_apiController.reqTopMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
+
 			snapshot = false;
 			regulatorySnapshot = false;
-			_apiController.reqTopMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler);
-			_topTasks.put(jobKey, handler);
+			// Unsubscribe logic uses handlers and unique reqIds (ticker IDs).
+			// Since reqId increments per request, different requests utilize different handlers.
+			TopMktDataHandler handler2 = new TopMktDataHandler(contract, _name, sizeMultiplier, broadcastTop, broadcastTick);
+			handler2.setMktCacheKey(CACHE_SUB_TOP_KEY + ":" + contract.exchange() + ":" + contract.pair() + ":mkt");
+			_topTasks.put(jobKey, handler2);
+			_apiController.reqTopMktData(contract, genericTickList, snapshot, regulatorySnapshot, handler2);
 		}
 		int qid = _apiController.lastReqId();
 		_topTaskByReqID.put(qid, jobKey); // reference for error msg
@@ -363,7 +373,8 @@ public class GatewayController extends BaseIBController {
 		if (isOptType) {
 			OptionTopMktDataHandler optHandler = _optionTopTasks.get(jobKey);
 			log("Cancel option top data for " + jobKey);
-			_apiController.cancelTopMktData(optHandler);
+			// _apiController.cancelTopMktData(optHandler);
+			_apiController.cancelOptionTopMktData(optHandler);
 			_optionTopTasks.remove(jobKey);
 		} else {
 			TopMktDataHandler handler = _topTasks.get(jobKey);
@@ -380,7 +391,7 @@ public class GatewayController extends BaseIBController {
 		if (subDataTopKeyMap.containsKey(jobKey)) {
 			SubData data = subDataTopKeyMap.get(jobKey);
 			apiIdReqDataMap.remove(data.apiId);
-			subDataTopKeyMap.remove((jobKey));
+			subDataTopKeyMap.remove(jobKey);
 		}
 
 		int qid = 0;
