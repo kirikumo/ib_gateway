@@ -282,7 +282,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
                 break;
             case VOLUME:
                 lastTickVolume = size;
-                cacheLastTrade();
+                recordLastTrade();
                 break;
             case OPEN:
                 break;
@@ -315,7 +315,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
                 break;
             case DELAYED_VOLUME:
                 lastTickVolume = size;
-                cacheLastTrade();
+                recordLastTrade();
                 break;
             case DELAYED_OPEN:
                 break;
@@ -478,7 +478,7 @@ public class OptionTopMktDataHandler implements IOptHandler{
 
     private void recordLastTrade() {
         if (tickDataInited == false) return;
-        if (lastTickSize == 0) return;
+        if (lastTickSize == null || lastTickSize == 0) return;
         if (lastTickPrice == null || lastTickPrice <= 0 || lastTickSize == null || lastTickSize < 0) {
             err(_contract.shownName() + " Call recordLastTrade() with incompleted data " + _contract.shownName() + " lastTickPrice "
                     + lastTickPrice + " lastTickSize " + lastTickSize);
