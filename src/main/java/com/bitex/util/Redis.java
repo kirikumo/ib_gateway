@@ -2,6 +2,7 @@ package com.bitex.util;
 
 import static com.bitex.util.DebugUtil.*;
 
+import java.util.Map;
 import java.util.function.Consumer;
 
 import com.alibaba.fastjson.JSON;
@@ -9,6 +10,7 @@ import com.alibaba.fastjson.JSON;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import redis.clients.jedis.StreamEntryID;
 
 /**
  * Thread-safe redis pool
@@ -101,5 +103,10 @@ public class Redis {
 				t.setex(k, seconds, v);
 			}
 		});
+	}
+
+	public static void xadd(String key, Object j) {
+		String jsonStr = JSON.toJSONString(j);
+		exec(t -> t.xadd(key, StreamEntryID.NEW_ENTRY, Map.of("data", jsonStr), 10000, true ));
 	}
 }

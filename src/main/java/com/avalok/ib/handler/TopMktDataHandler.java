@@ -1,5 +1,10 @@
 package com.avalok.ib.handler;
 
+import static com.bitex.util.DebugUtil.err;
+import static com.bitex.util.DebugUtil.info;
+import static com.bitex.util.DebugUtil.log;
+import static com.bitex.util.DebugUtil.warn;
+
 import java.util.function.Consumer;
 
 import com.alibaba.fastjson.JSON;
@@ -7,15 +12,12 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.IBContract;
 import com.bitex.util.Redis;
-import com.ib.client.Contract;
 import com.ib.client.Decimal;
 import com.ib.client.TickAttrib;
 import com.ib.client.TickType;
 import com.ib.controller.ApiController.ITopMktDataHandler;
 
 import redis.clients.jedis.Jedis;
-
-import static com.bitex.util.DebugUtil.*;
 
 /**
  * Reuse the broadcast and internal cache structure from DeepMktDataHandler
@@ -29,6 +31,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	protected final String publishODBKChannel; // Publish odbk to universal system
 	protected final String publishTickChannel; // Publish odbk to universal system
 	protected final String setexTickChannel;
+	protected final String streamODBKChannel;
 
 	protected final JSONArray topDataSnapshot = new JSONArray();
 	protected final JSONObject[] topAsks = new JSONObject[] {new JSONObject()};
@@ -53,6 +56,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":full_odbk_channel";
 		publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":full_tick_channel";
 		setexTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":tick:expire";
+		streamODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":tick:stream";
 //		publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
 //		publishTickChannel = "URANUS:"+contract.pair()+":full_tick_channel";
 		marketDataSizeMultiplier = sizeMultiplier;
@@ -120,6 +124,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 						t.publish(publishODBKChannel, JSON.toJSONString(topDataSnapshot));
 					} else if (_debug)
 						warn("Dont publish to " + publishODBKChannel);
+					// Redis.xadd(streamODBKChannel, topDataSnapshot);
 				}
 			};
 		}
@@ -183,6 +188,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			case OPEN:
 				break;
 			case CLOSE:
+				close = price;
 				break;
 			case LOW:
 				info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
@@ -222,6 +228,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 			case DELAYED_OPEN:
 				break;
 			case DELAYED_CLOSE:
+				close = price;
 				break;
 			case DELAYED_LOW:
 				break;
@@ -266,7 +273,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 				break;
 			case VOLUME:
 				lastTickVolume = size;
-				cacheLastTrade();
+				recordLastTrade();
 				break;
 			case OPEN:
 				break;
@@ -295,7 +302,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 				break;
 			case DELAYED_VOLUME:
 				lastTickVolume = size;
-				cacheLastTrade();
+				recordLastTrade();
 				break;
 			case DELAYED_HALTED:
 				break;
@@ -321,10 +328,11 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	private JSONObject lastTrade;
 	private JSONObject cacheTrade;
 	private Long delayMs = null;
+	public Double close = null;
 
 	private void recordLastTrade() {
 		if (tickDataInited == false) return;
-		if (lastTickSize == 0) return;
+		if (lastTickSize == null || lastTickSize == 0) return;
 		if (lastTickPrice == null || lastTickPrice <= 0 || lastTickSize == null || lastTickSize < 0) {
 			err(_contract.shownName() + " Call recordLastTrade() with incompleted data " + _contract.shownName() + " lastTickPrice "
 					+ lastTickPrice + " lastTickSize " + lastTickSize);
@@ -342,6 +350,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		lastTrade.put("p", lastTickPrice);
 		lastTrade.put("s", lastTickSize);
 		lastTrade.put("v", lastTickVolume);
+		lastTrade.put("closePrice", close);
 		lastTrade.put("t", lastTickTime);
 		newTicks.set(0, lastTrade);
 		newTicksData.set(1, System.currentTimeMillis());
@@ -377,6 +386,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		cacheTrade.put("p", lastPrice);
 		cacheTrade.put("s", lastSize);
 		cacheTrade.put("v", lastTickVolume);
+		cacheTrade.put("closePrice", close);
 		cacheTrade.put("t", lastTickTime);
 		cacheTicks.set(0, cacheTrade);
 		cacheTicksData.set(1, System.currentTimeMillis());

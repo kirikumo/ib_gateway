@@ -1,6 +1,5 @@
 package com.avalok.ib.handler;
 
-import apidemo.AccountSummaryPanel;
 import com.alibaba.fastjson.JSONObject;
 import com.ib.controller.AccountSummaryTag;
 import com.ib.controller.ApiController.IAccountSummaryHandler;
@@ -10,7 +9,6 @@ import java.util.Map;
 
 import static com.bitex.util.DebugUtil.*;
 import com.bitex.util.Redis;
-import static com.ib.controller.AccountSummaryTag.AccountType;
 
 public class AccountSummaryHandler implements IAccountSummaryHandler{
     Map<String, Map<String, String>> m_map = new HashMap<>();

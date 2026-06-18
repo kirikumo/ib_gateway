@@ -407,6 +407,21 @@ public class GatewayController extends BaseIBController {
 		return qid;
 	}
 
+
+	// private int snapshotData(IBContract contract) {
+	// 	if (!isRealConnected()) return 0;
+
+	// 	JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
+	// 	if (contractDetail == null) return 0;
+
+	// 	long sizeMultiplier = contractDetail.getLongValue("suggestedSizeIncrement");
+
+	// 	unsubscribeTopData(contract);
+	// 	int qid = subscribeTopData(contract, sizeMultiplier, true);
+
+	// 	return qid;
+	// }
+
 	private void restartMarketData() {
 		Set<String> shownNameSet = new HashSet<>();
 		info("Re-subscribe all depth data");
@@ -922,6 +937,9 @@ public class GatewayController extends BaseIBController {
 				case "UNSUB_TOP_MARK":
 					apiReqId = unsubscribeTopDataAndMarkHost(new IBContract(j.getJSONObject("contract")), j.getString("botId"));
 					break;
+				// case "SNAPSHOT":
+				// 	apiReqId = snapshotData(new IBContract(j.getJSONObject("contract")));
+				// 	break;
 				case "RESET":
 					_postConnected();
 					break;
