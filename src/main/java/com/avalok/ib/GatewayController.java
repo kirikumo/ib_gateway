@@ -72,8 +72,8 @@ public class GatewayController extends BaseIBController {
 	private ConcurrentHashMap<Integer, String> _depthTaskByReqID = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<String, List<String>> _depthShareHost = new ConcurrentHashMap<>();
 	private final boolean isSmartDepth = false;
-	private String CACHE_SUB_TOP_KEY = "SubTop:" + _name ;
-	private String CACHE_SUB_DEPTH_KEY = "SubDepth:" + _name ;
+	private String CACHE_SUB_TOP_KEY = "IBGateway:SubTop:" + _name ;
+	private String CACHE_SUB_DEPTH_KEY = "IBGateway:SubDepth:" + _name ;
 	private static class ReqData {
 		String key;
 		String hostName;
