@@ -318,7 +318,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			Decimal remaining, double avgFillPrice,
 			long permId, int parentId, double lastFillPrice,
 			int clientId, String whyHeld, double mktCapPrice) {
-		if (_processingPermId != null &&_processingPermId == permId) {
+		// 需同時有 _processingOrder，避免 openOrderEnd 後殘留 _processingPermId 導致 NPE
+		if (_processingOrder != null && _processingPermId != null && _processingPermId == permId) {
 			log("<-- orderStatus() _processingOrder orderId " + orderId + " permId " + permId);
 			if (_processingOrder.orderId() == 0) {
 				// GTC order orderId on openOrder() will init to 0
@@ -425,6 +426,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	public void openOrderEnd() {
 		log("<-- openOrder END");
 		_processingOrderId = null;
+		_processingPermId = null;
 		_processingOrder = null;
 		_allOrders.recOrders(_recvOpenOrders.toArray(new IBOrder[0]));
 		_recvOpenOrders.clear();
@@ -442,6 +444,9 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		_omsInit = false;
 		_aliveOrderInit = false;
 		_deadOrderInit = false;
+		_processingOrderId = null;
+		_processingPermId = null;
+		_processingOrder = null;
 		_recvOpenOrders.clear();
 //		_aliveOrders = new OrderCache();
 		_recvCompletedOrder.clear();
