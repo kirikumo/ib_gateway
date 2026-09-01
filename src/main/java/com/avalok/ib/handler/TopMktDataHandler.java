@@ -191,10 +191,10 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 				close = price;
 				break;
 			case LOW:
-				info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
+				if (price > 0) dayLow = price;
 				break;
 			case HIGH:
-				info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
+				if (price > 0) dayHigh = price;
 				break;
 			case HALTED:
 				break;
@@ -231,8 +231,10 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 				close = price;
 				break;
 			case DELAYED_LOW:
+				if (price > 0) dayLow = price;
 				break;
 			case DELAYED_HIGH:
+				if (price > 0) dayHigh = price;
 				break;
 			case DELAYED_HALTED:
 				break;
@@ -329,6 +331,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	private JSONObject cacheTrade;
 	private Long delayMs = null;
 	public Double close = null;
+	public Double dayHigh = null;
+	public Double dayLow = null;
 
 	private void recordLastTrade() {
 		if (tickDataInited == false) return;
@@ -387,6 +391,8 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		cacheTrade.put("s", lastSize);
 		cacheTrade.put("v", lastTickVolume);
 		cacheTrade.put("closePrice", close);
+		cacheTrade.put("dayHigh", dayHigh);
+		cacheTrade.put("dayLow", dayLow);
 		cacheTrade.put("t", lastTickTime);
 		cacheTicks.set(0, cacheTrade);
 		cacheTicksData.set(1, System.currentTimeMillis());

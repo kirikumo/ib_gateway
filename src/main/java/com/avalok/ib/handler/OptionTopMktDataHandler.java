@@ -186,6 +186,8 @@ public class OptionTopMktDataHandler implements IOptHandler{
     private JSONObject lastTrade;
     private JSONObject cacheTrade;
 	private Long delayMs = null;
+    public Double dayHigh = null;
+    public Double dayLow = null;
 
     @java.lang.Override
     public void tickPrice(TickType tickType, double price, TickAttrib attribs) {
@@ -212,8 +214,10 @@ public class OptionTopMktDataHandler implements IOptHandler{
             case CLOSE:
                 break;
             case LOW:
+                if (price > 0) dayLow = price;
                 break;
             case HIGH:
+                if (price > 0) dayHigh = price;
                 break;
             case HALTED:
                 break;
@@ -242,8 +246,10 @@ public class OptionTopMktDataHandler implements IOptHandler{
             case DELAYED_CLOSE:
                 break;
             case DELAYED_LOW:
+                if (price > 0) dayLow = price;
                 break;
             case DELAYED_HIGH:
+                if (price > 0) dayHigh = price;
                 break;
             case DELAYED_HALTED:
                 break;
@@ -531,6 +537,8 @@ public class OptionTopMktDataHandler implements IOptHandler{
         cacheTrade.put("p", lastPrice);
         cacheTrade.put("s", lastSize);
         cacheTrade.put("v", lastTickVolume);
+        cacheTrade.put("dayHigh", dayHigh);
+        cacheTrade.put("dayLow", dayLow);
         cacheTrade.put("t", lastTickTime);
         cacheTicks.set(0, cacheTrade);
         cacheTicksData.set(1, System.currentTimeMillis());
