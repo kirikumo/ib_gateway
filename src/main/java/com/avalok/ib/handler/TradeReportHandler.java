@@ -52,60 +52,17 @@ public class TradeReportHandler implements ApiController.ITradeReportHandler {
         j.put("evMultiplier", execution.evMultiplier());
         j.put("modelCode", execution.modelCode());
         j.put("lastLiquidity", execution.lastLiquidityStr());
-
-        // Redis.exec(new Consumer<Jedis>() {
-        //     @Override
-        //     public void accept(Jedis t) {
-        //         String key = "TradeReport:"+execution.acctNumber();
-        //         JSONObject j = new JSONObject();
-        //         j.put("orderId", execution.orderId());
-        //         j.put("clientId", execution.clientId());
-        //         j.put("execId", execution.execId());
-        //         j.put("time", execution.time());
-        //         j.put("acctNumber", execution.acctNumber());
-        //         j.put("exchange", execution.exchange());
-        //         j.put("side", execution.side());
-        //         j.put("shares", execution.shares().longValue());
-        //         j.put("price", execution.price());
-        //         j.put("permId", execution.permId());
-        //         j.put("liquidation", execution.liquidation());
-        //         j.put("cumQty", execution.cumQty().longValue());
-        //         j.put("avgPrice", execution.avgPrice());
-        //         j.put("orderRef", execution.orderRef());
-        //         j.put("evRule", execution.evRule());
-        //         j.put("evMultiplier", execution.evMultiplier());
-        //         j.put("modelCode", execution.modelCode());
-        //         j.put("lastLiquidity", execution.lastLiquidityStr());
-
-        //         t.hset(key, tradeKey, j.toJSONString());
-        //     }
-        // });
+        persistTrade(tradeKey, j);
     }
 
     @Override
     public void tradeReportEnd() {
-         Redis.exec(new Consumer<Jedis>() {
-             @Override
-             public void accept(Jedis t) {
-                try {
-                    result.forEach((tradeKey, v) -> {
-                        String acctNumber = v.getString("acctNumber");
-                        String key = "TradeReport:" + acctNumber;
-                        v.put("tradeKey", tradeKey);
-                        t.hset(key, tradeKey, v.toJSONString());
-                    });
-                } finally {
-                    result.clear();
-                }
-              }
-          });
-
+        flushTrades();
         log("tradeReportEnd");
     }
 
     @Override
     public void commissionAndFeesReport(String tradeKey, CommissionAndFeesReport commissionReport) {
-//        log("tradeKey: " + tradeKey + " commissionReport: " + commissionReport);
         if (!result.containsKey(tradeKey)) {
             result.put(tradeKey, new JSONObject());
         }
@@ -116,5 +73,24 @@ public class TradeReportHandler implements ApiController.ITradeReportHandler {
         j.put("realizedPNL", commissionReport.realizedPNL());
         j.put("yield", commissionReport.yield());
         j.put("yieldRedemptionDate", commissionReport.yieldRedemptionDate());
+        persistTrade(tradeKey, j);
+    }
+
+    private void persistTrade(String tradeKey, JSONObject j) {
+        String acctNumber = j.getString("acctNumber");
+        if (acctNumber == null) return;
+        j.put("tradeKey", tradeKey);
+        Redis.exec(t -> t.hset("TradeReport:" + acctNumber, tradeKey, j.toJSONString()));
+    }
+
+    private void flushTrades() {
+        Redis.exec(t -> {
+            result.forEach((tradeKey, v) -> {
+                String acctNumber = v.getString("acctNumber");
+                if (acctNumber == null) return;
+                v.put("tradeKey", tradeKey);
+                t.hset("TradeReport:" + acctNumber, tradeKey, v.toJSONString());
+            });
+        });
     }
 }

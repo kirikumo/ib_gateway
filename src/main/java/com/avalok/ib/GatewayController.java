@@ -70,7 +70,7 @@ public class GatewayController extends BaseIBController {
 	////////////////////////////////////////////////////////////////
 	private ConcurrentHashMap<String, DeepMktDataHandler> _depthTasks = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<Integer, String> _depthTaskByReqID = new ConcurrentHashMap<>();
-	private ConcurrentHashMap<String, List<String>> _depthShareHost = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<String, Set<String>> _depthShareHost = new ConcurrentHashMap<>();
 	private final boolean isSmartDepth = false;
 	private String CACHE_SUB_TOP_KEY = "IBGateway:SubTop:" + _name ;
 	private String CACHE_SUB_DEPTH_KEY = "IBGateway:SubDepth:" + _name ;
@@ -196,18 +196,12 @@ public class GatewayController extends BaseIBController {
 		if (contractDetail == null) return 0;
 
 		String jobKey = contract.exchange() + ":" + contract.pair();
-		if (_depthShareHost.containsKey(jobKey)) {
-			// if (_depthShareHost.get(jobKey).contains(hostName)) return 0;
-		} else {
-			List<String> hostList = new ArrayList<>();
-			_depthShareHost.put(jobKey, hostList);
-		}
+		shareHostSet(_depthShareHost, jobKey).add(hostName);
 
 		long sizeMultiplier = contractDetail.getLongValue("suggestedSizeIncrement");
 		unsubscribeDepthData(contract);
 		int qid = subscribeDepthData(contract, sizeMultiplier);
 		cacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey, "1");
-		_depthShareHost.get(jobKey).add(hostName);
 
 //		remove cache qid data before mark new qid data
 		if (subDataDepthKeyMap.containsKey(jobKey)) {
@@ -245,11 +239,10 @@ public class GatewayController extends BaseIBController {
 		}
 
 		int qid = 0;
-		if (_depthShareHost.containsKey(jobKey) && _depthShareHost.get(jobKey).contains(hostName)) {
-			_depthShareHost.get(jobKey).remove(hostName);
-		}
+		Set<String> depthHosts = _depthShareHost.get(jobKey);
+		if (depthHosts != null) depthHosts.remove(hostName);
 
-		if (_depthShareHost.containsKey(jobKey) && _depthShareHost.get(jobKey).size() == 0) {
+		if (depthHosts == null || depthHosts.isEmpty()) {
 			qid = unsubscribeDepthData(contract);
 			_depthShareHost.remove(jobKey);
 			delCacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey);
@@ -264,7 +257,11 @@ public class GatewayController extends BaseIBController {
 	private ConcurrentHashMap<String, TopMktDataHandler> _topTasks = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<String, OptionTopMktDataHandler> _optionTopTasks = new ConcurrentHashMap<>();
 	private ConcurrentHashMap<Integer, String> _topTaskByReqID = new ConcurrentHashMap<>();
-	private ConcurrentHashMap<String, List<String>> _topShareHost = new ConcurrentHashMap<>();
+	private ConcurrentHashMap<String, Set<String>> _topShareHost = new ConcurrentHashMap<>();
+
+	private Set<String> shareHostSet(ConcurrentHashMap<String, Set<String>> map, String jobKey) {
+		return map.computeIfAbsent(jobKey, k -> ConcurrentHashMap.newKeySet());
+	}
 
 	private int subscribeTopData(IBContract contract, Long sizeMultiplier) {
 		// String jobKey = contract.pair();
@@ -333,18 +330,12 @@ public class GatewayController extends BaseIBController {
 		JSONObject contractDetail = ContractDetailsHandler.findDetails(contract);
 		if (contractDetail == null) return 0;
 
-		if (_topShareHost.containsKey(jobKey)) {
-			// if (_topShareHost.get(jobKey).contains(hostName)) return 0;
-		} else {
-			List<String> hostList = new ArrayList<>();
-			_topShareHost.put(jobKey, hostList);
-		}
+		shareHostSet(_topShareHost, jobKey).add(hostName);
 		long sizeMultiplier = contractDetail.getLongValue("suggestedSizeIncrement");
 
 		unsubscribeTopData(contract);
 		int qid = subscribeTopData(contract, sizeMultiplier);
 		cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
-		_topShareHost.get(jobKey).add(hostName);
 
 //		remove cache qid data before mark new qid data
 		if (subDataTopKeyMap.containsKey(jobKey)) {
@@ -395,11 +386,10 @@ public class GatewayController extends BaseIBController {
 		}
 
 		int qid = 0;
-		if (_topShareHost.containsKey(jobKey) && _topShareHost.get(jobKey).contains(hostName)) {
-			_topShareHost.get(jobKey).remove(hostName);
-		}
+		Set<String> topHosts = _topShareHost.get(jobKey);
+		if (topHosts != null) topHosts.remove(hostName);
 
-		if (_topShareHost.containsKey(jobKey) && _topShareHost.get(jobKey).size() == 0) {
+		if (topHosts == null || topHosts.isEmpty()) {
 			qid = unsubscribeTopData(contract);
 			_topShareHost.remove(jobKey);
 			delCacheSubKey(CACHE_SUB_TOP_KEY, jobKey);
@@ -423,7 +413,6 @@ public class GatewayController extends BaseIBController {
 	// }
 
 	private void restartMarketData() {
-		Set<String> shownNameSet = new HashSet<>();
 		info("Re-subscribe all depth data");
 		DeepMktDataHandler[] handlers1 = _depthTasks.values().toArray(new DeepMktDataHandler[0]);
 		for (DeepMktDataHandler h : handlers1) {
@@ -432,7 +421,6 @@ public class GatewayController extends BaseIBController {
 
 			unsubscribeDepthData(contract);
 			subscribeDepthData(contract, sizeMultiplier);
-			shownNameSet.add(contract.shownName());
 			String jobKey = contract.exchange() + ":" + contract.pair();
 			cacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey, "1");
 		}
@@ -444,7 +432,6 @@ public class GatewayController extends BaseIBController {
 
 			unsubscribeTopData(contract);
 			subscribeTopData(contract, sizeMultiplier);
-			shownNameSet.add(contract.shownName());
 			String jobKey = contract.exchange() + ":" + contract.pair();
 			cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
 		}
@@ -454,11 +441,9 @@ public class GatewayController extends BaseIBController {
 			IBContract contract = h.contract();
 			unsubscribeTopData(contract);
 			subscribeTopData(contract, null);
-			shownNameSet.add(contract.shownName());
 			String jobKey = contract.exchange() + ":" + contract.pair();
 			cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
 		}
-		ContractDetailsHandler.retainNeededContracts(shownNameSet);
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -475,43 +460,21 @@ public class GatewayController extends BaseIBController {
 
 //	protected Long nextSubAcTs = 0L;
 	public void subscribeAccountMV() { // Is this streaming updating? Yes, with some latency 1~5s.
-		boolean subscribe = true;
-		log("--> Req account mv default");
-		if (accList != null) {
-			long delay = 3000L;
-			String lastAccount = "";
-			for (String account : accList) {
-				log("--> Req account mv " + account);
-				if (_apiController == null)
-					continue;
-				_apiController.reqAccountUpdates(subscribe, account, accountMVHandler);
-				lastAccount = account;
-				sleep(delay);
-			}
-			if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
-				_apiController.reqAccountUpdates(subscribe, focusAccount, accountMVHandler);
-			}
-		} else {
-			log("--> Req account mv default");
-			_apiController.reqAccountUpdates(subscribe, focusAccount, accountMVHandler);
-//			_apiController.reqAccountUpdates(subscribe, "", accountMVHandler);
+		if (_apiController == null) return;
+		log("--> Req account mv multi for all accounts");
+		_apiController.cancelAccountUpdatesMulti(accountMVHandler);
+		_apiController.cancelPositionsMulti(accountMVHandler);
+		// account="" 收所有帳戶；ledgerAndNLV=false 才有 CashBalance
+		_apiController.reqAccountUpdatesMulti("", "", false, accountMVHandler);
+		_apiController.reqPositionsMulti("", "", accountMVHandler);
+		if (focusAccount != null && !focusAccount.equals("")) {
+			log("--> Req account mv focus " + focusAccount);
+			_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
 		}
 	}
 
 	public void reqAccountUpdates(JSONArray updateAcList) {
-		long delay = 3000L;
-		new Thread(() -> {
-			String lastAccount = "";
-			for (Object account : updateAcList) {
-				log("--> Req account mv " + account);
-				_apiController.reqAccountUpdates(true, (String) account, accountMVHandler);
-				sleep(delay);
-				lastAccount = (String) account;
-			}
-			if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
-				_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
-			}
-		}).start();
+		subscribeAccountMV();
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -558,7 +521,7 @@ public class GatewayController extends BaseIBController {
 	protected int placeOrder(IBOrder order) throws Exception {
 		if (order.omsClientOID() == null)
 			throw new Exception("Abort placing order without OMS client_oid, no orderRef?");
-		if (order.contract.exchange().equals("ISLAND")) {
+		if ("ISLAND".equals(order.contract.exchange())) {
 //			Upcoming ISLAND to NASDAQ naming change will make all of the ISLAND exchange definitions invalid.
 //			As a compatibility measure a new setting has been introduced in TWS 10.16+: "Compatibility Mode: Send ISLAND for US Stocks trading on NASDAQ".
 //			This setting will enable all of the contract definitions with ISLAND exchange to be still acknowledged.
@@ -651,9 +614,13 @@ public class GatewayController extends BaseIBController {
 	////////////////////////////////////////////////////////////////
 	// History data
 	////////////////////////////////////////////////////////////////
-	protected int queryHistoryDataToRedis(JSONObject j, Long id) {
+	protected int queryHistoryDataToRedis(JSONObject j, Long id) throws Exception {
 		String endDateTime = j.getString("endDateTime");
 		Integer duration = j.getInteger("duration");
+		if (endDateTime == null || endDateTime.length() == 0)
+			throw new Exception("FIND_HISTORY missing endDateTime");
+		if (duration == null || duration <= 0)
+			throw new Exception("FIND_HISTORY missing or invalid duration");
 		IBContract contract = new IBContract(j.getJSONObject("contract"));
 
 		HistoricalDataHandler handler = new HistoricalDataHandler(id);
@@ -813,6 +780,7 @@ public class GatewayController extends BaseIBController {
 	private static TimerTask connectTimerTask;
 	private static int connectMark = 0;
 	private int retryConnectCount = 0;
+	private final Timer connectTimer = new Timer("GatewayControllerDelayTask _postConnected()", true);
 
 	@Override
 	protected void _postConnected() {
@@ -872,7 +840,6 @@ public class GatewayController extends BaseIBController {
 
 		// To have enough contract data to replace 'SMART' exchange
 		// Delay to subscribe order snapshot
-		Timer connectTimer = new Timer("GatewayControllerDelayTask _postConnected()");
 		connectTimer.schedule(connectTimerTask, 3000);
 	}
 
@@ -889,7 +856,8 @@ public class GatewayController extends BaseIBController {
 //		teardownListenOrder();
 	}
 
-	private JedisPubSub commandProcessJedisPubSub = new JedisPubSub() {
+	private JedisPubSub newCommandPubSub() {
+		return new JedisPubSub() {
 		public void onMessage(String channel, String message) {
 			JSONObject j = null;
 			try {
@@ -960,6 +928,7 @@ public class GatewayController extends BaseIBController {
 					break;
 				case "EDIT_ORDER":
 					apiReqId = editOrder(j.getString("omsId"), j.getJSONObject("changeInfo"));
+					break;
 				case "ACCOUNT_LIST":
 					response = JSON.toJSONString(accList);
 					break;
@@ -980,9 +949,9 @@ public class GatewayController extends BaseIBController {
 					apiReqId = queryHistoryDataToRedis(j, id);
 					break;
 				case "FIND_ORDER_PICK_CONTRACT":
-//					response = JSON.toJSONString((new IBOrder(j.getJSONObject("contract"))).cloneWithRealExchange().toOMSJSON());
-					IBOrder _ibOrder = new IBOrder(j.getJSONObject("contract"));
-					response = JSON.toJSONString(_ibOrder.cloneWithRealExchange().contract.toJSON());
+					IBContract pickContract = new IBContract(j.getJSONObject("contract"));
+					ContractDetailsHandler.findDetails(pickContract);
+					response = JSON.toJSONString(pickContract.toJSON());
 					break;
 				case "REQ_EXECUTIONS":
 					_apiController.reqExecutions(new ExecutionFilter(), new TradeReportHandler());
@@ -1037,7 +1006,8 @@ public class GatewayController extends BaseIBController {
 				Redis.pub(ackChannel, r);
 			}
 		}
-	};
+		};
+	}
 
 	private void listenCommand() throws Exception {
 		while (true) {
@@ -1046,7 +1016,7 @@ public class GatewayController extends BaseIBController {
 				public void accept(Jedis t) {
 					String cmdChannel = "IBGateway:" + _name + ":CMD";
 					info("Command listening started at " + cmdChannel);
-					t.subscribe(commandProcessJedisPubSub, cmdChannel);
+					t.subscribe(newCommandPubSub(), cmdChannel);
 				}
 			});
 			err("Restart command listening in 1 second");
@@ -1085,20 +1055,20 @@ public class GatewayController extends BaseIBController {
 			break;
 		case 317: // Market depth data has been RESET. Please empty deep book contents before
 					// applying any new entries.
-			log("Initialise all data jobs again.");
-			_postConnected();
+			log("Market depth reset, re-subscribe market data only.");
+			restartMarketData();
 			break;
 		case 2103: // Market data farm connection is broken
-			log("Initialise all data jobs again.");
-			_postConnected();
+			log("Market data farm broken, re-subscribe market data only.");
+			restartMarketData();
 			break;
 		case 2105: // HMDS data farm connection is broken
-			log("Initialise all data jobs again.");
-			_postConnected();
+			log("HMDS farm broken, re-subscribe market data only.");
+			restartMarketData();
 			break;
 		case 2108: // Market data farm connection is inactive but should be available upon demand
-			log("Initialise all data jobs again.");
-			_postConnected();
+			log("Market data farm inactive, re-subscribe market data only.");
+			restartMarketData();
 			break;
 		case 2157: // msg:Sec-def data farm connection is broken:secdefhk
 			break;

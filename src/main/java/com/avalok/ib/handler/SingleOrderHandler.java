@@ -100,10 +100,16 @@ public class SingleOrderHandler implements IOrderHandler, IOrderCancelHandler {
 				break;
 			case 399: // Order error: check them by message
 				if (errorMsg.contains("Warning: your order will not be placed at the exchange until "))
-					break; // This is okay.
+					break; // 盤前 warning，單仍有效
+				log(_order);
+				err("<-- broadcast unknown error for order [" + _order.omsClientOID() + "]\norder id [" + orderId + "]:" + errorCode + "," + errorMsg);
+				_ibController.ack(j);
+				printMsg = false;
+				break;
 			case 10147: // OrderId 51 that needs to be cancelled is not found.
 				_order.setCancelled(errorMsg);
 				_orderCacheHandler.writeToCacheAndOMS(_order);
+				break;
 			case 10148: // OrderId 51 that needs to be cancelled cannot be cancelled, state: Cancelled.
 				_order.setCancelled(errorMsg);
 				_orderCacheHandler.writeToCacheAndOMS(_order);

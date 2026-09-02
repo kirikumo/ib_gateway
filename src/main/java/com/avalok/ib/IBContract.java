@@ -4,6 +4,7 @@ import com.ib.client.ComboLeg;
 import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
 import com.ib.client.Types.*;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.handler.ContractDetailsHandler;
 
@@ -57,7 +58,7 @@ public class IBContract extends Contract {
 			if (secType() == SecType.STK)
 				;
 			else if (secType() == SecType.FUT) {
-				if (multiplier() == null || Double.parseDouble(multiplier()) == 1)
+				if (multiplierIsOne())
 					s = s + "@" + lastTradeDateOrContractMonth();
 				else
 					s = s + "@" + lastTradeDateOrContractMonth() + "@" + multiplier();
@@ -80,7 +81,7 @@ public class IBContract extends Contract {
 					;
 				else
 					s = s + "@" + lastTradeDateOrContractMonth();
-				if (multiplier() == null || Double.parseDouble(multiplier()) == 1)
+				if (multiplierIsOne())
 					;
 				else
 					s = s + "@" + multiplier();
@@ -171,6 +172,24 @@ public class IBContract extends Contract {
 
 		if (j.getBoolean("_fullDetailed") != null)
 			_fullDetailed = j.getBoolean("_fullDetailed");
+		if (j.getJSONArray("comboLegs") != null) {
+			JSONArray arr = j.getJSONArray("comboLegs");
+			List<ComboLeg> legs = new ArrayList<>();
+			for (int i = 0; i < arr.size(); i++) {
+				JSONObject lj = arr.getJSONObject(i);
+				ComboLeg leg = new ComboLeg();
+				if (lj.getInteger("conid") != null) leg.conid(lj.getInteger("conid"));
+				if (lj.getInteger("ratio") != null) leg.ratio(lj.getInteger("ratio"));
+				if (lj.getString("action") != null) leg.action(lj.getString("action"));
+				if (lj.getString("exchange") != null) leg.exchange(lj.getString("exchange"));
+				if (lj.getInteger("openClose") != null) leg.openClose(lj.getInteger("openClose"));
+				if (lj.getInteger("shortSaleSlot") != null) leg.shortSaleSlot(lj.getInteger("shortSaleSlot"));
+				if (lj.getString("designatedLocation") != null) leg.designatedLocation(lj.getString("designatedLocation"));
+				if (lj.getInteger("exemptCode") != null) leg.exemptCode(lj.getInteger("exemptCode"));
+				legs.add(leg);
+			}
+			comboLegs(legs);
+		}
 		buildFullInfo();
 	}
 	
@@ -239,7 +258,34 @@ public class IBContract extends Contract {
 		if (tradingClass() != null && tradingClass().length() > 0)
 			j.put("tradingClass", tradingClass());
 		j.put("_fullDetailed", _fullDetailed);
+		if (comboLegs() != null && comboLegs().size() > 0) {
+			JSONArray arr = new JSONArray();
+			for (ComboLeg leg : comboLegs()) {
+				JSONObject lj = new JSONObject();
+				lj.put("conid", leg.conid());
+				lj.put("ratio", leg.ratio());
+				lj.put("action", leg.getAction());
+				lj.put("exchange", leg.exchange());
+				lj.put("openClose", leg.getOpenClose());
+				lj.put("shortSaleSlot", leg.shortSaleSlot());
+				if (leg.designatedLocation() != null)
+					lj.put("designatedLocation", leg.designatedLocation());
+				lj.put("exemptCode", leg.exemptCode());
+				arr.add(lj);
+			}
+			j.put("comboLegs", arr);
+		}
 		return j;
+	}
+
+	private boolean multiplierIsOne() {
+		String m = multiplier();
+		if (m == null || m.length() == 0) return true;
+		try {
+			return Double.parseDouble(m) == 1;
+		} catch (NumberFormatException e) {
+			return true;
+		}
 	}
 	
 	@Override
@@ -318,6 +364,13 @@ public class IBContract extends Contract {
 			return false;
 		}
 		return true;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(conid(), symbol(), secType(), lastTradeDateOrContractMonth(),
+				strike(), right(), multiplier(), exchange(), primaryExch(), currency(),
+				localSymbol(), tradingClass());
 	}
 	
 	/** IB Contract 預設 strike 為 Double.MAX_VALUE，未設定時不可拿來比對。 */

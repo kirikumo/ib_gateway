@@ -67,8 +67,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	}
 	
 	public void writeToCacheAndOMS(IBOrder o) {
-		String ex = o.contract.exchange();
-		if (KNOWN_EXCHANGES.containsKey(ex) == false) { // New exchange order received, mark its OMS status.
+		String ex = omsExchange(o.contract);
+		if (ex != null && KNOWN_EXCHANGES.containsKey(ex) == false) { // New exchange order received, mark its OMS status.
 			KNOWN_EXCHANGES.put(ex, ex);
 			for (String acc : _ibController.accountList()) {
 				String k = "URANUS:"+ex+":"+acc+":OMS";
@@ -88,31 +88,37 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		cacheAliveOrderId(o);
 	}
 	
-	/**
-	 * Write to hset "URANUS:"+ibc.exchange()+":"+o.account()+":O:"+ibc.pair()
-	 * Also publish at channel "URANUS:"+ibc.exchange()+":"+o.account()+":O_channel"
-	 */
+	/** SMART 路由用 primaryExch 當 OMS 交易所，避免寫進 URANUS:SMART:... */
+	private static String omsExchange(IBContract ibc) {
+		String ex = ibc.exchange();
+		if (ex == null) return null;
+		if (ex.equals("SMART")) {
+			String primary = ibc.primaryExch();
+			if (primary != null && primary.length() > 0)
+				return primary;
+			warn("SMART without primaryExch, OMS key stays SMART for " + ibc.shownName());
+		}
+		return ex;
+	}
+
 	private void writeOMS(Jedis t, IBOrder o) {
-		// This SMART exchange would make a wrong OMS hashmap name
-		// Make real OMS hashmap data missing.
 		IBContract ibc = o.contract;
-		if (ibc.exchange().equals("SMART")) {
-			IBOrder real_o = o.cloneWithRealExchange();
-			if (real_o != null) {
-				o = real_o;
-				ibc = o.contract;
-			}
+		String ex = omsExchange(ibc);
+		if (ex == null) {
+			warn(">>> OMS skip order with null exchange\n" + o);
+			return;
 		}
 
 		String timeStr = "" + System.currentTimeMillis();
 		JSONObject j = o.toOMSJSON();
+		j.put("market", ex);
 		String jstr = JSON.toJSONString(j);
 		JSONObject pubJ = new JSONObject();
-		String hmap = "URANUS:"+ibc.exchange()+":"+o.account()+":O:"+ibc.pair();
+		String hmap = "URANUS:"+ex+":"+o.account()+":O:"+ibc.pair();
 //		String pubChannel = "URANUS:"+ibc.exchange()+":"+o.account()+":O_channel";
 		String pubChannel = "URANUS:ID:"+o.account()+":O_channel";
 		String pubAccountChannel = "URANUS:"+o.account()+":O_channel";
-		String hmapShort = "URANUS:"+ibc.exchange()+":"+o.account()+":O:";
+		String hmapShort = "URANUS:"+ex+":"+o.account()+":O:";
 		t.hdel(hmap, "0"); // Clear historical remained trash, could delete this after stable version released.
 		if (o.omsClientOID() != null) {
 			log(">>> OMS " + hmapShort + " / " + o.omsClientOID() + "\n" + o);
@@ -211,24 +217,10 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 //		});
 
 		log("<-- tradeReport() " + tradeKey + " " + ibc.shownName() + execution.cumQty() + "@" + execution.price());
+		persistTrade(tradeKey, j);
 	}
 	public void tradeReportEnd() {
-        Redis.exec(new Consumer<Jedis>() {
-            @Override
-            public void accept(Jedis t) {
-                try {
-                    result.forEach((tradeKey, v) -> {
-                        String acctNumber = v.getString("acctNumber");
-                        String key = "TradeReport:" + acctNumber;
-                        v.put("tradeKey", tradeKey);
-                        t.hset(key, tradeKey, v.toJSONString());
-                    });
-                } finally {
-                    result.clear();
-                }
-            }
-        });
-
+		flushTrades();
 		log("<-- tradeReportEnd");
 	}
 
@@ -243,7 +235,26 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
         j.put("realizedPNL", commissionReport.realizedPNL());
         j.put("yield", commissionReport.yield());
         j.put("yieldRedemptionDate", commissionReport.yieldRedemptionDate());
+		persistTrade(tradeKey, j);
     }
+
+	private void persistTrade(String tradeKey, JSONObject j) {
+		String acctNumber = j.getString("acctNumber");
+		if (acctNumber == null) return;
+		j.put("tradeKey", tradeKey);
+		Redis.exec(t -> t.hset("TradeReport:" + acctNumber, tradeKey, j.toJSONString()));
+	}
+
+	private void flushTrades() {
+		Redis.exec(t -> {
+			result.forEach((tradeKey, v) -> {
+				String acctNumber = v.getString("acctNumber");
+				if (acctNumber == null) return;
+				v.put("tradeKey", tradeKey);
+				t.hset("TradeReport:" + acctNumber, tradeKey, v.toJSONString());
+			});
+		});
+	}
 	
 	////////////////////////////////////////////////////////////////
 	// ICompletedOrdersHandler
@@ -279,7 +290,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	private Integer _processingOrderId = null;
 	private Long _processingPermId = null;
 	private IBOrder _processingOrder = null; // Cross validation
-	private Set<String> _aliveOids = new HashSet<>();
+	private Set<String> _aliveOids = ConcurrentHashMap.newKeySet();
 	@Override
 	public void openOrder(Contract contract, Order order, OrderState orderState) {
 		IBOrder o = new IBOrder(contract, order, orderState);
@@ -295,15 +306,18 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	}
 
 	private void cacheAliveOrderId(IBOrder o) {
+		String oid = o.omsClientOID();
+		if (oid == null) oid = o.omsAltId();
+		if (oid == null) return;
+
 		boolean changed;
 		Boolean isAlive = o.isAlive();
 
 		if (isAlive == null || isAlive) {
-			_aliveOids.add(o.omsClientOID());
-			changed = true;
+			changed = _aliveOids.add(oid);
 		}
 		else {
-			changed = _aliveOids.remove(o.omsClientOID());
+			changed = _aliveOids.remove(oid);
 		}
 
 		if (changed) {
@@ -331,10 +345,11 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			writeToCacheAndOMS(_processingOrder);
 		} else {
 			log("<-- orderStatus() search _allOrders orderId " + orderId + " permId " + permId);
-			// Search from alive_orders
-			IBOrder o = _allOrders.byId(orderId);
+			IBOrder o = orderId != 0 ? _allOrders.byId(orderId) : null;
+			if (o == null && permId != 0)
+				o = _allOrders.byPermId(permId);
 			if (o == null) {
-				err("orderStatus() Unexpected orderId " + orderId + ", not " + _processingOrderId);
+				err("orderStatus() Unexpected orderId " + orderId + " permId " + permId + ", not " + _processingOrderId);
 				return;
 			}
 			o.setStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
@@ -374,9 +389,10 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		boolean printMsg = true;
 		// mark order status.
 		switch(errorCode) {
-		case 161: // code:161, msg:Cancel attempted when order is not in a cancellable state.  Order permId =1338982574
+		case 161: // Cancel attempted when order is not in a cancellable state — 單仍活著
 			log(o);
 			err("<-- Not cancellable " + errorMsg);
+			break;
 		case 201: // code:201, msg:Order rejected - reason:
 			o.setRejected(errorMsg);
 			writeToCacheAndOMS(o);
@@ -387,7 +403,12 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			break;
 		case 399: // Order error: check them by message
 			if (errorMsg.contains("Warning: your order will not be placed at the exchange until "))
-				break; // This is okay.
+				break; // 盤前 warning，單仍有效
+			log(o);
+			err("<-- broadcast error for order [" + o.omsClientOID() + "]\norder id [" + orderId + "]:" + errorCode + "," + errorMsg);
+			_ibController.ack(j);
+			printMsg = false;
+			break;
 		case 10147: // OrderId 51 that needs to be cancelled is not found.
 			o.setCancelled(errorMsg);
 			writeToCacheAndOMS(o);
@@ -479,7 +500,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 				int ct = 1;
 				for(IBOrder o : orders) {
 					writeOMS(r, o);
-					KNOWN_EXCHANGES.put(o.contract.exchange(), o.contract.exchange());
+					String ex = omsExchange(o.contract);
+					if (ex != null) KNOWN_EXCHANGES.put(ex, ex);
 					ct += 1;
 				}
 				info("OMS init with " + ct + "  orders");
@@ -499,17 +521,20 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 class OrderCache {
 	private Map<String, IBOrder> _orderByOMSId = new ConcurrentHashMap<>();
 	private Map<Integer, IBOrder> _orderById = new ConcurrentHashMap<>();
+	private Map<Long, IBOrder> _orderByPermId = new ConcurrentHashMap<>();
 	OrderCache() {}
 	void recOrders(IBOrder[] list) {
 		for (IBOrder o : list) recOrder(o);
 	}
 	void recOrder(IBOrder o) {
 		String omsId = o.omsId();
-		if (omsId != null) _orderByOMSId.put(o.omsId(), o);
-		_orderById.put(o.orderId(), o);
-		// errWithTrace("recOrder " + o.permId() + " - " + o.orderId());
+		if (omsId != null) _orderByOMSId.put(omsId, o);
+		// GTC openOrder 常先給 orderId=0，不可當 key 否則多單互蓋
+		if (o.orderId() != 0) _orderById.put(o.orderId(), o);
+		if (o.permId() != 0) _orderByPermId.put(o.permId(), o);
 	}
 	IBOrder byId(int id) { return _orderById.get(id); }
+	IBOrder byPermId(long permId) { return _orderByPermId.get(permId); }
 	IBOrder byOMSId(String id) { return _orderByOMSId.get(id); }
 	Collection<IBOrder> orders() { return _orderByOMSId.values(); }
 }

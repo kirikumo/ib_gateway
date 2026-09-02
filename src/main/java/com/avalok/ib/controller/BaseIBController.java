@@ -114,14 +114,31 @@ public abstract class BaseIBController implements IConnectionHandler {
 	//////////////////////////////////////////////////////
 	// Initialise ENV and _connect() in background thread
 	//////////////////////////////////////////////////////
-	public final static String TWS_API_ADDR = System.getenv("TWS_API_ADDR");
-	public final static int TWS_API_PORT = Integer.parseInt(System.getenv("TWS_API_PORT"));
-	public final static String TWS_NAME = TWS_API_ADDR + "_" + TWS_API_PORT;
-	protected int _apiClientID = Integer.parseInt(System.getenv("TWS_API_CLIENTID")); // Only the default client (i.e 0) can auto bind orders
+	public static String TWS_API_ADDR;
+	public static int TWS_API_PORT;
+	public static String TWS_NAME;
+	protected int _apiClientID;
 	protected Long callConnectTS = 0L;
+
+	private void loadEnv() {
+		if (TWS_API_ADDR != null) return;
+		TWS_API_ADDR = System.getenv("TWS_API_ADDR");
+		String port = System.getenv("TWS_API_PORT");
+		String clientId = System.getenv("TWS_API_CLIENTID");
+		if (TWS_API_ADDR == null || TWS_API_ADDR.length() == 0 || port == null || clientId == null)
+			systemAbort("Missing TWS_API_ADDR / TWS_API_PORT / TWS_API_CLIENTID");
+		try {
+			TWS_API_PORT = Integer.parseInt(port);
+			_apiClientID = Integer.parseInt(clientId);
+		} catch (NumberFormatException e) {
+			systemAbort("Invalid TWS_API_PORT or TWS_API_CLIENTID");
+		}
+		TWS_NAME = TWS_API_ADDR + "_" + TWS_API_PORT;
+	}
 
 	private static Thread connectThread = new Thread();
 	protected synchronized void _connect() {
+		loadEnv();
 		// DebugUtil.printStackInfo();
 		if (isConnected() || isRealConnected()) {
 			log("status is still good, abort _connect()");
@@ -141,53 +158,47 @@ public abstract class BaseIBController implements IConnectionHandler {
 			sleep(_initConnTS - System.currentTimeMillis());
 		}
 
-//		if (connectThread.isAlive()) {
-//			connectThread.interrupt();
-//		}
 		connectThread.interrupt();
 
 		connectThread = new Thread(new Runnable() {
 			public void run() {
 				int retry_ct = 0;
 				log("Connect thread started.");
-				while (true) {
-//					if (isConnected()) break;
+				while (!isRealConnected()) {
+					if (Thread.currentThread().isInterrupted()) {
+						log("Connect thread interrupted");
+						return;
+					}
 					try {
-						
 						log("Connecting gateway " + TWS_API_ADDR + " ID " + _apiClientID);
-						// TODO this step might hang.
 						IBApiController newController = new IBApiController(_assignNewIConnectionHandler(), new NullIBLogger(), new NullIBLogger());
-						// make sure _apiController not exist
 						if (_apiController != null) {
 							log("_apiController != null");
 							_postDisconnected();
 							_apiController.disconnect();
 						}
-						// make initial connection to local host, port 7496, client id 0, no connection options
-//						About +PACEAPI option: https://groups.io/g/twsapi/message/43130
-						newController.connect(TWS_API_ADDR, TWS_API_PORT, _apiClientID, "+PACEAPI");  // NOTE: DON'T SET null to connection options
-						_apiController = newController;  // Only assign after _connect()
+						newController.connect(TWS_API_ADDR, TWS_API_PORT, _apiClientID, "+PACEAPI");
+						_apiController = newController;
 						_connectedTS = System.currentTimeMillis();
-						log("Gateway connected with client ID " + _apiClientID);
-//						_markTWSServerConnected(false);
-						break;
+						log("Gateway socket connect issued with client ID " + _apiClientID);
+						long deadline = System.currentTimeMillis() + 10_000;
+						while (!isRealConnected() && System.currentTimeMillis() < deadline) {
+							if (Thread.currentThread().isInterrupted()) return;
+							sleep(200);
+						}
+						if (isRealConnected()) {
+							log("Connect thread finished.");
+							return;
+						}
+						log("connected() not received in 10s, retry");
 					} catch (StackOverflowError e) {
 						log("StackOverflowError in connecting gateway with ID " + _apiClientID + " retry_ct:" + retry_ct);
 					} catch (Exception e) {
 						log("Error in connecting gateway with ID " + _apiClientID + " retry_ct:" + retry_ct);
 						log(e);
-					} finally {
-						retry_ct += 1;
-						sleep(50);
 					}
-				}
-				log("sleep 10s for waiting connection");
-				sleep(10000);
-				if (isRealConnected()) {
-					log("Connect thread finished.");
-				} else {
-					log("Connect thread failed, try again _connect");
-					_connect();
+					retry_ct += 1;
+					sleep(1000);
 				}
 			}
 		});

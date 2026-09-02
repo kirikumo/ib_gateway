@@ -16,6 +16,7 @@ import com.ib.controller.*;
 import com.ib.controller.ApiConnection.*;
 import com.ib.controller.ApiController.IAccountHandler;
 import com.ib.controller.ApiController.IAccountUpdateMultiHandler;
+import com.ib.controller.ApiController.IPositionMultiHandler;
 import com.ib.controller.ApiController.ICompletedOrdersHandler;
 import com.ib.controller.ApiController.IConnectionHandler;
 import com.ib.controller.ApiController.IContractDetailsHandler;
@@ -106,6 +107,26 @@ public class IBApiController {
 		twsAPIRateControl();
 		recordOperationHistory("reqAccountUpdates:" + acctCode);
 		_api.reqAccountUpdates(subscribe, acctCode, handler);
+	}
+	public void reqAccountUpdatesMulti(String account, String modelCode, boolean ledgerAndNLV, IAccountUpdateMultiHandler handler) {
+		twsAPIRateControl();
+		recordOperationHistory("reqAccountUpdatesMulti:" + account);
+		_api.reqAccountUpdatesMulti(account, modelCode, ledgerAndNLV, handler);
+	}
+	public void cancelAccountUpdatesMulti(IAccountUpdateMultiHandler handler) {
+		twsAPIRateControl();
+		recordOperationHistory("cancelAccountUpdatesMulti");
+		_api.cancelAccountUpdatesMulti(handler);
+	}
+	public void reqPositionsMulti(String account, String modelCode, IPositionMultiHandler handler) {
+		twsAPIRateControl();
+		recordOperationHistory("reqPositionsMulti:" + account);
+		_api.reqPositionsMulti(account, modelCode, handler);
+	}
+	public void cancelPositionsMulti(IPositionMultiHandler handler) {
+		twsAPIRateControl();
+		recordOperationHistory("cancelPositionsMulti");
+		_api.cancelPositionsMulti(handler);
 	}
 
 	public void reqPositions(IPositionHandler handler) {
