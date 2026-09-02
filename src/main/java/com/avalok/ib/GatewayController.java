@@ -456,15 +456,45 @@ public class GatewayController extends BaseIBController {
 //	}
 
 	protected AccountMVHandler accountMVHandler = new AccountMVHandler();
+	String focusAccount = "";
 
 	public void subscribeAccountMV() { // Is this streaming updating? Yes, with some latency 1~5s.
-		if (_apiController == null) return;
-		log("--> Req account mv multi for all accounts");
-		_apiController.cancelAccountUpdatesMulti(accountMVHandler);
-		_apiController.cancelPositionsMulti(accountMVHandler);
-		// account="" 收所有帳戶；ledgerAndNLV=false 才有 CashBalance
-		_apiController.reqAccountUpdatesMulti("", "", false, accountMVHandler);
-		_apiController.reqPositionsMulti("", "", accountMVHandler);
+		boolean subscribe = true;
+		log("--> Req account mv default");
+		if (accList != null) {
+			long delay = 3000L;
+			String lastAccount = "";
+			for (String account : accList) {
+				log("--> Req account mv " + account);
+				if (_apiController == null)
+					continue;
+				_apiController.reqAccountUpdates(subscribe, account, accountMVHandler);
+				lastAccount = account;
+				sleep(delay);
+			}
+			if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
+				_apiController.reqAccountUpdates(subscribe, focusAccount, accountMVHandler);
+			}
+		} else {
+			log("--> Req account mv default");
+			_apiController.reqAccountUpdates(subscribe, focusAccount, accountMVHandler);
+		}
+	}
+
+	public void reqAccountUpdates(JSONArray updateAcList) {
+		long delay = 3000L;
+		new Thread(() -> {
+			String lastAccount = "";
+			for (Object account : updateAcList) {
+				log("--> Req account mv " + account);
+				_apiController.reqAccountUpdates(true, (String) account, accountMVHandler);
+				sleep(delay);
+				lastAccount = (String) account;
+			}
+			if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
+				_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
+			}
+		}).start();
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -823,6 +853,7 @@ public class GatewayController extends BaseIBController {
 						subscribeTradeReport();
 						restartMarketData();
 						subscribeAccountMV();
+						queryAccountSummary();
 						log("_postConnected : refresh alive and completed orders");
 						refreshLiveOrders();
 						refreshCompletedOrders();
@@ -942,10 +973,13 @@ public class GatewayController extends BaseIBController {
 					response = JSON.toJSONString(accList);
 					break;
 				case "UPDATE_ACCOUNT_MV":
-					subscribeAccountMV();
+					reqAccountUpdates(j.getJSONArray("updateAcList"));
 					break;
 				case "UPDATE_FOCUS_ACCOUNT":
-					log("UPDATE_FOCUS_ACCOUNT ignored, all accounts already subscribed via UpdatesMulti");
+					focusAccount = j.getString("focusAccount");
+					if (_apiController != null) {
+						_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
+					}
 					break;
 				case "FIND_ACCOUNT_SUMMARY":
 					apiReqId = queryAccountSummary();

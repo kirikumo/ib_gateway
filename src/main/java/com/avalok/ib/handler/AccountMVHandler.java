@@ -11,15 +11,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.IBContract;
 import com.bitex.util.Redis;
-import com.ib.client.Contract;
-import com.ib.client.Decimal;
 import com.ib.controller.Position;
 import com.ib.controller.ApiController.IAccountHandler;
-import com.ib.controller.ApiController.IAccountUpdateMultiHandler;
-import com.ib.controller.ApiController.IPositionMultiHandler;
 
 
-public class AccountMVHandler implements IAccountHandler, IAccountUpdateMultiHandler, IPositionMultiHandler {
+public class AccountMVHandler implements IAccountHandler {
 
 	// Modify _tmpData before _dataInit
 	// Modify _data directly after _dataInit
@@ -105,56 +101,6 @@ public class AccountMVHandler implements IAccountHandler, IAccountUpdateMultiHan
 	@Override
 	public synchronized void accountDownloadEnd(String account) {
 		info("<-- AccountMV Download End " + account);
-		markInitAndWrite();
-	}
-
-	@Override
-	public synchronized void accountUpdateMulti(String account, String modelCode, String key, String value, String currency) {
-		accountValue(account, key, value, currency);
-	}
-
-	@Override
-	public synchronized void accountUpdateMultiEnd() {
-		info("<-- AccountMV Multi End");
-		markInitAndWrite();
-	}
-
-	@Override
-	public synchronized void positionMulti(String account, String modelCode, Contract contract, Decimal pos, double avgCost) {
-		IBContract ibc = new IBContract(contract);
-		if (!ibc_cache.containsKey(ibc.pair())) {
-			ibc_cache.put(ibc.pair(), ibc);
-		}
-		ContractDetailsHandler.findDetails(ibc);
-		info("<-- " + account + " PosMulti " + ibc.exchange() + "/" +
-				ibc.shownName() + " pos:" + pos.longValue() + " cost:" + avgCost);
-		JSONObject j = new JSONObject();
-		j.put("type", "position");
-		j.put("contract", ibc.toJSON());
-		j.put("pos", pos.longValue());
-		j.put("avgCost", avgCost);
-		j.put("shortName", ibc.shownName());
-		putAccountAsset(account, ibc.shownName(), j);
-	}
-
-	@Override
-	public synchronized void positionMultiEnd() {
-		info("<-- Position Multi End");
-		markInitAndWrite();
-	}
-
-	private void putAccountAsset(String account, String assetKey, JSONObject j) {
-		if (_dataInit) {
-			_data.putIfAbsent(account, new ConcurrentHashMap<String, JSONObject>());
-			_data.get(account).put(assetKey, j);
-			writePosition();
-		} else {
-			_tmpData.putIfAbsent(account, new ConcurrentHashMap<String, JSONObject>());
-			_tmpData.get(account).put(assetKey, j);
-		}
-	}
-
-	private void markInitAndWrite() {
 		if (_dataInit == false) {
 			_dataInit = true;
 			_data = _tmpData;
