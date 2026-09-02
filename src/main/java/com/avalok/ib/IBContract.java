@@ -320,6 +320,12 @@ public class IBContract extends Contract {
 		return true;
 	}
 	
+	/** IB Contract 預設 strike 為 Double.MAX_VALUE，未設定時不可拿來比對。 */
+	private boolean strikeSpecified() {
+		double s = strike();
+		return s != 0 && s != Double.MAX_VALUE && !Double.isNaN(s) && !Double.isInfinite(s);
+	}
+
 	/**
 	 * If existed details match another contract
 	 */
@@ -333,12 +339,16 @@ public class IBContract extends Contract {
 		if (secType() != SecType.None)
 			if (secType() != fullDetailedContract.secType())
 				return false;
-		if (lastTradeDateOrContractMonth() != null)
-			if (fullDetailedContract.lastTradeDateOrContractMonth().startsWith(lastTradeDateOrContractMonth()) == false)
+		if (lastTradeDateOrContractMonth() != null && lastTradeDateOrContractMonth().length() > 0) {
+			String fullDate = fullDetailedContract.lastTradeDateOrContractMonth();
+			if (fullDate == null || fullDate.startsWith(lastTradeDateOrContractMonth()) == false)
 				return false;
-		if (strike() != 0)
-			if (strike() != fullDetailedContract.strike())
+		}
+		// 僅期權需要比 strike；STK 的 Double.MAX_VALUE 對上 IB 回傳的 0 會永遠 miss
+		if (secType() == SecType.OPT || secType() == SecType.FOP) {
+			if (strikeSpecified() && strike() != fullDetailedContract.strike())
 				return false;
+		}
 		if (right() != Right.None)
 			if (right() != fullDetailedContract.right())
 				return false;
