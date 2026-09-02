@@ -50,6 +50,7 @@ public class ApiDemo implements IConnectionHandler {
 	private final ComboPanel m_comboPanel = new ComboPanel(m_mktDataPanel);
 	private final StratPanel m_stratPanel = new StratPanel();
 	private final NewsPanel m_newsPanel = new NewsPanel();
+	private final ConfigPanel m_configPanel = new ConfigPanel();
 	private final JTextArea m_msg = new JTextArea();
 
 	// getter methods
@@ -91,6 +92,7 @@ public class ApiDemo implements IConnectionHandler {
 		m_tabbedPanel.addTab( "Advisor", m_advisorPanel);
 		// m_tabbedPanel.addTab( "Strategy", m_stratPanel); in progress
 		m_tabbedPanel.addTab( "News", m_newsPanel);
+		m_tabbedPanel.addTab( "Config", m_configPanel);
 			
 		m_msg.setEditable( false);
 		m_msg.setLineWrap( true);

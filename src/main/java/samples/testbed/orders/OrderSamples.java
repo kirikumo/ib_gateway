@@ -227,6 +227,17 @@ public class OrderSamples {
 		return order;
 	}
 
+    public static Order LimitOrderWithStopLossAndProfitTaker(String action, Decimal quantity, double limitPrice, int slOrderId, int ptOrderId) {
+        // ! [limit_order_with_stop_loss_and_profit_taker]
+        Order order = OrderSamples.LimitOrder(action, quantity, limitPrice);
+        order.slOrderId(slOrderId);
+        order.slOrderType("PRESET");
+        order.ptOrderId(ptOrderId);
+        order.ptOrderType("PRESET");
+        // ! [limit_order_with_stop_loss_and_profit_taker]
+        return order;
+    }
+
     public static Order LimitOrderWithManualOrderTime(String action, Decimal quantity, double limitPrice, String manualOrderTime) {
         // ! [limitorderwithmanualordertime]
         Order order = OrderSamples.LimitOrder(action, quantity, limitPrice);

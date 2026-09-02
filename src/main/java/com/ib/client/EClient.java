@@ -5,18 +5,97 @@ package com.ib.client;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.ib.client.Types.SecType;
 import com.ib.client.Types.WhatToShow;
+import com.ib.client.protobuf.AccountDataRequestProto;
+import com.ib.client.protobuf.AccountSummaryRequestProto;
+import com.ib.client.protobuf.AccountUpdatesMultiRequestProto;
+import com.ib.client.protobuf.AllOpenOrdersRequestProto;
+import com.ib.client.protobuf.AttachedOrdersProto;
+import com.ib.client.protobuf.AutoOpenOrdersRequestProto;
+import com.ib.client.protobuf.CalculateImpliedVolatilityRequestProto;
+import com.ib.client.protobuf.CalculateOptionPriceRequestProto;
+import com.ib.client.protobuf.CancelAccountSummaryProto;
+import com.ib.client.protobuf.CancelAccountUpdatesMultiProto;
+import com.ib.client.protobuf.CancelCalculateImpliedVolatilityProto;
+import com.ib.client.protobuf.CancelCalculateOptionPriceProto;
+import com.ib.client.protobuf.CancelContractDataProto;
+import com.ib.client.protobuf.CancelFundamentalsDataProto;
+import com.ib.client.protobuf.CancelHeadTimestampProto;
+import com.ib.client.protobuf.CancelHistogramDataProto;
+import com.ib.client.protobuf.CancelHistoricalDataProto;
+import com.ib.client.protobuf.CancelHistoricalTicksProto;
+import com.ib.client.protobuf.CancelMarketDataProto;
+import com.ib.client.protobuf.CancelMarketDepthProto;
+import com.ib.client.protobuf.CancelNewsBulletinsProto;
 import com.ib.client.protobuf.CancelOrderRequestProto;
+import com.ib.client.protobuf.CancelPnLProto;
+import com.ib.client.protobuf.CancelPnLSingleProto;
+import com.ib.client.protobuf.CancelPositionsMultiProto;
+import com.ib.client.protobuf.CancelPositionsProto;
+import com.ib.client.protobuf.CancelRealTimeBarsProto;
+import com.ib.client.protobuf.CancelScannerSubscriptionProto;
+import com.ib.client.protobuf.CancelTickByTickProto;
+import com.ib.client.protobuf.CancelWshEventDataProto;
+import com.ib.client.protobuf.CancelWshMetaDataProto;
+import com.ib.client.protobuf.CompletedOrdersRequestProto;
+import com.ib.client.protobuf.ConfigRequestProto;
+import com.ib.client.protobuf.ContractDataRequestProto;
+import com.ib.client.protobuf.CurrentTimeInMillisRequestProto;
+import com.ib.client.protobuf.CurrentTimeRequestProto;
 import com.ib.client.protobuf.ExecutionRequestProto;
+import com.ib.client.protobuf.ExerciseOptionsRequestProto;
+import com.ib.client.protobuf.FAReplaceProto;
+import com.ib.client.protobuf.FARequestProto;
+import com.ib.client.protobuf.FamilyCodesRequestProto;
+import com.ib.client.protobuf.FundamentalsDataRequestProto;
 import com.ib.client.protobuf.GlobalCancelRequestProto;
+import com.ib.client.protobuf.HeadTimestampRequestProto;
+import com.ib.client.protobuf.HistogramDataRequestProto;
+import com.ib.client.protobuf.HistoricalDataRequestProto;
+import com.ib.client.protobuf.HistoricalNewsRequestProto;
+import com.ib.client.protobuf.HistoricalTicksRequestProto;
+import com.ib.client.protobuf.IdsRequestProto;
+import com.ib.client.protobuf.ManagedAccountsRequestProto;
+import com.ib.client.protobuf.MarketDataRequestProto;
+import com.ib.client.protobuf.MarketDataTypeRequestProto;
+import com.ib.client.protobuf.MarketDepthExchangesRequestProto;
+import com.ib.client.protobuf.MarketDepthRequestProto;
+import com.ib.client.protobuf.MarketRuleRequestProto;
+import com.ib.client.protobuf.MatchingSymbolsRequestProto;
+import com.ib.client.protobuf.NewsArticleRequestProto;
+import com.ib.client.protobuf.NewsBulletinsRequestProto;
+import com.ib.client.protobuf.NewsProvidersRequestProto;
+import com.ib.client.protobuf.OpenOrdersRequestProto;
+import com.ib.client.protobuf.OrderProto;
 import com.ib.client.protobuf.PlaceOrderRequestProto;
+import com.ib.client.protobuf.PnLRequestProto;
+import com.ib.client.protobuf.PnLSingleRequestProto;
+import com.ib.client.protobuf.PositionsMultiRequestProto;
+import com.ib.client.protobuf.PositionsRequestProto;
+import com.ib.client.protobuf.QueryDisplayGroupsRequestProto;
+import com.ib.client.protobuf.RealTimeBarsRequestProto;
+import com.ib.client.protobuf.ScannerParametersRequestProto;
+import com.ib.client.protobuf.ScannerSubscriptionRequestProto;
+import com.ib.client.protobuf.SecDefOptParamsRequestProto;
+import com.ib.client.protobuf.SetServerLogLevelRequestProto;
+import com.ib.client.protobuf.SmartComponentsRequestProto;
+import com.ib.client.protobuf.SoftDollarTiersRequestProto;
+import com.ib.client.protobuf.StartApiRequestProto;
+import com.ib.client.protobuf.SubscribeToGroupEventsRequestProto;
+import com.ib.client.protobuf.TickByTickRequestProto;
+import com.ib.client.protobuf.UnsubscribeFromGroupEventsRequestProto;
+import com.ib.client.protobuf.UpdateConfigRequestProto;
+import com.ib.client.protobuf.UpdateDisplayGroupRequestProto;
+import com.ib.client.protobuf.UserInfoRequestProto;
+import com.ib.client.protobuf.VerifyMessageRequestProto;
+import com.ib.client.protobuf.VerifyRequestProto;
+import com.ib.client.protobuf.WshEventDataRequestProto;
+import com.ib.client.protobuf.WshMetaDataRequestProto;
 
 public abstract class EClient {
 
@@ -104,8 +183,6 @@ public abstract class EClient {
 	// 65 = can receive verifyAndAuthMessageAPI and verifyAndAuthCompleted messages
 	// 66 = can receive randomize size and randomize price order fields
 
-    protected static final int REDIRECT_COUNT_MAX = 2;
-
     protected static final int CLIENT_VERSION = 66;
     protected static final int MIN_SERVER_VER_SUPPORTED = 38; //all supported server versions are listed below
     
@@ -191,6 +268,10 @@ public abstract class EClient {
     private static final int CANCEL_WSH_EVENT_DATA = 103;
     private static final int REQ_USER_INFO = 104;
     private static final int REQ_CURRENT_TIME_IN_MILLIS = 105;
+    private static final int CANCEL_CONTRACT_DATA = 106;
+    private static final int CANCEL_HISTORICAL_TICKS = 107;
+	private static final int REQ_CONFIG = 108;
+	private static final int UPDATE_CONFIG = 109;
 
 	private static final int MIN_SERVER_VER_REAL_TIME_BARS = 34;
 	private static final int MIN_SERVER_VER_SCALE_ORDERS = 35;
@@ -337,9 +418,29 @@ public abstract class EClient {
     protected static final int MIN_SERVER_VER_PROTOBUF = 201;
     protected static final int MIN_SERVER_VER_ZERO_STRIKE = 202;
     protected static final int MIN_SERVER_VER_PROTOBUF_PLACE_ORDER = 203;
-    
+    protected static final int MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER = 204;
+    protected static final int MIN_SERVER_VER_PROTOBUF_CONTRACT_DATA = 205;
+    protected static final int MIN_SERVER_VER_PROTOBUF_MARKET_DATA = 206;
+    protected static final int MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS = 207;
+    protected static final int MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA = 208;
+    protected static final int MIN_SERVER_VER_PROTOBUF_NEWS_DATA = 209;
+    protected static final int MIN_SERVER_VER_PROTOBUF_SCAN_DATA = 210;
+    protected static final int MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1 = 211;
+    protected static final int MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2 = 212;
+    protected static final int MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3 = 213;
+    protected static final int MIN_SERVER_VER_ADD_Z_SUFFIX_TO_UTC_DATE_TIME = 214;
+    protected static final int MIN_SERVER_VER_CANCEL_CONTRACT_DATA = 215;
+    protected static final int MIN_SERVER_VER_ADDITIONAL_ORDER_PARAMS_1 = 216;
+    protected static final int MIN_SERVER_VER_ADDITIONAL_ORDER_PARAMS_2 = 217;
+    protected static final int MIN_SERVER_VER_ATTACHED_ORDERS = 218;
+    protected static final int MIN_SERVER_VER_CONFIG = 219;
+    protected static final int MIN_SERVER_VER_MARKET_DATA_VOLUMES_IN_SHARES = 220;
+    protected static final int MIN_SERVER_VER_UPDATE_CONFIG = 221;
+    protected static final int MIN_SERVER_VER_FRACTIONAL_LAST_SIZE = 222;
+    protected static final int MIN_SERVER_VER_HEDGE_MAX_SIZE = 223;
+
     public static final int MIN_VERSION = 100; // envelope encoding, applicable to useV100Plus mode only
-    public static final int MAX_VERSION = MIN_SERVER_VER_PROTOBUF_PLACE_ORDER; // ditto
+    public static final int MAX_VERSION = MIN_SERVER_VER_HEDGE_MAX_SIZE; // ditto
     
     public static final int PROTOBUF_MSG_ID = 200;
     public static final Map<Integer, Integer> PROTOBUF_MSG_IDS = new HashMap<Integer, Integer>();
@@ -348,6 +449,81 @@ public abstract class EClient {
         PROTOBUF_MSG_IDS.put(PLACE_ORDER, MIN_SERVER_VER_PROTOBUF_PLACE_ORDER);
         PROTOBUF_MSG_IDS.put(CANCEL_ORDER, MIN_SERVER_VER_PROTOBUF_PLACE_ORDER);
         PROTOBUF_MSG_IDS.put(REQ_GLOBAL_CANCEL, MIN_SERVER_VER_PROTOBUF_PLACE_ORDER);
+        PROTOBUF_MSG_IDS.put(REQ_ALL_OPEN_ORDERS, MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER);
+        PROTOBUF_MSG_IDS.put(REQ_AUTO_OPEN_ORDERS, MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER);
+        PROTOBUF_MSG_IDS.put(REQ_COMPLETED_ORDERS, MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER);
+        PROTOBUF_MSG_IDS.put(REQ_OPEN_ORDERS, MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER);
+        PROTOBUF_MSG_IDS.put(REQ_CONTRACT_DATA, MIN_SERVER_VER_PROTOBUF_CONTRACT_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_MKT_DATA, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_MKT_DATA, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_MKT_DEPTH, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_MKT_DEPTH, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_MARKET_DATA_TYPE, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_ACCOUNT_DATA, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(REQ_MANAGED_ACCTS, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(REQ_POSITIONS, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(CANCEL_POSITIONS, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(REQ_ACCOUNT_SUMMARY, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(CANCEL_ACCOUNT_SUMMARY, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(REQ_POSITIONS_MULTI, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(CANCEL_POSITIONS_MULTI, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(REQ_ACCOUNT_UPDATES_MULTI, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(CANCEL_ACCOUNT_UPDATES_MULTI, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
+        PROTOBUF_MSG_IDS.put(REQ_HISTORICAL_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_HISTORICAL_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_REAL_TIME_BARS, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_REAL_TIME_BARS, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_HEAD_TIMESTAMP, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_HEAD_TIMESTAMP, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_HISTOGRAM_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_HISTOGRAM_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_HISTORICAL_TICKS, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_TICK_BY_TICK_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_TICK_BY_TICK_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_NEWS_BULLETINS, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_NEWS_BULLETINS, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_NEWS_ARTICLE, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_NEWS_PROVIDERS, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_HISTORICAL_NEWS, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_WSH_META_DATA, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_WSH_META_DATA, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_WSH_EVENT_DATA, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_WSH_EVENT_DATA, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_SCANNER_PARAMETERS, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_SCANNER_SUBSCRIPTION, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_SCANNER_SUBSCRIPTION, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_FUNDAMENTAL_DATA, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_FUNDAMENTAL_DATA, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_PNL, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_PNL, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_PNL_SINGLE, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
+        PROTOBUF_MSG_IDS.put(CANCEL_PNL_SINGLE, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
+        PROTOBUF_MSG_IDS.put(REQ_FA, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
+        PROTOBUF_MSG_IDS.put(REPLACE_FA, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
+        PROTOBUF_MSG_IDS.put(EXERCISE_OPTIONS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
+        PROTOBUF_MSG_IDS.put(REQ_CALC_IMPLIED_VOLAT, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
+        PROTOBUF_MSG_IDS.put(CANCEL_CALC_IMPLIED_VOLAT, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
+        PROTOBUF_MSG_IDS.put(REQ_CALC_OPTION_PRICE, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
+        PROTOBUF_MSG_IDS.put(CANCEL_CALC_OPTION_PRICE, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
+        PROTOBUF_MSG_IDS.put(REQ_SEC_DEF_OPT_PARAMS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
+        PROTOBUF_MSG_IDS.put(REQ_SOFT_DOLLAR_TIERS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
+        PROTOBUF_MSG_IDS.put(REQ_FAMILY_CODES, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
+        PROTOBUF_MSG_IDS.put(REQ_MATCHING_SYMBOLS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
+        PROTOBUF_MSG_IDS.put(REQ_SMART_COMPONENTS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
+        PROTOBUF_MSG_IDS.put(REQ_MARKET_RULE, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
+        PROTOBUF_MSG_IDS.put(REQ_USER_INFO, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
+        PROTOBUF_MSG_IDS.put(REQ_IDS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(REQ_CURRENT_TIME, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(REQ_CURRENT_TIME_IN_MILLIS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(START_API, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(SET_SERVER_LOGLEVEL, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(VERIFY_REQUEST, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(VERIFY_MESSAGE, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(QUERY_DISPLAY_GROUPS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(SUBSCRIBE_TO_GROUP_EVENTS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(UPDATE_DISPLAY_GROUP, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(UNSUBSCRIBE_FROM_GROUP_EVENTS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
+        PROTOBUF_MSG_IDS.put(REQ_MKT_DEPTH_EXCHANGES, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
     }
 
     protected EReaderSignal m_signal;
@@ -444,6 +620,11 @@ public abstract class EClient {
     public abstract void eDisconnect();
     
     public synchronized void startAPI() {
+        if (useProtoBuf(START_API)) {
+            startAPIProtoBuf(EClientUtils.createStartApiRequestProto(m_clientId, m_optionalCapabilities));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -473,7 +654,39 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void startAPIProtoBuf(StartApiRequestProto.StartApiRequest startApiRequestProto) {
+        if (startApiRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send start api msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, START_API + PROTOBUF_MSG_ID);
+
+            // send start api request
+            byte[] byteArray = startApiRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_STARTAPI, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelScannerSubscription( int tickerId) {
+        if (useProtoBuf(CANCEL_SCANNER_SUBSCRIPTION)) {
+            cancelScannerSubscriptionProtoBuf(EClientUtils.createCancelScannerSubscriptionProto(tickerId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -504,7 +717,41 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelScannerSubscriptionProtoBuf(CancelScannerSubscriptionProto.CancelScannerSubscription cancelScannerSubscriptionProto) {
+        if (cancelScannerSubscriptionProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelScannerSubscriptionProto.hasReqId() ? cancelScannerSubscriptionProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel scanner subscription msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_SCANNER_SUBSCRIPTION + PROTOBUF_MSG_ID);
+
+            // send cancel scanner subscription
+            byte[] byteArray = cancelScannerSubscriptionProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANSCANNER, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqScannerParameters() {
+        if (useProtoBuf(REQ_SCANNER_PARAMETERS)) {
+            reqScannerParametersProtoBuf(EClientUtils.createScannerParametersRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -534,10 +781,43 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqScannerParametersProtoBuf(ScannerParametersRequestProto.ScannerParametersRequest scannerParametersRequestProto) {
+        if (scannerParametersRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req scanner parameters msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_SCANNER_PARAMETERS + PROTOBUF_MSG_ID);
+
+            // send scanner parameters request
+            byte[] byteArray = scannerParametersRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQSCANNERPARAMETERS, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqScannerSubscription(int tickerId, 
             ScannerSubscription subscription, 
             List<TagValue> scannerSubscriptionOptions, 
             List<TagValue> scannerSubscriptionFilterOptions) {
+        
+        if (useProtoBuf(REQ_SCANNER_SUBSCRIPTION)) {
+            reqScannerSubscriptionProtoBuf(EClientUtils.createScannerSubscriptionRequestProto(tickerId, subscription, scannerSubscriptionOptions, scannerSubscriptionFilterOptions));
+            return;
+        }
+
         // not connected?
         if (!isConnected()) {
             notConnected();
@@ -619,10 +899,47 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqScannerSubscriptionProtoBuf(ScannerSubscriptionRequestProto.ScannerSubscriptionRequest scannerSubscriptionRequestProto) {
+        if (scannerSubscriptionRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = scannerSubscriptionRequestProto.hasReqId() ? scannerSubscriptionRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req scanner subscription msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_SCANNER_SUBSCRIPTION + PROTOBUF_MSG_ID);
+
+            // send scanner subscription request
+            byte[] byteArray = scannerSubscriptionRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQSCANNER, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqMktData(int tickerId, Contract contract,
     		String genericTickList, boolean snapshot, boolean regulatorySnapshot, List<TagValue> mktDataOptions) {
+        if (useProtoBuf(REQ_MKT_DATA)) {
+            reqMarketDataProtoBuf(EClientUtils.createMarketDataRequestProto(tickerId, contract, genericTickList, snapshot, regulatorySnapshot, mktDataOptions));
+            return;
+        }
+
         if (!isConnected()) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.NOT_CONNECTED, "");
+            notConnected();
             return;
         }
 
@@ -766,7 +1083,43 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqMarketDataProtoBuf(MarketDataRequestProto.MarketDataRequest marketDataRequestProto) {
+        if (marketDataRequestProto == null) {
+            return;
+        }
+
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = marketDataRequestProto.hasReqId() ? marketDataRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req market data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_MKT_DATA + PROTOBUF_MSG_ID);
+
+            // send market data request
+            byte[] byteArray = marketDataRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQMKT, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelHistoricalData( int tickerId ) {
+        if (useProtoBuf(CANCEL_HISTORICAL_DATA)) {
+            cancelHistoricalDataProtoBuf(EClientUtils.createCancelHistoricalDataProto(tickerId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -797,7 +1150,41 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelHistoricalDataProtoBuf(CancelHistoricalDataProto.CancelHistoricalData cancelHistoricalDataProto) {
+        if (cancelHistoricalDataProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelHistoricalDataProto.hasReqId() ? cancelHistoricalDataProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel historical data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_HISTORICAL_DATA + PROTOBUF_MSG_ID);
+
+            // send cancel historical data
+            byte[] byteArray = cancelHistoricalDataProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANHISTDATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelRealTimeBars(int tickerId) {
+        if (useProtoBuf(CANCEL_REAL_TIME_BARS)) {
+            cancelRealTimeBarsProtoBuf(EClientUtils.createCancelRealTimeBarsProto(tickerId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -827,12 +1214,46 @@ public abstract class EClient {
             close();
         }
     }
+    
+    public synchronized void cancelRealTimeBarsProtoBuf(CancelRealTimeBarsProto.CancelRealTimeBars cancelRealTimeBarsProto) {
+        if (cancelRealTimeBarsProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelRealTimeBarsProto.hasReqId() ? cancelRealTimeBarsProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel real time bars msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_REAL_TIME_BARS + PROTOBUF_MSG_ID);
+
+            // send cancel real time bars
+            byte[] byteArray = cancelRealTimeBarsProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANRTBARS, e.toString());
+            close();
+        }
+    }
 
     /** Note that formatData parameter affects intra-day bars only; 1-day bars always return with date in YYYYMMDD format. */
     public synchronized void reqHistoricalData( int tickerId, Contract contract,
                                                 String endDateTime, String durationStr,
                                                 String barSizeSetting, String whatToShow,
                                                 int useRTH, int formatDate, boolean keepUpToDate, List<TagValue> chartOptions) {
+        if (useProtoBuf(REQ_HISTORICAL_DATA)) {
+            reqHistoricalDataProtoBuf(EClientUtils.createHistoricalDataRequestProto(tickerId, contract, endDateTime, durationStr, barSizeSetting, whatToShow, useRTH != 0, formatDate, keepUpToDate, chartOptions));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -950,11 +1371,50 @@ public abstract class EClient {
             close();
         }
     }
+    
+
+    public synchronized void reqHistoricalDataProtoBuf(HistoricalDataRequestProto.HistoricalDataRequest historicalDataRequestProto) {
+        if (historicalDataRequestProto == null) {
+            return;
+        }
+    
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+    
+        int reqId = historicalDataRequestProto.hasReqId() ? historicalDataRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+    
+        // send req historical data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_HISTORICAL_DATA + PROTOBUF_MSG_ID);
+    
+            // send historical data request
+            byte[] byteArray = historicalDataRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQHISTDATA, e.toString());
+            close();
+        }
+    }
 
     /** Note that formatData parameter affects intra-day bars only; 1-day bars always return with date in YYYYMMDD format. */
     public synchronized void reqHeadTimestamp(int tickerId, Contract contract,
                                                 String whatToShow, int useRTH, int formatDate) {
-    	// not connected?
+
+        if (useProtoBuf(REQ_HEAD_TIMESTAMP)) {
+            reqHeadTimestampProtoBuf(EClientUtils.createHeadTimestampRequestProto(tickerId, contract, whatToShow, useRTH != 0, formatDate));
+            return;
+        }
+
+        // not connected?
     	if( !isConnected()) {
     		notConnected();
     		return;
@@ -986,9 +1446,46 @@ public abstract class EClient {
             close();
         }
     }
-    
+
+    public synchronized void reqHeadTimestampProtoBuf(HeadTimestampRequestProto.HeadTimestampRequest headTimestampRequestProto) {
+        if (headTimestampRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = headTimestampRequestProto.hasReqId() ? headTimestampRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req head timestamp msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_HEAD_TIMESTAMP + PROTOBUF_MSG_ID);
+
+            // send head timestamp request
+            byte[] byteArray = headTimestampRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQHEADTIMESTAMP, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelHeadTimestamp(int tickerId) {
-    	// not connected?
+        if (useProtoBuf(CANCEL_HEAD_TIMESTAMP)) {
+            cancelHeadTimestampProtoBuf(EClientUtils.createCancelHeadTimestampProto(tickerId));
+            return;
+        }
+
+        // not connected?
     	if( !isConnected()) {
     		notConnected();
     		return;
@@ -1011,10 +1508,43 @@ public abstract class EClient {
     		error(tickerId, EClientErrors.FAIL_SEND_CANCELHEADTIMESTAMP, e.toString());
     		close();
         }
-   }
-    
-    
+    }
+
+    public synchronized void cancelHeadTimestampProtoBuf(CancelHeadTimestampProto.CancelHeadTimestamp cancelHeadTimestampProto) {
+        if (cancelHeadTimestampProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelHeadTimestampProto.hasReqId() ? cancelHeadTimestampProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel head timestamp msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_HEAD_TIMESTAMP + PROTOBUF_MSG_ID);
+
+            // send cancel head timestamp
+            byte[] byteArray = cancelHeadTimestampProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANCELHEADTIMESTAMP, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqRealTimeBars(int tickerId, Contract contract, int barSize, String whatToShow, boolean useRTH, List<TagValue> realTimeBarsOptions) {
+        if (useProtoBuf(REQ_REAL_TIME_BARS)) {
+            reqRealTimeBarsProtoBuf(EClientUtils.createRealTimeBarsRequestProto(tickerId, contract, barSize, whatToShow, useRTH, realTimeBarsOptions));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -1085,7 +1615,44 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqRealTimeBarsProtoBuf(RealTimeBarsRequestProto.RealTimeBarsRequest realTimeBarsRequestProto) {
+        if (realTimeBarsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = realTimeBarsRequestProto.hasReqId() ? realTimeBarsRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req real time bars msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_REAL_TIME_BARS + PROTOBUF_MSG_ID);
+
+            // send real time bars request
+            byte[] byteArray = realTimeBarsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQRTBARS, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqContractDetails(int reqId, Contract contract) {
+        if (useProtoBuf(REQ_CONTRACT_DATA)) {
+            reqContractDataProtoBuf(EClientUtils.createContractDataRequestProto(reqId, contract));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -1196,7 +1763,44 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqContractDataProtoBuf(ContractDataRequestProto.ContractDataRequest contractDataRequestProto) {
+        if (contractDataRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = contractDataRequestProto.hasReqId() ? contractDataRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req contract data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_CONTRACT_DATA + PROTOBUF_MSG_ID);
+
+            // send contract data request
+            byte[] byteArray = contractDataRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQCONTRACT, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqMktDepth( int tickerId, Contract contract, int numRows, boolean isSmartDepth, List<TagValue> mktDepthOptions) {
+        if (useProtoBuf(REQ_MKT_DEPTH)) {
+            reqMarketDepthProtoBuf(EClientUtils.createMarketDepthRequestProto(tickerId, contract, numRows, isSmartDepth, mktDepthOptions));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -1291,7 +1895,43 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqMarketDepthProtoBuf(MarketDepthRequestProto.MarketDepthRequest marketDepthRequestProto) {
+        if (marketDepthRequestProto == null) {
+            return;
+        }
+
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = marketDepthRequestProto.hasReqId() ? marketDepthRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req market depth msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_MKT_DEPTH + PROTOBUF_MSG_ID);
+
+            // send market depth request
+            byte[] byteArray = marketDepthRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQMKTDEPTH, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelMktData( int tickerId) {
+        if (useProtoBuf(CANCEL_MKT_DATA)) {
+            cancelMarketDataProtoBuf(EClientUtils.createCancelMarketDataProto(tickerId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -1316,7 +1956,43 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelMarketDataProtoBuf(CancelMarketDataProto.CancelMarketData cancelMarketDataProto) {
+        if (cancelMarketDataProto == null) {
+            return;
+        }
+
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelMarketDataProto.hasReqId() ? cancelMarketDataProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel market data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_MKT_DATA + PROTOBUF_MSG_ID);
+
+            // send cancel market data
+            byte[] byteArray = cancelMarketDataProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANMKT, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelMktDepth( int tickerId, boolean isSmartDepth) {
+        if (useProtoBuf(CANCEL_MKT_DEPTH)) {
+            cancelMarketDepthProtoBuf(EClientUtils.createCancelMarketDepthProto(tickerId, isSmartDepth));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -1359,10 +2035,46 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelMarketDepthProtoBuf(CancelMarketDepthProto.CancelMarketDepth cancelMarketDepthProto) {
+        if (cancelMarketDepthProto == null) {
+            return;
+        }
+
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelMarketDepthProto.hasReqId() ? cancelMarketDepthProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel market depth msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_MKT_DEPTH + PROTOBUF_MSG_ID);
+
+            // send cancel market depth
+            byte[] byteArray = cancelMarketDepthProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANMKTDEPTH, e.toString());
+            close();
+        }
+    }
+
     public synchronized void exerciseOptions( int tickerId, Contract contract,
                                               int exerciseAction, int exerciseQuantity,
                                               String account, int override, String manualOrderTime, 
                                               String customerAccount, boolean professionalCustomer) {
+        if (useProtoBuf(EXERCISE_OPTIONS)) {
+            exerciseOptionsProtoBuf(EClientUtils.createExerciseOptionsRequestProto(tickerId, contract, exerciseAction, exerciseQuantity, account, override != 0, manualOrderTime, customerAccount, professionalCustomer));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -1453,6 +2165,38 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void exerciseOptionsProtoBuf(ExerciseOptionsRequestProto.ExerciseOptionsRequest exerciseOptionsRequestProto) {
+        if (exerciseOptionsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int tickerId = exerciseOptionsRequestProto.hasOrderId() ? exerciseOptionsRequestProto.getOrderId() : EClientErrors.NO_VALID_ID;
+
+        // send exercise options msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, EXERCISE_OPTIONS + PROTOBUF_MSG_ID);
+
+            // send exercise options request
+            byte[] byteArray = exerciseOptionsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(tickerId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(tickerId, EClientErrors.FAIL_SEND_REQMKT, e.toString());
+            close();
+        }
+    }
+
     public synchronized void placeOrderProtoBuf(PlaceOrderRequestProto.PlaceOrderRequest placeOrderRequestProto) {
         if (placeOrderRequestProto == null) {
             return;
@@ -1466,6 +2210,22 @@ public abstract class EClient {
 
         int orderId = placeOrderRequestProto.hasOrderId() ? placeOrderRequestProto.getOrderId() : Integer.MAX_VALUE;
 
+        if (placeOrderRequestProto.hasOrder()) {
+            String wrongParam = validateOrderParameters(placeOrderRequestProto.getOrder());
+            if (wrongParam != null) {
+                error(orderId, EClientErrors.UPDATE_TWS, " The following order parameter is not supported by your TWS version - " + wrongParam);
+                return;
+            }
+        }
+
+        if (placeOrderRequestProto.hasAttachedOrders()) {
+            String wrongParam = validateAttachedOrdersParameters(placeOrderRequestProto.getAttachedOrders());
+            if (wrongParam != null) {
+                error(orderId, EClientErrors.UPDATE_TWS, " The following attached orders parameter is not supported by your TWS version - " + wrongParam);
+                return;
+            }
+        }
+        
         try {
             Builder b = prepareBuffer(); 
             sendMsgId(b, PLACE_ORDER + PROTOBUF_MSG_ID);
@@ -2352,7 +3112,72 @@ public abstract class EClient {
         }
     }
 
+    private String validateOrderParameters(OrderProto.Order order) {
+        if (m_serverVersion < MIN_SERVER_VER_ADDITIONAL_ORDER_PARAMS_1) {
+            if (order.hasDeactivate()) {
+                return "deactivate";
+            }
+
+            if (order.hasPostOnly()) {
+                return "postOnly";
+            }
+
+            if (order.hasAllowPreOpen()) {
+                return "allowPreOpen";
+            }
+
+            if (order.hasIgnoreOpenAuction()) {
+                return "ignoreOpenAuction";
+            }
+        }
+
+        if (m_serverVersion < MIN_SERVER_VER_ADDITIONAL_ORDER_PARAMS_2) {
+            if (order.hasRouteMarketableToBbo()) {
+                return "routeMarketableToBbo";
+            }
+
+            if (order.hasSeekPriceImprovement()) {
+                return "seekPriceImprovement";
+            }
+
+            if (order.hasWhatIfType()) {
+                return "whatIfType";
+            }
+        }
+
+        if (m_serverVersion < MIN_SERVER_VER_HEDGE_MAX_SIZE) {
+            if (order.hasHedgeMaxSize()) {
+                return "hedgeMaxSize";
+            }
+        }
+
+        return null;
+    }
+
+    private String validateAttachedOrdersParameters(AttachedOrdersProto.AttachedOrders attachedOrders) {
+        if (m_serverVersion < MIN_SERVER_VER_ATTACHED_ORDERS ) {
+            if (attachedOrders.hasSlOrderId()) {
+                return "slOrderId";
+            }
+            if (attachedOrders.hasSlOrderType()) {
+                return "slOrderType";
+            }
+            if (attachedOrders.hasPtOrderId()) {
+                return "ptOrderId";
+            }
+            if (attachedOrders.hasPtOrderType()) {
+                return "ptOrderType";
+            }
+        }
+        return null;
+    }
+
     public synchronized void reqAccountUpdates(boolean subscribe, String acctCode) {
+        if (useProtoBuf(REQ_ACCOUNT_DATA)) {
+            reqAccountUpdatesProtoBuf(EClientUtils.createAccountDataRequestProto(subscribe, acctCode));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2384,6 +3209,36 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqAccountUpdatesProtoBuf(AccountDataRequestProto.AccountDataRequest accountDataRequestProto) {
+        if (accountDataRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send account data request msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_ACCOUNT_DATA + PROTOBUF_MSG_ID);
+
+            // send account data request
+            byte[] byteArray = accountDataRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(EClientErrors.NO_VALID_ID, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_ACCT, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqExecutionsProtoBuf(ExecutionRequestProto.ExecutionRequest executionRequestProto) {
         if (executionRequestProto == null) {
             return;
@@ -2395,7 +3250,7 @@ public abstract class EClient {
             return;
         }
 
-        int reqId = executionRequestProto.hasReqId() ? executionRequestProto.getReqId() : Integer.MAX_VALUE;
+        int reqId = executionRequestProto.hasReqId() ? executionRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
 
         // send req executions msg
         try {
@@ -2579,6 +3434,11 @@ public abstract class EClient {
     }
 
     public synchronized void reqOpenOrders() {
+        if (useProtoBuf(REQ_OPEN_ORDERS)) {
+            reqOpenOrdersProtoBuf(EClientUtils.createOpenOrdersRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2602,7 +3462,35 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqOpenOrdersProtoBuf(OpenOrdersRequestProto.OpenOrdersRequest openOrdersRequest) {
+        // not connected?
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req open orders msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_OPEN_ORDERS + PROTOBUF_MSG_ID);
+
+            // send open orders request
+            byte[] byteArray = openOrdersRequest.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_OORDER, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqIds( int numIds) {
+        if (useProtoBuf(REQ_IDS)) {
+            reqIdsProtoBuf(EClientUtils.createIdsRequestProto(numIds));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2626,7 +3514,39 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqIdsProtoBuf(IdsRequestProto.IdsRequest idsRequestProto) {
+        if (idsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req ids msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_IDS + PROTOBUF_MSG_ID);
+
+            // send ids request
+            byte[] byteArray = idsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_CORDER, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqNewsBulletins( boolean allMsgs) {
+        if (useProtoBuf(REQ_NEWS_BULLETINS)) {
+            reqNewsBulletinsProtoBuf(EClientUtils.createNewsBulletinsRequestProto(allMsgs));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2650,7 +3570,39 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqNewsBulletinsProtoBuf(NewsBulletinsRequestProto.NewsBulletinsRequest newsBulletinsRequestProto) {
+        if (newsBulletinsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req news bulletins msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_NEWS_BULLETINS + PROTOBUF_MSG_ID);
+
+            // send news bulletins request
+            byte[] byteArray = newsBulletinsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_CORDER, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelNewsBulletins() {
+        if (useProtoBuf(CANCEL_NEWS_BULLETINS)) {
+            cancelNewsBulletinsProtoBuf(EClientUtils.createCancelNewsBulletinsProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2674,7 +3626,39 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelNewsBulletinsProtoBuf(CancelNewsBulletinsProto.CancelNewsBulletins cancelNewsBulletinsProto) {
+        if (cancelNewsBulletinsProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send cancel news bulletins msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_NEWS_BULLETINS + PROTOBUF_MSG_ID);
+
+            // send cancel news bulletins
+            byte[] byteArray = cancelNewsBulletinsProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_CORDER, e.toString());
+            close();
+        }
+    }
+
     public synchronized void setServerLogLevel(int logLevel) {
+        if (useProtoBuf(SET_SERVER_LOGLEVEL)) {
+            setServerLogLevelProtoBuf(EClientUtils.createSetServerLogLevelRequestProto(logLevel));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2699,7 +3683,39 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void setServerLogLevelProtoBuf(SetServerLogLevelRequestProto.SetServerLogLevelRequest setServerLogLevelRequestProto) {
+        if (setServerLogLevelRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send set server log level msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, SET_SERVER_LOGLEVEL + PROTOBUF_MSG_ID);
+
+            // send set server log level request
+            byte[] byteArray = setServerLogLevelRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_SERVER_LOG_LEVEL, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqAutoOpenOrders(boolean bAutoBind) {
+        if (useProtoBuf(REQ_AUTO_OPEN_ORDERS)) {
+            reqAutoOpenOrdersProtoBuf(EClientUtils.createAutoOpenOrdersRequestProto(bAutoBind));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2724,7 +3740,35 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqAutoOpenOrdersProtoBuf(AutoOpenOrdersRequestProto.AutoOpenOrdersRequest autoOpenOrdersRequest) {
+        // not connected?
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req auto open orders msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_AUTO_OPEN_ORDERS + PROTOBUF_MSG_ID);
+
+            // send auto open orders request
+            byte[] byteArray = autoOpenOrdersRequest.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_OORDER, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqAllOpenOrders() {
+        if (useProtoBuf(REQ_ALL_OPEN_ORDERS)) {
+            reqAllOpenOrdersProtoBuf(EClientUtils.createAllOpenOrdersRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2747,8 +3791,36 @@ public abstract class EClient {
             close();
         }
     }
+    
+    public synchronized void reqAllOpenOrdersProtoBuf(AllOpenOrdersRequestProto.AllOpenOrdersRequest allOpenOrdersRequest) {
+        // not connected?
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req all open orders msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_ALL_OPEN_ORDERS + PROTOBUF_MSG_ID);
+
+            // send all open orders request
+            byte[] byteArray = allOpenOrdersRequest.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_OORDER, e.toString());
+            close();
+        }
+    }
 
     public synchronized void reqManagedAccts() {
+        if (useProtoBuf(REQ_MANAGED_ACCTS)) {
+            reqManagedAcctsProtoBuf(EClientUtils.createManagedAccountsRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2772,11 +3844,43 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqManagedAcctsProtoBuf(ManagedAccountsRequestProto.ManagedAccountsRequest managedAccountsRequestProto) {
+        if (managedAccountsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req managed accts msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_MANAGED_ACCTS + PROTOBUF_MSG_ID);
+
+            // send managed accounts request
+            byte[] byteArray = managedAccountsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_OORDER, e.toString());
+            close();
+        }
+    }
+
     public void requestFA( Types.FADataType faDataType ) {
         requestFA(faDataType.id());
     }
 
     public synchronized void requestFA( int faDataType ) {
+        if (useProtoBuf(REQ_FA)) {
+            reqFAProtoBuf(EClientUtils.createFARequestProto(faDataType));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2801,7 +3905,34 @@ public abstract class EClient {
             closeAndSend(b);
         }
         catch(Exception e) {
-            error( faDataType, EClientErrors.FAIL_SEND_FA_REQUEST, e.toString());
+            error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_FA_REQUEST, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void reqFAProtoBuf(FARequestProto.FARequest faRequestProto) {
+        if (faRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req FA msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_FA + PROTOBUF_MSG_ID);
+
+            // send FA request
+            byte[] byteArray = faRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_FA_REQUEST, e.toString());
             close();
         }
     }
@@ -2811,6 +3942,11 @@ public abstract class EClient {
     }
 
     public synchronized void replaceFA( int reqId, int faDataType, String xml ) {
+        if (useProtoBuf(REPLACE_FA)) {
+            replaceFAProtoBuf(EClientUtils.createFAReplaceProto(reqId, faDataType, xml));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2847,7 +3983,44 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void replaceFAProtoBuf(FAReplaceProto.FAReplace faReplaceProto) {
+        if (faReplaceProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = faReplaceProto.hasReqId() ? faReplaceProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send replace FA msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REPLACE_FA + PROTOBUF_MSG_ID);
+
+            // send FA replace
+            byte[] byteArray = faReplaceProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_FA_REPLACE, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqCurrentTime() {
+        if (useProtoBuf(REQ_CURRENT_TIME)) {
+            reqCurrentTimeProtoBuf(EClientUtils.createCurrentTimeRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2877,9 +4050,42 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqCurrentTimeProtoBuf(CurrentTimeRequestProto.CurrentTimeRequest currentTimeRequestProto) {
+        if (currentTimeRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req current time msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_CURRENT_TIME + PROTOBUF_MSG_ID);
+
+            // send current time request
+            byte[] byteArray = currentTimeRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQCURRTIME, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqFundamentalData(int reqId, Contract contract, String reportType,
             //reserved for future use, must be blank
             List<TagValue> fundamentalDataOptions) {
+
+        if (useProtoBuf(REQ_FUNDAMENTAL_DATA)) {
+            reqFundamentalsDataProtoBuf(EClientUtils.createFundamentalsDataRequestProto(reqId, contract, reportType, fundamentalDataOptions));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2939,7 +4145,44 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqFundamentalsDataProtoBuf(FundamentalsDataRequestProto.FundamentalsDataRequest fundamentalsDataRequestProto) {
+        if (fundamentalsDataRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = fundamentalsDataRequestProto.hasReqId() ? fundamentalsDataRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req fundamental data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_FUNDAMENTAL_DATA + PROTOBUF_MSG_ID);
+
+            // send fundamental data request
+            byte[] byteArray = fundamentalsDataRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQFUNDDATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelFundamentalData(int reqId) {
+        if (useProtoBuf(CANCEL_FUNDAMENTAL_DATA)) {
+            cancelFundamentalsDataProtoBuf(EClientUtils.createCancelFundamentalsDataProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -2970,10 +4213,44 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelFundamentalsDataProtoBuf(CancelFundamentalsDataProto.CancelFundamentalsData cancelFundamentalsDataProto) {
+        if (cancelFundamentalsDataProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelFundamentalsDataProto.hasReqId() ? cancelFundamentalsDataProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel fundamental data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_FUNDAMENTAL_DATA + PROTOBUF_MSG_ID);
+
+            // send cancel fundamental data
+            byte[] byteArray = cancelFundamentalsDataProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANFUNDDATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void calculateImpliedVolatility(int reqId, Contract contract,
             double optionPrice, double underPrice,
             //reserved for future use, must be blank
             List<TagValue> impliedVolatilityOptions) {
+
+        if (useProtoBuf(REQ_CALC_IMPLIED_VOLAT)) {
+            calculateImpliedVolatilityProtoBuf(EClientUtils.createCalculateImpliedVolatilityRequestProto(reqId, contract, optionPrice, underPrice, impliedVolatilityOptions));
+            return;
+        }
 
         // not connected?
         if (!isConnected()) {
@@ -3040,7 +4317,43 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void calculateImpliedVolatilityProtoBuf(CalculateImpliedVolatilityRequestProto.CalculateImpliedVolatilityRequest calculateImpliedVolatilityRequestProto) {
+        if (calculateImpliedVolatilityRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = calculateImpliedVolatilityRequestProto.hasReqId() ? calculateImpliedVolatilityRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send calculate implied volatility msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_CALC_IMPLIED_VOLAT + PROTOBUF_MSG_ID);
+
+            // send calculate implied volatility request
+            byte[] byteArray = calculateImpliedVolatilityRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQCALCIMPLIEDVOLAT, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelCalculateImpliedVolatility(int reqId) {
+        if (useProtoBuf(CANCEL_CALC_IMPLIED_VOLAT)) {
+            cancelCalculateImpliedVolatilityProtoBuf(EClientUtils.createCancelCalculateImpliedVolatilityProto(reqId));
+            return;
+        }
 
         // not connected?
         if( !isConnected()) {
@@ -3072,10 +4385,44 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelCalculateImpliedVolatilityProtoBuf(CancelCalculateImpliedVolatilityProto.CancelCalculateImpliedVolatility cancelCalculateImpliedVolatilityProto) {
+        if (cancelCalculateImpliedVolatilityProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelCalculateImpliedVolatilityProto.hasReqId() ? cancelCalculateImpliedVolatilityProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel calculate implied volatility msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_CALC_IMPLIED_VOLAT + PROTOBUF_MSG_ID);
+
+            // send cancel calculate implied volatility
+            byte[] byteArray = cancelCalculateImpliedVolatilityProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANCALCIMPLIEDVOLAT, e.toString());
+            close();
+        }
+    }
+
     public synchronized void calculateOptionPrice(int reqId, Contract contract,
             double volatility, double underPrice,
             //reserved for future use, must be blank
             List<TagValue> optionPriceOptions) {
+
+        if (useProtoBuf(REQ_CALC_OPTION_PRICE)) {
+            calculateOptionPriceProtoBuf(EClientUtils.createCalculateOptionPriceRequestProto(reqId, contract, volatility, underPrice, optionPriceOptions));
+            return;
+        }
 
         // not connected?
         if (!isConnected()) {
@@ -3142,7 +4489,43 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void calculateOptionPriceProtoBuf(CalculateOptionPriceRequestProto.CalculateOptionPriceRequest calculateOptionPriceRequestProto) {
+        if (calculateOptionPriceRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = calculateOptionPriceRequestProto.hasReqId() ? calculateOptionPriceRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send calculate option price msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_CALC_OPTION_PRICE + PROTOBUF_MSG_ID);
+
+            // send calculate option price request
+            byte[] byteArray = calculateOptionPriceRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQCALCOPTIONPRICE, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelCalculateOptionPrice(int reqId) {
+        if (useProtoBuf(CANCEL_CALC_OPTION_PRICE)) {
+            cancelCalculateOptionPriceProtoBuf(EClientUtils.createCancelCalculateOptionPriceProto(reqId));
+            return;
+        }
 
         // not connected?
         if( !isConnected()) {
@@ -3170,6 +4553,35 @@ public abstract class EClient {
         }
         catch( Exception e) {
             error( reqId, EClientErrors.FAIL_SEND_CANCALCOPTIONPRICE, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void cancelCalculateOptionPriceProtoBuf(CancelCalculateOptionPriceProto.CancelCalculateOptionPrice cancelCalculateOptionPriceProto) {
+        if (cancelCalculateOptionPriceProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelCalculateOptionPriceProto.hasReqId() ? cancelCalculateOptionPriceProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel calculate option price msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_CALC_OPTION_PRICE + PROTOBUF_MSG_ID);
+
+            // send cancel calculate option price
+            byte[] byteArray = cancelCalculateOptionPriceProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANCALCOPTIONPRICE, e.toString());
             close();
         }
     }
@@ -3249,6 +4661,11 @@ public abstract class EClient {
     }
 
     public synchronized void reqMarketDataType(int marketDataType) {
+        if (useProtoBuf(REQ_MARKET_DATA_TYPE)) {
+            reqMarketDataTypeProtoBuf(EClientUtils.createMarketDataTypeRequestProto(marketDataType));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3279,7 +4696,41 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqMarketDataTypeProtoBuf(MarketDataTypeRequestProto.MarketDataTypeRequest marketDataTypeRequestProto) {
+        if (marketDataTypeRequestProto == null) {
+            return;
+        }
+
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req market data type msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_MARKET_DATA_TYPE + PROTOBUF_MSG_ID);
+
+            // send market data type request
+            byte[] byteArray = marketDataTypeRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(EClientErrors.NO_VALID_ID, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQMARKETDATATYPE, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqPositions() {
+        if (useProtoBuf(REQ_POSITIONS)) {
+            reqPositionsProtoBuf(EClientUtils.createPositionsRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3303,11 +4754,43 @@ public abstract class EClient {
         }
         catch (IOException e) {
             error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQPOSITIONS, e.toString());
+            close();
         }
     }
-    
+
+    public synchronized void reqPositionsProtoBuf(PositionsRequestProto.PositionsRequest positionsRequestProto) {
+        if (positionsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req positions msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, REQ_POSITIONS + PROTOBUF_MSG_ID);
+
+            // send positions request
+            byte[] byteArray = positionsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch (Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQPOSITIONS, e.toString());
+            close();
+        }
+    }
 
 	public synchronized void reqSecDefOptParams(int reqId, String underlyingSymbol, String futFopExchange, String underlyingSecType, int underlyingConId) {
+        if (useProtoBuf(REQ_SEC_DEF_OPT_PARAMS)) {
+            reqSecDefOptParamsProtoBuf(EClientUtils.createSecDefOptParamsRequestProto(reqId, underlyingSymbol, futFopExchange, underlyingSecType, underlyingConId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3340,7 +4823,44 @@ public abstract class EClient {
         }
 	}
 	
+    public synchronized void reqSecDefOptParamsProtoBuf(SecDefOptParamsRequestProto.SecDefOptParamsRequest secDefOptParamsRequestProto) {
+        if (secDefOptParamsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = secDefOptParamsRequestProto.hasReqId() ? secDefOptParamsRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req security definition option parameters msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_SEC_DEF_OPT_PARAMS + PROTOBUF_MSG_ID);
+
+            // send security definition option parameters request
+            byte[] byteArray = secDefOptParamsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQSECDEFOPTPARAMS, e.toString());
+            close();
+        }
+    }
+
 	public synchronized void reqSoftDollarTiers(int reqId) {
+        if (useProtoBuf(REQ_SOFT_DOLLAR_TIERS)) {
+            reqSoftDollarTiersProtoBuf(EClientUtils.createSoftDollarTiersRequestProto(reqId));
+            return;
+        }
+
 		if (!isConnected()) {
 			notConnected();
 			return;
@@ -3361,10 +4881,48 @@ public abstract class EClient {
         }
         catch (IOException e) {
             error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQSOFTDOLLARTIERS, e.toString());
+            close();
         }
 	}
 
+    public synchronized void reqSoftDollarTiersProtoBuf(SoftDollarTiersRequestProto.SoftDollarTiersRequest softDollarTiersRequestProto) {
+        if (softDollarTiersRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = softDollarTiersRequestProto.hasReqId() ? softDollarTiersRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req soft dollar tiers msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_SOFT_DOLLAR_TIERS + PROTOBUF_MSG_ID);
+
+            // send soft dollar tiers request
+            byte[] byteArray = softDollarTiersRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQSOFTDOLLARTIERS, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelPositions() {
+        if (useProtoBuf(CANCEL_POSITIONS)) {
+            cancelPositionsProtoBuf(EClientUtils.createCancelPositionsRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3388,10 +4946,43 @@ public abstract class EClient {
         }
         catch (IOException e) {
             error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_CANPOSITIONS, e.toString());
+            close();
         }
     }
     
+    public synchronized void cancelPositionsProtoBuf(CancelPositionsProto.CancelPositions cancelPositionsProto) {
+        if (cancelPositionsProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send cancel positions msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, CANCEL_POSITIONS + PROTOBUF_MSG_ID);
+
+            // send cancel positions request
+            byte[] byteArray = cancelPositionsProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch (Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_CANPOSITIONS, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqPositionsMulti( int reqId, String account, String modelCode) {
+        if (useProtoBuf(REQ_POSITIONS_MULTI)) {
+            reqPositionsMultiProtoBuf(EClientUtils.createPositionsMultiRequestProto(reqId, account, modelCode));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3399,7 +4990,7 @@ public abstract class EClient {
         }
 
         if (m_serverVersion < MIN_SERVER_VER_MODELS_SUPPORT) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS,
+            error(reqId, EClientErrors.UPDATE_TWS,
             "  It does not support positions multi request.");
             return;
         }
@@ -3425,7 +5016,44 @@ public abstract class EClient {
         }
     }    
     
+    public synchronized void reqPositionsMultiProtoBuf(PositionsMultiRequestProto.PositionsMultiRequest positionsMultiRequestProto) {
+        if (positionsMultiRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = positionsMultiRequestProto.hasReqId() ? positionsMultiRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send positions multi request msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, REQ_POSITIONS_MULTI + PROTOBUF_MSG_ID);
+
+            // send positions multi request
+            byte[] byteArray = positionsMultiRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQPOSITIONSMULTI, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelPositionsMulti( int reqId) {
+        if (useProtoBuf(CANCEL_POSITIONS_MULTI)) {
+            cancelPositionsMultiProtoBuf(EClientUtils.createCancelPositionsMultiRequestProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3433,7 +5061,7 @@ public abstract class EClient {
         }
 
         if (m_serverVersion < MIN_SERVER_VER_MODELS_SUPPORT) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS,
+            error(reqId, EClientErrors.UPDATE_TWS,
             "  It does not support positions multi cancellation.");
             return;
         }
@@ -3449,11 +5077,46 @@ public abstract class EClient {
             closeAndSend(b);
         }
         catch (IOException e) {
-            error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_CANPOSITIONSMULTI, e.toString());
+            error(reqId, EClientErrors.FAIL_SEND_CANPOSITIONSMULTI, e.toString());
+            close();
         }
     }
-    
-	public synchronized void cancelAccountUpdatesMulti( int reqId) {
+
+    public synchronized void cancelPositionsMultiProtoBuf(CancelPositionsMultiProto.CancelPositionsMulti cancelPositionsMultiProto) {
+        if (cancelPositionsMultiProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelPositionsMultiProto.hasReqId() ? cancelPositionsMultiProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel positions multi msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, CANCEL_POSITIONS_MULTI + PROTOBUF_MSG_ID);
+
+            // send cancel positions multi
+            byte[] byteArray = cancelPositionsMultiProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANPOSITIONSMULTI, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void cancelAccountUpdatesMulti( int reqId) {
+        if (useProtoBuf(CANCEL_ACCOUNT_UPDATES_MULTI)) {
+            cancelAccountUpdatesMultiProtoBuf(EClientUtils.createCancelAccountUpdatesMultiRequestProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3461,7 +5124,7 @@ public abstract class EClient {
         }
 
         if (m_serverVersion < MIN_SERVER_VER_MODELS_SUPPORT) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS,
+            error(reqId, EClientErrors.UPDATE_TWS,
             "  It does not support account updates multi cancellation.");
             return;
         }
@@ -3478,10 +5141,45 @@ public abstract class EClient {
         }
         catch (IOException e) {
             error(reqId, EClientErrors.FAIL_SEND_CANACCOUNTUPDATESMULTI, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void cancelAccountUpdatesMultiProtoBuf(CancelAccountUpdatesMultiProto.CancelAccountUpdatesMulti cancelAccountUpdatesMultiProto) {
+        if (cancelAccountUpdatesMultiProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelAccountUpdatesMultiProto.hasReqId() ? cancelAccountUpdatesMultiProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel account updates multi msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, CANCEL_ACCOUNT_UPDATES_MULTI + PROTOBUF_MSG_ID);
+
+            // send cancel account updates multi
+            byte[] byteArray = cancelAccountUpdatesMultiProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANACCOUNTUPDATESMULTI, e.toString());
+            close();
         }
     }
 
     public synchronized void reqAccountUpdatesMulti( int reqId, String account, String modelCode, boolean ledgerAndNLV) {
+        if (useProtoBuf(REQ_ACCOUNT_UPDATES_MULTI)) {
+            reqAccountUpdatesMultiProtoBuf(EClientUtils.createAccountUpdatesMultiRequestProto(reqId, account, modelCode, ledgerAndNLV));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3489,7 +5187,7 @@ public abstract class EClient {
         }
 
         if (m_serverVersion < MIN_SERVER_VER_MODELS_SUPPORT) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS,
+            error(reqId, EClientErrors.UPDATE_TWS,
             "  It does not support account updates multi requests.");
             return;
         }
@@ -3516,7 +5214,44 @@ public abstract class EClient {
         }
     }
     
+    public synchronized void reqAccountUpdatesMultiProtoBuf(AccountUpdatesMultiRequestProto.AccountUpdatesMultiRequest accountUpdatesMultiRequestProto) {
+        if (accountUpdatesMultiRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = accountUpdatesMultiRequestProto.hasReqId() ? accountUpdatesMultiRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send account updates multi request msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, REQ_ACCOUNT_UPDATES_MULTI + PROTOBUF_MSG_ID);
+
+            // send account updates multi request
+            byte[] byteArray = accountUpdatesMultiRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQACCOUNTUPDATESMULTI, e.toString());
+            close();
+        }
+    }
+    
     public synchronized void reqAccountSummary( int reqId, String group, String tags) {
+        if (useProtoBuf(REQ_ACCOUNT_SUMMARY)) {
+            reqAccountSummaryProtoBuf(EClientUtils.createAccountSummaryRequestProto(reqId, group, tags));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3524,7 +5259,7 @@ public abstract class EClient {
         }
 
         if (m_serverVersion < MIN_SERVER_VER_ACCT_SUMMARY) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS,
+            error(reqId, EClientErrors.UPDATE_TWS,
             "  It does not support account summary requests.");
             return;
         }
@@ -3550,7 +5285,44 @@ public abstract class EClient {
         }
     }
 
-	public synchronized void cancelAccountSummary( int reqId) {
+    public synchronized void reqAccountSummaryProtoBuf(AccountSummaryRequestProto.AccountSummaryRequest accountSummaryRequestProto) {
+        if (accountSummaryRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = accountSummaryRequestProto.hasReqId() ? accountSummaryRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send account summary request msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, REQ_ACCOUNT_SUMMARY + PROTOBUF_MSG_ID);
+
+            // send account summary request
+            byte[] byteArray = accountSummaryRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQACCOUNTDATA, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void cancelAccountSummary( int reqId) {
+        if (useProtoBuf(CANCEL_ACCOUNT_SUMMARY)) {
+            cancelAccountSummaryProtoBuf(EClientUtils.createCancelAccountSummaryRequestProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3558,7 +5330,7 @@ public abstract class EClient {
         }
 
         if (m_serverVersion < MIN_SERVER_VER_ACCT_SUMMARY) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS,
+            error(reqId, EClientErrors.UPDATE_TWS,
             "  It does not support account summary cancellation.");
             return;
         }
@@ -3574,10 +5346,46 @@ public abstract class EClient {
             closeAndSend(b);
         }
         catch (IOException e) {
-            error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_CANACCOUNTDATA, e.toString());
+            error(reqId, EClientErrors.FAIL_SEND_CANACCOUNTDATA, e.toString());
+            close();
         }
     }
+
+    public synchronized void cancelAccountSummaryProtoBuf(CancelAccountSummaryProto.CancelAccountSummary cancelAccountSummaryProto) {
+        if (cancelAccountSummaryProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelAccountSummaryProto.hasReqId() ? cancelAccountSummaryProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel account summary msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, CANCEL_ACCOUNT_SUMMARY + PROTOBUF_MSG_ID);
+
+            // send cancel account summary
+            byte[] byteArray = cancelAccountSummaryProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANACCOUNTDATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void verifyRequest( String apiName, String apiVersion) {
+        if (useProtoBuf(VERIFY_REQUEST)) {
+            verifyRequestProtoBuf(EClientUtils.createVerifyRequestProto(apiName, apiVersion));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3615,7 +5423,44 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void verifyRequestProtoBuf(VerifyRequestProto.VerifyRequest verifyRequestProto) {
+        if (verifyRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        if (!m_extraAuth) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_VERIFYMESSAGE, "  Intent to authenticate needs to be expressed during initial connect request.");
+            return;
+        }
+
+        // send verify request msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, VERIFY_REQUEST + PROTOBUF_MSG_ID);
+
+            // send verify request
+            byte[] byteArray = verifyRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_VERIFYREQUEST, e.toString());
+            close();
+        }
+    }
+
     public synchronized void verifyMessage( String apiData) {
+        if (useProtoBuf(VERIFY_MESSAGE)) {
+            verifyMessageProtoBuf(EClientUtils.createVerifyMessageRequestProto(apiData));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3642,6 +5487,33 @@ public abstract class EClient {
             error(EClientErrors.NO_VALID_ID, e.error(), e.text());
         }
         catch (IOException e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_VERIFYMESSAGE, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void verifyMessageProtoBuf(VerifyMessageRequestProto.VerifyMessageRequest verifyMessageRequestProto) {
+        if (verifyMessageRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send verify message msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, VERIFY_MESSAGE + PROTOBUF_MSG_ID);
+
+            // send verify message request
+            byte[] byteArray = verifyMessageRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
             error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_VERIFYMESSAGE, e.toString());
             close();
         }
@@ -3720,7 +5592,12 @@ public abstract class EClient {
         }
     }
 
-	public synchronized void queryDisplayGroups( int reqId) {
+    public synchronized void queryDisplayGroups( int reqId) {
+        if (useProtoBuf(QUERY_DISPLAY_GROUPS)) {
+            queryDisplayGroupsProtoBuf(EClientUtils.createQueryDisplayGroupsRequestProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3728,7 +5605,7 @@ public abstract class EClient {
         }
 
         if (m_serverVersion < MIN_SERVER_VER_LINKING) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS,
+            error(reqId, EClientErrors.UPDATE_TWS,
             "  It does not support queryDisplayGroups request.");
             return;
         }
@@ -3744,11 +5621,47 @@ public abstract class EClient {
             closeAndSend(b);
         }
         catch (IOException e) {
-            error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_QUERYDISPLAYGROUPS, e.toString());
+            error(reqId, EClientErrors.FAIL_SEND_QUERYDISPLAYGROUPS, e.toString());
+            close();
         }
     }
-	
-	public synchronized void subscribeToGroupEvents( int reqId, int groupId) {
+
+    public synchronized void queryDisplayGroupsProtoBuf(QueryDisplayGroupsRequestProto.QueryDisplayGroupsRequest queryDisplayGroupsRequestProto) {
+        if (queryDisplayGroupsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+
+        int reqId = queryDisplayGroupsRequestProto.hasReqId() ? queryDisplayGroupsRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send query display groups msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, QUERY_DISPLAY_GROUPS + PROTOBUF_MSG_ID);
+
+            // send query display groups request
+            byte[] byteArray = queryDisplayGroupsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_QUERYDISPLAYGROUPS, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void subscribeToGroupEvents( int reqId, int groupId) {
+        if (useProtoBuf(SUBSCRIBE_TO_GROUP_EVENTS)) {
+            subscribeToGroupEventsProtoBuf(EClientUtils.createSubscribeToGroupEventsRequestProto(reqId, groupId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3756,7 +5669,7 @@ public abstract class EClient {
         }
 
         if (m_serverVersion < MIN_SERVER_VER_LINKING) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS,
+            error(reqId, EClientErrors.UPDATE_TWS,
             "  It does not support subscribeToGroupEvents request.");
             return;
         }
@@ -3773,11 +5686,46 @@ public abstract class EClient {
             closeAndSend(b);
         }
         catch (IOException e) {
-            error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_SUBSCRIBETOGROUPEVENTS, e.toString());
+            error( reqId, EClientErrors.FAIL_SEND_SUBSCRIBETOGROUPEVENTS, e.toString());
+            close();
         }
     }	
 
-	public synchronized void updateDisplayGroup( int reqId, String contractInfo) {
+    public synchronized void subscribeToGroupEventsProtoBuf(SubscribeToGroupEventsRequestProto.SubscribeToGroupEventsRequest subscribeToGroupEventsRequestProto) {
+        if (subscribeToGroupEventsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = subscribeToGroupEventsRequestProto.hasReqId() ? subscribeToGroupEventsRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send subscribe to group events msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, SUBSCRIBE_TO_GROUP_EVENTS + PROTOBUF_MSG_ID);
+
+            // send subscribe to group events request
+            byte[] byteArray = subscribeToGroupEventsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_SUBSCRIBETOGROUPEVENTS, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void updateDisplayGroup( int reqId, String contractInfo) {
+        if (useProtoBuf(UPDATE_DISPLAY_GROUP)) {
+            updateDisplayGroupProtoBuf(EClientUtils.createUpdateDisplayGroupRequestProto(reqId, contractInfo));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3810,7 +5758,41 @@ public abstract class EClient {
         }
     }	
 
-	public synchronized void unsubscribeFromGroupEvents( int reqId) {
+    public synchronized void updateDisplayGroupProtoBuf(UpdateDisplayGroupRequestProto.UpdateDisplayGroupRequest updateDisplayGroupRequestProto) {
+        if (updateDisplayGroupRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = updateDisplayGroupRequestProto.hasReqId() ? updateDisplayGroupRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send update display group msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, UPDATE_DISPLAY_GROUP + PROTOBUF_MSG_ID);
+
+            // send update display group request
+            byte[] byteArray = updateDisplayGroupRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_UPDATEDISPLAYGROUP, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void unsubscribeFromGroupEvents( int reqId) {
+        if (useProtoBuf(UNSUBSCRIBE_FROM_GROUP_EVENTS)) {
+            unsubscribeFromGroupEventsProtoBuf(EClientUtils.createUnsubscribeFromGroupEventsRequestProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3818,7 +5800,7 @@ public abstract class EClient {
         }
 
         if (m_serverVersion < MIN_SERVER_VER_LINKING) {
-            error(EClientErrors.NO_VALID_ID, EClientErrors.UPDATE_TWS,
+            error(reqId, EClientErrors.UPDATE_TWS,
             "  It does not support unsubscribeFromGroupEvents request.");
             return;
         }
@@ -3834,11 +5816,46 @@ public abstract class EClient {
             closeAndSend(b);
         }
         catch (IOException e) {
-            error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_UNSUBSCRIBEFROMGROUPEVENTS, e.toString());
+            error(reqId, EClientErrors.FAIL_SEND_UNSUBSCRIBEFROMGROUPEVENTS, e.toString());
+            close();
         }
     }	
 
+    public synchronized void unsubscribeFromGroupEventsProtoBuf(UnsubscribeFromGroupEventsRequestProto.UnsubscribeFromGroupEventsRequest unsubscribeFromGroupEventsRequestProto) {
+        if (unsubscribeFromGroupEventsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = unsubscribeFromGroupEventsRequestProto.hasReqId() ? unsubscribeFromGroupEventsRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send unsubscribe from group events msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, UNSUBSCRIBE_FROM_GROUP_EVENTS + PROTOBUF_MSG_ID);
+
+            // send unsubscribe from group events request
+            byte[] byteArray = unsubscribeFromGroupEventsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_UNSUBSCRIBEFROMGROUPEVENTS, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqMatchingSymbols( int reqId, String pattern) {
+        if (useProtoBuf(REQ_MATCHING_SYMBOLS)) {
+            reqMatchingSymbolsProtoBuf(EClientUtils.createMatchingSymbolsRequestProto(reqId, pattern));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3868,7 +5885,44 @@ public abstract class EClient {
         }
     }	
 
+    public synchronized void reqMatchingSymbolsProtoBuf(MatchingSymbolsRequestProto.MatchingSymbolsRequest matchingSymbolsRequestProto) {
+        if (matchingSymbolsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = matchingSymbolsRequestProto.hasReqId() ? matchingSymbolsRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req matching symbols msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_MATCHING_SYMBOLS + PROTOBUF_MSG_ID);
+
+            // send matching symbols request
+            byte[] byteArray = matchingSymbolsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQMATCHINGSYMBOLS, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqFamilyCodes() {
+        if (useProtoBuf(REQ_FAMILY_CODES)) {
+            reqFamilyCodesProtoBuf(EClientUtils.createFamilyCodesRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3889,10 +5943,43 @@ public abstract class EClient {
         }
         catch (IOException e) {
             error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQFAMILYCODES, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void reqFamilyCodesProtoBuf(FamilyCodesRequestProto.FamilyCodesRequest familyCodesRequestProto) {
+        if (familyCodesRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req family codes msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_FAMILY_CODES + PROTOBUF_MSG_ID);
+
+            // send family codes request
+            byte[] byteArray = familyCodesRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQFAMILYCODES, e.toString());
+            close();
         }
     }
 
     public synchronized void reqMktDepthExchanges() {
+        if (useProtoBuf(REQ_MKT_DEPTH_EXCHANGES)) {
+            reqMarketDepthExchangesProtoBuf(EClientUtils.createMarketDepthExchangesRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3913,10 +6000,43 @@ public abstract class EClient {
         }
         catch (IOException e) {
             error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQMKTDEPTHEXCHANGES, e.toString());
+            close();
         }
     }
-    
+
+    public synchronized void reqMarketDepthExchangesProtoBuf(MarketDepthExchangesRequestProto.MarketDepthExchangesRequest marketDepthExchangesRequestProto) {
+        if (marketDepthExchangesRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req market depth exchanges msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_MKT_DEPTH_EXCHANGES + PROTOBUF_MSG_ID);
+
+            // send market depth exchanges request
+            byte[] byteArray = marketDepthExchangesRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQMKTDEPTHEXCHANGES, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqSmartComponents(int reqId, String bboExchange) {
+        if (useProtoBuf(REQ_SMART_COMPONENTS)) {
+            reqSmartComponentsProtoBuf(EClientUtils.createSmartComponentsRequestProto(reqId, bboExchange));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3946,7 +6066,44 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqSmartComponentsProtoBuf(SmartComponentsRequestProto.SmartComponentsRequest smartComponentsRequestProto) {
+        if (smartComponentsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = smartComponentsRequestProto.hasReqId() ? smartComponentsRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req smart components msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_SMART_COMPONENTS + PROTOBUF_MSG_ID);
+
+            // send smart components request
+            byte[] byteArray = smartComponentsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQSMARTCOMPONENTS, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqNewsProviders() {
+        if (useProtoBuf(REQ_NEWS_PROVIDERS)) {
+            reqNewsProvidersProtoBuf(EClientUtils.createNewsProvidersRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -3967,10 +6124,43 @@ public abstract class EClient {
         }
         catch (IOException e) {
             error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQNEWSPROVIDERS, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void reqNewsProvidersProtoBuf(NewsProvidersRequestProto.NewsProvidersRequest newsProvidersRequestProto) {
+        if (newsProvidersRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req news providers msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_NEWS_PROVIDERS + PROTOBUF_MSG_ID);
+
+            // send news providers request
+            byte[] byteArray = newsProvidersRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQNEWSPROVIDERS, e.toString());
+            close();
         }
     }
 
     public synchronized void reqNewsArticle(int requestId, String providerCode, String articleId, List<TagValue> newsArticleOptions) {
+        if (useProtoBuf(REQ_NEWS_ARTICLE)) {
+            reqNewsArticleProtoBuf(EClientUtils.createNewsArticleRequestProto(requestId, providerCode, articleId, newsArticleOptions));
+            return;
+        }
+
         // not connected?
         if (!isConnected()) {
             notConnected();
@@ -4007,8 +6197,45 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqNewsArticleProtoBuf(NewsArticleRequestProto.NewsArticleRequest newsArticleRequestProto) {
+        if (newsArticleRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = newsArticleRequestProto.hasReqId() ? newsArticleRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req news article msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_NEWS_ARTICLE + PROTOBUF_MSG_ID);
+
+            // send news article request
+            byte[] byteArray = newsArticleRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQNEWSARTICLE, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqHistoricalNews( int requestId, int conId, String providerCodes, 
             String startDateTime, String endDateTime, int totalResults, List<TagValue> historicalNewsOptions) {
+
+        if (useProtoBuf(REQ_HISTORICAL_NEWS)) {
+            reqHistoricalNewsProtoBuf(EClientUtils.createHistoricalNewsRequestProto(requestId, conId, providerCodes, startDateTime, endDateTime, totalResults, historicalNewsOptions));
+            return;
+        }
 
         // not connected?
         if (!isConnected()) {
@@ -4049,9 +6276,46 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqHistoricalNewsProtoBuf(HistoricalNewsRequestProto.HistoricalNewsRequest historicalNewsRequestProto) {
+        if (historicalNewsRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = historicalNewsRequestProto.hasReqId() ? historicalNewsRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req historical news msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_HISTORICAL_NEWS + PROTOBUF_MSG_ID);
+
+            // send historical news request
+            byte[] byteArray = historicalNewsRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQHISTORICALNEWS, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqHistogramData(int tickerId, Contract contract,
     		boolean useRTH, String timePeriod) {
-    	// not connected?
+        if (useProtoBuf(REQ_HISTOGRAM_DATA)) {
+            reqHistogramDataProtoBuf(EClientUtils.createHistogramDataRequestProto(tickerId, contract, useRTH, timePeriod));
+            return;
+        }
+
+        // not connected?
     	if( !isConnected()) {
     		notConnected();
     		return;
@@ -4082,8 +6346,45 @@ public abstract class EClient {
             close();
         }
     }
-    
+
+    public synchronized void reqHistogramDataProtoBuf(HistogramDataRequestProto.HistogramDataRequest histogramDataRequestProto) {
+        if (histogramDataRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = histogramDataRequestProto.hasReqId() ? histogramDataRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req histogram data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_HISTOGRAM_DATA + PROTOBUF_MSG_ID);
+
+            // send histogram data request
+            byte[] byteArray = histogramDataRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQHISTOGRAMDATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelHistogramData( int tickerId ) {
+        if (useProtoBuf(CANCEL_HISTOGRAM_DATA)) {
+            cancelHistogramDataProtoBuf(EClientUtils.createCancelHistogramDataProto(tickerId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4111,7 +6412,41 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelHistogramDataProtoBuf(CancelHistogramDataProto.CancelHistogramData cancelHistogramDataProto) {
+        if (cancelHistogramDataProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelHistogramDataProto.hasReqId() ? cancelHistogramDataProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel histogram data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_HISTOGRAM_DATA + PROTOBUF_MSG_ID);
+
+            // send cancel histogram data
+            byte[] byteArray = cancelHistogramDataProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANCELHISTOGRAMDATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqMarketRule( int marketRuleId) {
+        if (useProtoBuf(REQ_MARKET_RULE)) {
+            reqMarketRuleProtoBuf(EClientUtils.createMarketRuleRequestProto(marketRuleId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4138,8 +6473,40 @@ public abstract class EClient {
             close();
         }
     }
-    
+
+    public synchronized void reqMarketRuleProtoBuf(MarketRuleRequestProto.MarketRuleRequest marketRuleRequestProto) {
+        if (marketRuleRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req market rule msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_MARKET_RULE + PROTOBUF_MSG_ID);
+
+            // send market rule request
+            byte[] byteArray = marketRuleRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQMARKETRULE, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqPnL(int reqId, String account, String modelCode) {
+        if (useProtoBuf(REQ_PNL)) {
+            reqPnLProtoBuf(EClientUtils.createPnLRequestProto(reqId, account, modelCode));
+            return;
+        }
+
         if( !isConnected()) {
             notConnected();
             return;
@@ -4169,8 +6536,45 @@ public abstract class EClient {
             close();
         }
     }
-    
+
+    public synchronized void reqPnLProtoBuf(PnLRequestProto.PnLRequest pnlRequestProto) {
+        if (pnlRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = pnlRequestProto.hasReqId() ? pnlRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req pnl msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_PNL + PROTOBUF_MSG_ID);
+
+            // send pnl request
+            byte[] byteArray = pnlRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQPNL, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelPnL(int reqId) {
+        if (useProtoBuf(CANCEL_PNL)) {
+            cancelPnLProtoBuf(EClientUtils.createCancelPnLProto(reqId));
+            return;
+        }
+
         if( !isConnected()) {
             notConnected();
             return;
@@ -4196,7 +6600,41 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelPnLProtoBuf(CancelPnLProto.CancelPnL cancelPnLProto) {
+        if (cancelPnLProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelPnLProto.hasReqId() ? cancelPnLProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel pnl msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_PNL + PROTOBUF_MSG_ID);
+
+            // send cancel pnl
+            byte[] byteArray = cancelPnLProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANCELPNL, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqPnLSingle(int reqId, String account, String modelCode, int conId) {
+        if (useProtoBuf(REQ_PNL_SINGLE)) {
+            reqPnLSingleProtoBuf(EClientUtils.createPnLSingleRequestProto(reqId, account, modelCode, conId));
+            return;
+        }
+
         if( !isConnected()) {
             notConnected();
             return;
@@ -4227,8 +6665,45 @@ public abstract class EClient {
             close();
         }
     }
-    
+
+    public synchronized void reqPnLSingleProtoBuf(PnLSingleRequestProto.PnLSingleRequest pnlSingleRequestProto) {
+        if (pnlSingleRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = pnlSingleRequestProto.hasReqId() ? pnlSingleRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req pnl single msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_PNL_SINGLE + PROTOBUF_MSG_ID);
+
+            // send pnl single request
+            byte[] byteArray = pnlSingleRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQPNLSINGLE, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelPnLSingle(int reqId) {
+        if (useProtoBuf(CANCEL_PNL_SINGLE)) {
+            cancelPnLSingleProtoBuf(EClientUtils.createCancelPnLSingleProto(reqId));
+            return;
+        }
+
         if( !isConnected()) {
             notConnected();
             return;
@@ -4252,10 +6727,44 @@ public abstract class EClient {
             close();
         }
     }
-    
+
+    public synchronized void cancelPnLSingleProtoBuf(CancelPnLSingleProto.CancelPnLSingle cancelPnLSingleProto) {
+        if (cancelPnLSingleProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelPnLSingleProto.hasReqId() ? cancelPnLSingleProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel pnl single msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_PNL_SINGLE + PROTOBUF_MSG_ID);
+
+            // send cancel pnl single
+            byte[] byteArray = cancelPnLSingleProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANCELPNLSINGLE, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqHistoricalTicks(int reqId, Contract contract, String startDateTime,
             String endDateTime, int numberOfTicks, String whatToShow, int useRth, boolean ignoreSize,
             List<TagValue> miscOptions) {
+        if (useProtoBuf(REQ_HISTORICAL_TICKS)) {
+            reqHistoricalTicksProtoBuf(EClientUtils.createHistoricalTicksRequestProto(reqId, contract, startDateTime, endDateTime, numberOfTicks, whatToShow, useRth != 0, ignoreSize, miscOptions));
+            return;
+        }
+
         if (!isConnected()) {
             notConnected();
             return;
@@ -4291,8 +6800,45 @@ public abstract class EClient {
             close();
         }        
     }
-  
+
+    public synchronized void reqHistoricalTicksProtoBuf(HistoricalTicksRequestProto.HistoricalTicksRequest historicalTicksRequestProto) {
+        if (historicalTicksRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = historicalTicksRequestProto.hasReqId() ? historicalTicksRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req historical ticks msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_HISTORICAL_TICKS + PROTOBUF_MSG_ID);
+
+            // send historical ticks request
+            byte[] byteArray = historicalTicksRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQHISTORICALTICKS, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqTickByTickData(int reqId, Contract contract, String tickType, int numberOfTicks, boolean ignoreSize) {
+        if (useProtoBuf(REQ_TICK_BY_TICK_DATA)) {
+            reqTickByTickDataProtoBuf(EClientUtils.createTickByTickRequestProto(reqId, contract, tickType, numberOfTicks, ignoreSize));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4347,7 +6893,44 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void reqTickByTickDataProtoBuf(TickByTickRequestProto.TickByTickRequest tickByTickRequestProto) {
+        if (tickByTickRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = tickByTickRequestProto.hasReqId() ? tickByTickRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req tick-by-tick data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_TICK_BY_TICK_DATA + PROTOBUF_MSG_ID);
+
+            // send tick-by-tick request
+            byte[] byteArray = tickByTickRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(EClientException e) {
+            error(reqId, e.error(), e.text());
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQTICKBYTICKDATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelTickByTickData(int reqId) {
+        if (useProtoBuf(CANCEL_TICK_BY_TICK_DATA)) {
+            cancelTickByTickDataProtoBuf(EClientUtils.createCancelTickByTickProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4375,7 +6958,41 @@ public abstract class EClient {
         }
     }
 
+    public synchronized void cancelTickByTickDataProtoBuf(CancelTickByTickProto.CancelTickByTick cancelTickByTickProto) {
+        if (cancelTickByTickProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelTickByTickProto.hasReqId() ? cancelTickByTickProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel tick-by-tick data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_TICK_BY_TICK_DATA + PROTOBUF_MSG_ID);
+
+            // send cancel tick-by-tick data
+            byte[] byteArray = cancelTickByTickProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANCELTICKBYTICKDATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqCompletedOrders(boolean apiOnly) {
+        if (useProtoBuf(REQ_COMPLETED_ORDERS)) {
+            reqCompletedOrdersProtoBuf(EClientUtils.createCompletedOrdersRequestProto(apiOnly));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4403,7 +7020,36 @@ public abstract class EClient {
         }
     }
     
+    public synchronized void reqCompletedOrdersProtoBuf(CompletedOrdersRequestProto.CompletedOrdersRequest completedOrdersRequest) {
+        // not connected?
+        if( !isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req completed orders msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_COMPLETED_ORDERS + PROTOBUF_MSG_ID);
+
+            // send completed orders request
+            byte[] byteArray = completedOrdersRequest.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQCOMPLETEDORDERS, e.toString());
+            close();
+        }
+    }
+    
+    
     public synchronized void reqWshMetaData(int reqId) {
+        if (useProtoBuf(REQ_WSH_META_DATA)) {
+            reqWshMetaDataProtoBuf(EClientUtils.createWshMetaDataRequestProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4430,8 +7076,42 @@ public abstract class EClient {
             close();
         }   	
     }
-    
+
+    public synchronized void reqWshMetaDataProtoBuf(WshMetaDataRequestProto.WshMetaDataRequest wshMetaDataRequestProto) {
+        if (wshMetaDataRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = wshMetaDataRequestProto.hasReqId() ? wshMetaDataRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req WSH meta data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_WSH_META_DATA + PROTOBUF_MSG_ID);
+
+            // send WSH meta data request
+            byte[] byteArray = wshMetaDataRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQ_WSH_META_DATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelWshMetaData(int reqId) {
+        if (useProtoBuf(CANCEL_WSH_META_DATA)) {
+            cancelWshMetaDataProtoBuf(EClientUtils.createCancelWshMetaDataProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4458,8 +7138,42 @@ public abstract class EClient {
             close();
         }   	
     }
-    
+
+    public synchronized void cancelWshMetaDataProtoBuf(CancelWshMetaDataProto.CancelWshMetaData cancelWshMetaDataProto) {
+        if (cancelWshMetaDataProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelWshMetaDataProto.hasReqId() ? cancelWshMetaDataProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel WSH meta data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_WSH_META_DATA + PROTOBUF_MSG_ID);
+
+            // send cancel WSH meta data
+            byte[] byteArray = cancelWshMetaDataProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CAN_WSH_META_DATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqWshEventData(int reqId, WshEventData wshEventData) {
+        if (useProtoBuf(REQ_WSH_EVENT_DATA)) {
+            reqWshEventDataProtoBuf(EClientUtils.createWshEventDataRequestProto(reqId, wshEventData));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4517,8 +7231,42 @@ public abstract class EClient {
             close();
         }   	
     }
-    
+
+    public synchronized void reqWshEventDataProtoBuf(WshEventDataRequestProto.WshEventDataRequest wshEventDataRequestProto) {
+        if (wshEventDataRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = wshEventDataRequestProto.hasReqId() ? wshEventDataRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req WSH event data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_WSH_EVENT_DATA + PROTOBUF_MSG_ID);
+
+            // send WSH event data request
+            byte[] byteArray = wshEventDataRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQ_WSH_EVENT_DATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void cancelWshEventData(int reqId) {
+        if (useProtoBuf(CANCEL_WSH_EVENT_DATA)) {
+            cancelWshEventDataProtoBuf(EClientUtils.createCancelWshEventDataProto(reqId));
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4545,8 +7293,41 @@ public abstract class EClient {
             close();
         }   	
     }
-    
+
+    public synchronized void cancelWshEventDataProtoBuf(CancelWshEventDataProto.CancelWshEventData cancelWshEventDataProto) {
+        if (cancelWshEventDataProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelWshEventDataProto.hasReqId() ? cancelWshEventDataProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send cancel WSH event data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_WSH_EVENT_DATA + PROTOBUF_MSG_ID);
+
+            // send cancel WSH event data
+            byte[] byteArray = cancelWshEventDataProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CAN_WSH_EVENT_DATA, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqUserInfo(int reqId) {
+        if (useProtoBuf(REQ_USER_INFO)) {
+            reqUserInfoProtoBuf(EClientUtils.createUserInfoRequestProto(reqId));
+            return;
+        }
 
         // not connected?
         if( !isConnected()) {
@@ -4572,8 +7353,42 @@ public abstract class EClient {
             close();
         }
     }    
-    
+
+    public synchronized void reqUserInfoProtoBuf(UserInfoRequestProto.UserInfoRequest userInfoRequestProto) {
+        if (userInfoRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = userInfoRequestProto.hasReqId() ? userInfoRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        // send req user info msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_USER_INFO + PROTOBUF_MSG_ID);
+
+            // send user info request
+            byte[] byteArray = userInfoRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_REQ_USER_INFO, e.toString());
+            close();
+        }
+    }
+
     public synchronized void reqCurrentTimeInMillis() {
+        if (useProtoBuf(REQ_CURRENT_TIME_IN_MILLIS)) {
+            reqCurrentTimeInMillisProtoBuf(EClientUtils.createCurrentTimeInMillisRequestProto());
+            return;
+        }
+
         // not connected?
         if( !isConnected()) {
             notConnected();
@@ -4594,7 +7409,177 @@ public abstract class EClient {
             error( EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQCURRTIMEINMILLIS, e.toString());
             close();
         }
-    }    
+    }
+
+    public synchronized void reqCurrentTimeInMillisProtoBuf(CurrentTimeInMillisRequestProto.CurrentTimeInMillisRequest currentTimeInMillisRequestProto) {
+        if (currentTimeInMillisRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        // send req current time in millis msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, REQ_CURRENT_TIME_IN_MILLIS + PROTOBUF_MSG_ID);
+
+            // send current time in millis request
+            byte[] byteArray = currentTimeInMillisRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch(Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQCURRTIMEINMILLIS, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void cancelContractData(int reqId) {
+        cancelContractDataProtoBuf(EClientUtils.createCancelContractDataProto(reqId));
+    }
+
+    public synchronized void cancelContractDataProtoBuf(CancelContractDataProto.CancelContractData cancelContractDataProto) {
+        if (cancelContractDataProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelContractDataProto.hasReqId() ? cancelContractDataProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        if( m_serverVersion < MIN_SERVER_VER_CANCEL_CONTRACT_DATA) {
+            error(reqId, EClientErrors.UPDATE_TWS, "  It does not support contract data cancels.");
+            return;
+        }
+
+        // send cancel contract data msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_CONTRACT_DATA + PROTOBUF_MSG_ID);
+
+            // send cancel contract data
+            byte[] byteArray = cancelContractDataProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch (Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANCEL_CONTRACT_DATA, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void cancelHistoricalTicks(int reqId) {
+        cancelHistoricalTicksProtoBuf(EClientUtils.createCancelHistoricalTicksProto(reqId));
+    }
+
+    public synchronized void cancelHistoricalTicksProtoBuf(CancelHistoricalTicksProto.CancelHistoricalTicks cancelHistoricalTicksProto) {
+        if (cancelHistoricalTicksProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = cancelHistoricalTicksProto.hasReqId() ? cancelHistoricalTicksProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        if( m_serverVersion < MIN_SERVER_VER_CANCEL_CONTRACT_DATA) {
+            error(reqId, EClientErrors.UPDATE_TWS, "  It does not support historical ticks cancels.");
+            return;
+        }
+
+        // send cancel historical ticks msg
+        try {
+            Builder b = prepareBuffer(); 
+            sendMsgId(b, CANCEL_HISTORICAL_TICKS + PROTOBUF_MSG_ID);
+
+            // send cancel historical ticks
+            byte[] byteArray = cancelHistoricalTicksProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        }
+        catch (Exception e) {
+            error(reqId, EClientErrors.FAIL_SEND_CANCEL_HISTORICAL_TICKS, e.toString());
+            close();
+        }
+    }
+    
+    public synchronized void reqConfigProtoBuf(ConfigRequestProto.ConfigRequest configRequestProto) {
+        if (configRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = configRequestProto.hasReqId() ? configRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        if (m_serverVersion < MIN_SERVER_VER_CONFIG) {
+            error(reqId, EClientErrors.UPDATE_TWS, "  It does not support config requests.");
+            return;
+        }
+
+        // send req config msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, REQ_CONFIG + PROTOBUF_MSG_ID);
+
+            // send config request
+            byte[] byteArray = configRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        } catch (Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_REQCONFIG, e.toString());
+            close();
+        }
+    }
+
+    public synchronized void updateConfigProtoBuf(UpdateConfigRequestProto.UpdateConfigRequest updateConfigRequestProto) {
+        if (updateConfigRequestProto == null) {
+            return;
+        }
+
+        // not connected?
+        if (!isConnected()) {
+            notConnected();
+            return;
+        }
+
+        int reqId = updateConfigRequestProto.hasReqId() ? updateConfigRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
+
+        if (m_serverVersion < MIN_SERVER_VER_UPDATE_CONFIG) {
+            error(reqId, EClientErrors.UPDATE_TWS, "  It does not support update config requests.");
+            return;
+        }
+
+        // send update config request msg
+        try {
+            Builder b = prepareBuffer();
+            sendMsgId(b, UPDATE_CONFIG + PROTOBUF_MSG_ID);
+
+            // send update config request
+            byte[] byteArray = updateConfigRequestProto.toByteArray();
+            b.sendByteArray(byteArray);
+            closeAndSend(b);
+        } catch (Exception e) {
+            error(EClientErrors.NO_VALID_ID, EClientErrors.FAIL_SEND_UPDATECONFIG, e.toString());
+            close();
+        }
+    }
+
     /**
      * @deprecated This method is never called.
      */
@@ -4670,7 +7655,7 @@ public abstract class EClient {
         error(EClientErrors.NO_VALID_ID, EClientErrors.NOT_CONNECTED, "");
     }
 
-    public String connectedHost()        { return m_host; } // Host that was connected/redirected
+    public String connectedHost()        { return m_host; } // Host that was connected
     protected void send( int val) throws IOException {
         send( String.valueOf( val) );
     }

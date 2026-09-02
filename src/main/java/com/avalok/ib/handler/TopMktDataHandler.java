@@ -477,6 +477,10 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		info(_contract.shownName() + " tickReqParams() tickerId " + tickerId + " minTick " + minTick + " bboExchange " + bboExchange + " snapshotPermissions " + snapshotPermissions);
 	}
 
+	@Override
+	public void tickReqParamsProtoBuf(com.ib.client.protobuf.TickReqParamsProto.TickReqParams tickReqParamsProto) {
+	}
+
 	public long getSizeMultiplier() {
 		return marketDataSizeMultiplier;
 	}

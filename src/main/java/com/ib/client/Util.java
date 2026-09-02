@@ -5,6 +5,7 @@ package com.ib.client;
 
 import static com.ib.controller.Formats.fmt;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -235,5 +236,10 @@ public class Util {
                 str.equals(String.valueOf(Long.MIN_VALUE)) ||
                 str.equals(String.valueOf(Integer.MAX_VALUE)) ||
                 str.equals(String.valueOf(Double.MAX_VALUE))) ? Decimal.INVALID : Decimal.parse(str);
+    }
+
+    public static String formatDouble(double v) {
+        DecimalFormat df = new DecimalFormat("#.###########");
+        return df.format(v);
     }
 }

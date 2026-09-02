@@ -13,7 +13,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 
-import com.avalok.ib.handler.ContractDetailsHandler;
 import com.ib.client.*;
 import com.ib.client.Types.BarSize;
 import com.ib.client.Types.DeepSide;
@@ -24,20 +23,96 @@ import com.ib.client.Types.FADataType;
 import com.ib.client.Types.FundamentalType;
 import com.ib.client.Types.NewsType;
 import com.ib.client.Types.WhatToShow;
+import com.ib.client.protobuf.AccountDataEndProto;
+import com.ib.client.protobuf.AccountSummaryEndProto;
+import com.ib.client.protobuf.AccountSummaryProto;
+import com.ib.client.protobuf.AccountUpdateMultiEndProto;
+import com.ib.client.protobuf.AccountUpdateMultiProto;
+import com.ib.client.protobuf.AccountUpdateTimeProto;
+import com.ib.client.protobuf.AccountValueProto;
+import com.ib.client.protobuf.CommissionAndFeesReportProto;
+import com.ib.client.protobuf.CompletedOrderProto;
+import com.ib.client.protobuf.CompletedOrdersEndProto;
+import com.ib.client.protobuf.ConfigRequestProto;
+import com.ib.client.protobuf.ConfigResponseProto;
+import com.ib.client.protobuf.ContractDataEndProto;
+import com.ib.client.protobuf.ContractDataProto;
+import com.ib.client.protobuf.CurrentTimeInMillisProto;
+import com.ib.client.protobuf.CurrentTimeProto;
+import com.ib.client.protobuf.DisplayGroupListProto;
+import com.ib.client.protobuf.DisplayGroupUpdatedProto;
 import com.ib.client.protobuf.ErrorMessageProto;
 import com.ib.client.protobuf.ExecutionDetailsEndProto;
 import com.ib.client.protobuf.ExecutionDetailsProto;
+import com.ib.client.protobuf.FamilyCodesProto;
+import com.ib.client.protobuf.FundamentalsDataProto;
+import com.ib.client.protobuf.HeadTimestampProto;
+import com.ib.client.protobuf.HistogramDataProto;
+import com.ib.client.protobuf.HistoricalDataEndProto;
+import com.ib.client.protobuf.HistoricalDataProto;
+import com.ib.client.protobuf.HistoricalDataUpdateProto;
+import com.ib.client.protobuf.HistoricalNewsEndProto;
+import com.ib.client.protobuf.HistoricalNewsProto;
+import com.ib.client.protobuf.HistoricalScheduleProto;
+import com.ib.client.protobuf.HistoricalTicksBidAskProto;
+import com.ib.client.protobuf.HistoricalTicksLastProto;
+import com.ib.client.protobuf.HistoricalTicksProto;
+import com.ib.client.protobuf.ManagedAccountsProto;
+import com.ib.client.protobuf.MarketDataTypeProto;
+import com.ib.client.protobuf.MarketDepthExchangesProto;
+import com.ib.client.protobuf.MarketDepthL2Proto;
+import com.ib.client.protobuf.MarketDepthProto;
+import com.ib.client.protobuf.MarketRuleProto;
+import com.ib.client.protobuf.NewsArticleProto;
+import com.ib.client.protobuf.NewsBulletinProto;
+import com.ib.client.protobuf.NewsProvidersProto;
+import com.ib.client.protobuf.NextValidIdProto;
 import com.ib.client.protobuf.OpenOrderProto;
 import com.ib.client.protobuf.OpenOrdersEndProto;
+import com.ib.client.protobuf.OrderBoundProto;
 import com.ib.client.protobuf.OrderStatusProto;
+import com.ib.client.protobuf.PnLProto;
+import com.ib.client.protobuf.PnLSingleProto;
+import com.ib.client.protobuf.PortfolioValueProto;
+import com.ib.client.protobuf.PositionEndProto;
+import com.ib.client.protobuf.PositionMultiEndProto;
+import com.ib.client.protobuf.PositionMultiProto;
+import com.ib.client.protobuf.PositionProto;
+import com.ib.client.protobuf.RealTimeBarTickProto;
+import com.ib.client.protobuf.ReceiveFAProto;
+import com.ib.client.protobuf.ReplaceFAEndProto;
+import com.ib.client.protobuf.RerouteMarketDataRequestProto;
+import com.ib.client.protobuf.RerouteMarketDepthRequestProto;
+import com.ib.client.protobuf.ScannerDataProto;
+import com.ib.client.protobuf.ScannerParametersProto;
+import com.ib.client.protobuf.SecDefOptParameterEndProto;
+import com.ib.client.protobuf.SecDefOptParameterProto;
+import com.ib.client.protobuf.SmartComponentsProto;
+import com.ib.client.protobuf.SoftDollarTiersProto;
+import com.ib.client.protobuf.SymbolSamplesProto;
+import com.ib.client.protobuf.TickByTickDataProto;
+import com.ib.client.protobuf.TickGenericProto;
+import com.ib.client.protobuf.TickNewsProto;
+import com.ib.client.protobuf.TickOptionComputationProto;
+import com.ib.client.protobuf.TickPriceProto;
+import com.ib.client.protobuf.TickReqParamsProto;
+import com.ib.client.protobuf.TickSizeProto;
+import com.ib.client.protobuf.TickSnapshotEndProto;
+import com.ib.client.protobuf.TickStringProto;
+import com.ib.client.protobuf.UpdateConfigRequestProto;
+import com.ib.client.protobuf.UpdateConfigResponseProto;
+import com.ib.client.protobuf.UserInfoProto;
+import com.ib.client.protobuf.VerifyCompletedProto;
+import com.ib.client.protobuf.VerifyMessageApiProto;
+import com.ib.client.protobuf.WshEventDataProto;
+import com.ib.client.protobuf.WshMetaDataProto;
 import com.ib.controller.ApiConnection.ILogger;
-import java.util.GregorianCalendar;
 
 public class ApiController implements EWrapper {
 	private ApiConnection m_client;
 	private final ILogger m_outLogger;
 	private final ILogger m_inLogger;
-	public int m_reqId;	// used for all requests except orders; designed not to conflict with m_orderId
+	private int m_reqId;	// used for all requests except orders; designed not to conflict with m_orderId
 	private int m_orderId;
 
 	private final IConnectionHandler m_connectionHandler;
@@ -49,6 +124,8 @@ public class ApiController implements EWrapper {
 	private ITimeInMillisHandler m_timeInMillisHandlerIn;
 	private IBulletinHandler m_bulletinHandler;
 	private IUserInfoHandler m_userInfoHandler;
+	private IConfigHandler m_configHandler;
+	private final Map<Integer,IContractDetailsHandler> m_contractDetailsListMap = new HashMap<>();
 	private final Map<Integer,IInternalHandler> m_contractDetailsMap = new HashMap<>();
 	private final Map<Integer,IOptHandler> m_optionCompMap = new HashMap<>();
 	private final Map<Integer,IEfpHandler> m_efpMap = new HashMap<>();
@@ -245,7 +322,9 @@ public class ApiController implements EWrapper {
 	}
 
 	@Override public void updatePortfolio(Contract contract, Decimal positionIn, double marketPrice, double marketValue, double averageCost, double unrealizedPNL, double realizedPNL, String account) {
-		contract.exchange( contract.primaryExch());
+		if (contract.exchange() == null && contract.primaryExch() != null) {
+			contract.exchange( contract.primaryExch());
+		}
 
 		Position position = new Position( contract, account, positionIn, marketPrice, marketValue, averageCost, unrealizedPNL, realizedPNL);
 		for( IAccountHandler handler : m_accountHandlers) {
@@ -400,7 +479,7 @@ public class ApiController implements EWrapper {
 			return;
 
 		final List<ContractDetails> list = new ArrayList<>();
-		internalReqContractDetails( contract, new IInternalHandler() {
+		int reqId = internalReqContractDetails( contract, new IInternalHandler() {
 			@Override public void contractDetails(ContractDetails data) {
 				list.add( data);
 			}
@@ -408,25 +487,21 @@ public class ApiController implements EWrapper {
 				processor.contractDetails( list);
 			}
 		});
+		m_contractDetailsListMap.put(reqId, processor);
 		sendEOM();
 	}
 
-	public void reqContractDetailsToRedis(Contract contract, final ContractDetailsHandler processor, Long id) {
-		if (!checkConnection())
-			return;
+    public void cancelContractData(final IContractDetailsHandler handler) {
+        if (!checkConnection())
+            return;
 
-		final List<ContractDetails> list = new ArrayList<>();
-		internalReqContractDetails( contract, new IInternalHandler() {
-			@Override public void contractDetails(ContractDetails data) {
-				list.add( data);
-			}
-			@Override public void contractDetailsEnd() {
-				processor.setexDetailList(list, id);
-				processor.contractDetails( list);
-			}
-		});
-		sendEOM();
-	}
+        Integer reqId = getAndRemoveKey(m_contractDetailsListMap, handler);
+
+        if (reqId != null) {
+            m_client.cancelContractData(reqId);
+            sendEOM();
+        }
+    }
 
 	private interface IInternalHandler {
 		void contractDetails(ContractDetails data);
@@ -482,6 +557,7 @@ public class ApiController implements EWrapper {
 		void tickSnapshotEnd();
 		void marketDataType(int marketDataType);
 		void tickReqParams(int tickerId, double minTick, String bboExchange, int snapshotPermissions);
+		void tickReqParamsProtoBuf(TickReqParamsProto.TickReqParams tickReqParamsProto);
 	}
 
 	public interface IEfpHandler extends ITopMktDataHandler {
@@ -504,6 +580,8 @@ public class ApiController implements EWrapper {
 		@Override public void marketDataType(int marketDataType) {
 		}
 		@Override public void tickReqParams(int tickerId, double minTick, String bboExchange, int snapshotPermissions) {
+		}
+		@Override public void tickReqParamsProtoBuf(TickReqParamsProto.TickReqParams tickReqParamsProto) {
 		}
 	}
 
@@ -859,6 +937,13 @@ public class ApiController implements EWrapper {
 		if (order.orderId() == 0) {
 			order.orderId( m_orderId++);
 		}
+		if (!order.slOrderType().isEmpty()) {
+			order.slOrderId(m_orderId++);
+		}
+		if (!order.ptOrderType().isEmpty()) {
+			order.ptOrderId(m_orderId++);
+		}
+		
 		if (handler != null) {
 			m_orderHandlers.put( order.orderId(), handler);
 		}
@@ -1081,31 +1166,7 @@ public class ApiController implements EWrapper {
 				handler.historicalDataEnd();
 			}
 			else {
-				long longDate;
-				String timeStr = bar.time();
-				if (bar.time().length() == 8) {
-					int year = Integer.parseInt( bar.time().substring( 0, 4) );
-					int month = Integer.parseInt( bar.time().substring( 4, 6) );
-					int day = Integer.parseInt( bar.time().substring( 6) );
-					longDate = new GregorianCalendar( year, month - 1, day).getTimeInMillis() / 1000;
-				}
-				else if (timeStr.contains(" ")) { // "20260308 17:00:00 US/Central"
-					try {
-						java.time.format.DateTimeFormatter fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss z");
-						if (!timeStr.contains("/")) { // handle time zone like "EST"
-							fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss z");
-						} else { // handle time zone like "US/Central"
-							fmt = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss VV");
-						}
-						longDate = java.time.ZonedDateTime.parse(timeStr, fmt).toEpochSecond();
-					} catch (Exception e) {
-						longDate = Long.parseLong(timeStr);
-					}
-				}
-				else {
-					longDate = Long.parseLong( bar.time());
-				}
-				Bar bar2 = new Bar( longDate, bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
+				Bar bar2 = new Bar( bar.time(), bar.high(), bar.low(), bar.open(), bar.close(), bar.wap(), bar.volume(), bar.count());
 				handler.historicalData(bar2);
 			}
 		}
@@ -1862,6 +1923,18 @@ public class ApiController implements EWrapper {
         m_client.reqHistoricalTicks(reqId, contract, startDateTime, endDateTime, numberOfTicks, whatToShow, useRth, ignoreSize, Collections.emptyList());
     }   
 
+    public void cancelHistoricalTicks(IHistoricalTickHandler handler) {
+        if (!checkConnection())
+            return;
+
+        Integer reqId = getAndRemoveKey(m_historicalTicksMap, handler);
+
+        if (reqId != null) {
+            m_client.cancelHistoricalTicks(reqId);
+            sendEOM();
+        }
+    }
+
     @Override
     public void historicalTicks(int reqId, List<HistoricalTick> ticks, boolean last) {
         IHistoricalTickHandler handler = m_historicalTicksMap.get(reqId);
@@ -2074,7 +2147,7 @@ public class ApiController implements EWrapper {
 
         Integer reqId = getAndRemoveKey(m_wshEventDataMap, handler);
         if (reqId != null) {
-            m_client.cancelWshMetaData(reqId);
+            m_client.cancelWshEventData(reqId);
             sendEOM();
         }
     }
@@ -2148,6 +2221,44 @@ public class ApiController implements EWrapper {
         recEOM();
     }
 
+    // ---------------------------------------- Config handling ------------------------------
+    public interface IConfigHandler {
+        void configResponseProtoBuf(ConfigResponseProto.ConfigResponse configResponseProto);
+        void updateConfigResponseProtoBuf(UpdateConfigResponseProto.UpdateConfigResponse updateConfigResponseProto);
+    }
+
+    public void reqConfig(IConfigHandler handler) {
+        if (!checkConnection())
+            return;
+
+        m_configHandler = handler;
+        ConfigRequestProto.ConfigRequest.Builder configRequestBuilder = ConfigRequestProto.ConfigRequest.newBuilder();
+        configRequestBuilder.setReqId(0);
+
+        m_client.reqConfigProtoBuf(configRequestBuilder.build());
+        sendEOM();
+    }
+
+    public void updateConfig(IConfigHandler handler, UpdateConfigRequestProto.UpdateConfigRequest updateConfigRequestProto) {
+        if (!checkConnection())
+            return;
+
+        m_configHandler = handler;
+
+        m_client.updateConfigProtoBuf(updateConfigRequestProto);
+        sendEOM();
+    }
+
+    @Override public void configResponseProtoBuf(ConfigResponseProto.ConfigResponse configResponseProto) {
+        m_configHandler.configResponseProtoBuf(configResponseProto);
+        recEOM();
+    }
+
+    @Override public void updateConfigResponseProtoBuf(UpdateConfigResponseProto.UpdateConfigResponse updateConfigResponseProto) {
+        m_configHandler.updateConfigResponseProtoBuf(updateConfigResponseProto);
+        recEOM();
+    }
+
     // ---------------------------------------------- Protobuf ---------------------------------------------
     @Override public void orderStatusProtoBuf(OrderStatusProto.OrderStatus orderStatusProto) { }
     @Override public void openOrderProtoBuf(OpenOrderProto.OpenOrder openOrderProto) { }
@@ -2155,4 +2266,85 @@ public class ApiController implements EWrapper {
     @Override public void errorProtoBuf(ErrorMessageProto.ErrorMessage errorMessageProto) { }
     @Override public void execDetailsProtoBuf(ExecutionDetailsProto.ExecutionDetails executionDetailsProto) { }
     @Override public void execDetailsEndProtoBuf(ExecutionDetailsEndProto.ExecutionDetailsEnd executionDetailsEndProto) { }
+    @Override public void completedOrderProtoBuf(CompletedOrderProto.CompletedOrder completedOrderProto) { }
+    @Override public void completedOrdersEndProtoBuf(CompletedOrdersEndProto.CompletedOrdersEnd completedOrdersEndProto) { }
+    @Override public void orderBoundProtoBuf(OrderBoundProto.OrderBound orderBoundProto) { }
+    @Override public void contractDataProtoBuf(ContractDataProto.ContractData contractDataProto) { }
+    @Override public void bondContractDataProtoBuf(ContractDataProto.ContractData contractDataProto) { }
+    @Override public void contractDataEndProtoBuf(ContractDataEndProto.ContractDataEnd contractDataEndProto) { }
+    @Override public void tickPriceProtoBuf(TickPriceProto.TickPrice tickPriceProto) { }
+    @Override public void tickSizeProtoBuf(TickSizeProto.TickSize tickSizeProto) { }
+    @Override public void tickOptionComputationProtoBuf(TickOptionComputationProto.TickOptionComputation tickOptionComputationProto) { }
+    @Override public void tickGenericProtoBuf(TickGenericProto.TickGeneric tickGenericProto) { }
+    @Override public void tickStringProtoBuf(TickStringProto.TickString tickStringProto) { }
+    @Override public void tickSnapshotEndProtoBuf(TickSnapshotEndProto.TickSnapshotEnd tickSnapshotEndProto) { }
+    @Override public void updateMarketDepthProtoBuf(MarketDepthProto.MarketDepth marketDepthProto) { }
+    @Override public void updateMarketDepthL2ProtoBuf(MarketDepthL2Proto.MarketDepthL2 marketDepthL2Proto) { }
+    @Override public void marketDataTypeProtoBuf(MarketDataTypeProto.MarketDataType marketDataTypeProto) { }
+    @Override public void tickReqParamsProtoBuf(TickReqParamsProto.TickReqParams tickReqParamsProto) {
+        int reqId = tickReqParamsProto.hasReqId() ? tickReqParamsProto.getReqId() : EClientErrors.NO_VALID_ID;
+        ITopMktDataHandler handler = m_topMktDataMap.get(reqId);
+        if (handler != null) {
+            handler.tickReqParamsProtoBuf(tickReqParamsProto);
+        }
+        recEOM();
+    }
+    @Override public void updateAccountValueProtoBuf(AccountValueProto.AccountValue accounValueProto) { }
+    @Override public void updatePortfolioProtoBuf(PortfolioValueProto.PortfolioValue portfolioValueProto) { }
+    @Override public void updateAccountTimeProtoBuf(AccountUpdateTimeProto.AccountUpdateTime accountUpdateTimeProto) { }
+    @Override public void accountDataEndProtoBuf(AccountDataEndProto.AccountDataEnd accountDataEndProto) { }
+    @Override public void managedAccountsProtoBuf(ManagedAccountsProto.ManagedAccounts managedAccountsProto) { }
+    @Override public void positionProtoBuf(PositionProto.Position positionProto) { }
+    @Override public void positionEndProtoBuf(PositionEndProto.PositionEnd positionEndProto) { }
+    @Override public void accountSummaryProtoBuf(AccountSummaryProto.AccountSummary accountSummaryProto) { }
+    @Override public void accountSummaryEndProtoBuf(AccountSummaryEndProto.AccountSummaryEnd accountSummaryEndProto) { }
+    @Override public void positionMultiProtoBuf(PositionMultiProto.PositionMulti positionMultiProto) { }
+    @Override public void positionMultiEndProtoBuf(PositionMultiEndProto.PositionMultiEnd positionMultiEndProto) { }
+    @Override public void accountUpdateMultiProtoBuf(AccountUpdateMultiProto.AccountUpdateMulti accountUpdateMultiProto) { }
+    @Override public void accountUpdateMultiEndProtoBuf(AccountUpdateMultiEndProto.AccountUpdateMultiEnd accountUpdateMultiEndProto) { }
+    @Override public void historicalDataProtoBuf(HistoricalDataProto.HistoricalData historicalDataProto) { }
+    @Override public void historicalDataUpdateProtoBuf(HistoricalDataUpdateProto.HistoricalDataUpdate historicalDataUpdateProto) { }
+    @Override public void historicalDataEndProtoBuf(HistoricalDataEndProto.HistoricalDataEnd historicalDataEndProto) { }
+    @Override public void realTimeBarTickProtoBuf(RealTimeBarTickProto.RealTimeBarTick realTimeBarTickProto) { }
+    @Override public void headTimestampProtoBuf(HeadTimestampProto.HeadTimestamp headTimestampProto) { }
+    @Override public void histogramDataProtoBuf(HistogramDataProto.HistogramData histogramDataProto) { }
+    @Override public void historicalTicksProtoBuf(HistoricalTicksProto.HistoricalTicks historicalTicksProto) { }
+    @Override public void historicalTicksBidAskProtoBuf(HistoricalTicksBidAskProto.HistoricalTicksBidAsk historicalTicksBidAskProto) { }
+    @Override public void historicalTicksLastProtoBuf(HistoricalTicksLastProto.HistoricalTicksLast historicalTicksLastProto) { }
+    @Override public void tickByTickDataProtoBuf(TickByTickDataProto.TickByTickData tickByTickDataProto) { }
+    @Override public void updateNewsBulletinProtoBuf(NewsBulletinProto.NewsBulletin newsBulletinProto) { }
+    @Override public void newsArticleProtoBuf(NewsArticleProto.NewsArticle newsArticleProto) { }
+    @Override public void newsProvidersProtoBuf(NewsProvidersProto.NewsProviders newsProvidersProto) { }
+    @Override public void historicalNewsProtoBuf(HistoricalNewsProto.HistoricalNews historicalNewsProto) { }
+    @Override public void historicalNewsEndProtoBuf(HistoricalNewsEndProto.HistoricalNewsEnd historicalNewsEndProto) { }
+    @Override public void wshMetaDataProtoBuf(WshMetaDataProto.WshMetaData wshMetaDataProto) { }
+    @Override public void wshEventDataProtoBuf(WshEventDataProto.WshEventData wshEventDataProto) { }
+    @Override public void tickNewsProtoBuf(TickNewsProto.TickNews tickNewsProto) { }
+    @Override public void scannerParametersProtoBuf(ScannerParametersProto.ScannerParameters scannerParametersProto) { }
+    @Override public void scannerDataProtoBuf(ScannerDataProto.ScannerData scannerDataProto) { }
+    @Override public void fundamentalsDataProtoBuf(FundamentalsDataProto.FundamentalsData fundamentalsDataProto) { }
+    @Override public void pnlProtoBuf(PnLProto.PnL pnlProto) { }
+    @Override public void pnlSingleProtoBuf(PnLSingleProto.PnLSingle pnlSingleProto) { }
+    @Override public void receiveFAProtoBuf(ReceiveFAProto.ReceiveFA receiveFAProto) { }
+    @Override public void replaceFAEndProtoBuf(ReplaceFAEndProto.ReplaceFAEnd replaceFAEndProto) { }
+    @Override public void commissionAndFeesReportProtoBuf(CommissionAndFeesReportProto.CommissionAndFeesReport commissionAndFeesReportProto) { }
+    @Override public void historicalScheduleProtoBuf(HistoricalScheduleProto.HistoricalSchedule historicalScheduleProto) { }
+    @Override public void rerouteMarketDataRequestProtoBuf(RerouteMarketDataRequestProto.RerouteMarketDataRequest rerouteMarketDataRequestProto) { }
+    @Override public void rerouteMarketDepthRequestProtoBuf(RerouteMarketDepthRequestProto.RerouteMarketDepthRequest rerouteMarketDepthRequestProto) { }
+    @Override public void secDefOptParameterProtoBuf(SecDefOptParameterProto.SecDefOptParameter secDefOptParameterProto) { }
+    @Override public void secDefOptParameterEndProtoBuf(SecDefOptParameterEndProto.SecDefOptParameterEnd secDefOptParameterEndProto) { }
+    @Override public void softDollarTiersProtoBuf(SoftDollarTiersProto.SoftDollarTiers softDollarTiersProto) { }
+    @Override public void familyCodesProtoBuf(FamilyCodesProto.FamilyCodes familyCodesProto) { }
+    @Override public void symbolSamplesProtoBuf(SymbolSamplesProto.SymbolSamples symbolSamplesProto) { }
+    @Override public void smartComponentsProtoBuf(SmartComponentsProto.SmartComponents smartComponentsProto) { }
+    @Override public void marketRuleProtoBuf(MarketRuleProto.MarketRule marketRuleProto) { }
+    @Override public void userInfoProtoBuf(UserInfoProto.UserInfo userInfoProto) { }
+    @Override public void nextValidIdProtoBuf(NextValidIdProto.NextValidId nextValidIdProto) { }
+    @Override public void currentTimeProtoBuf(CurrentTimeProto.CurrentTime currentTimeProto) { }
+    @Override public void currentTimeInMillisProtoBuf(CurrentTimeInMillisProto.CurrentTimeInMillis currentTimeInMillisProto) { }
+    @Override public void verifyMessageApiProtoBuf(VerifyMessageApiProto.VerifyMessageApi verifyMessageApiProto) { }
+    @Override public void verifyCompletedProtoBuf(VerifyCompletedProto.VerifyCompleted verifyCompletedProto) { }
+    @Override public void displayGroupListProtoBuf(DisplayGroupListProto.DisplayGroupList displayGroupListProto) { }
+    @Override public void displayGroupUpdatedProtoBuf(DisplayGroupUpdatedProto.DisplayGroupUpdated displayGroupUpdatedProto) { }
+    @Override public void marketDepthExchangesProtoBuf(MarketDepthExchangesProto.MarketDepthExchanges marketDepthExchangesProto) { }
 }

@@ -2,6 +2,7 @@ package com.avalok.ib.controller;
 
 import static com.bitex.util.DebugUtil.*;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -41,8 +42,24 @@ public class IBApiController {
 	public IBApiController(IConnectionHandler handler, ILogger inLogger, ILogger outLogger) {
 		_api = new ApiController(handler, inLogger, outLogger);
 	}
-	public int lastReqId() { return _api.m_reqId - 1; }
-	public int nextReqId() { return _api.m_reqId; }
+	private static final Field REQ_ID_FIELD;
+	static {
+		try {
+			REQ_ID_FIELD = ApiController.class.getDeclaredField("m_reqId");
+			REQ_ID_FIELD.setAccessible(true);
+		} catch (Exception e) {
+			throw new ExceptionInInitializerError(e);
+		}
+	}
+	private int reqId() {
+		try {
+			return REQ_ID_FIELD.getInt(_api);
+		} catch (Exception e) {
+			throw new IllegalStateException("ApiController.m_reqId", e);
+		}
+	}
+	public int lastReqId() { return reqId() - 1; }
+	public int nextReqId() { return reqId(); }
 
 	////////////////////////////////////////////////////////////////
 	// API Operation history.
@@ -247,7 +264,10 @@ public class IBApiController {
 	public void reqContractDetailsToRedis(Contract contract, final ContractDetailsHandler processor, Long id) {
 		twsAPIRateControl();
 		recordOperationHistory("reqContractDetailsToRedis");
-		_api.reqContractDetailsToRedis(contract, processor, id);
+		_api.reqContractDetails(contract, list -> {
+			processor.setexDetailList(list, id);
+			processor.contractDetails(list);
+		});
 	}
 	public void reqAccountSummary(String group, AccountSummaryTag[] tags, ApiController.IAccountSummaryHandler handler) {
 		twsAPIRateControl();

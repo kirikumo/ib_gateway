@@ -408,6 +408,10 @@ public class OptionTopMktDataHandler implements IOptHandler{
     }
 
     @java.lang.Override
+    public void tickReqParamsProtoBuf(com.ib.client.protobuf.TickReqParamsProto.TickReqParams tickReqParamsProto) {
+    }
+
+    @java.lang.Override
     public void tickOptionComputation(TickType tickType, int tickAttrib, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) {
         if (_debug)
             info(_contract.shownName() + " tickOptionComputation() tickType " + tickType +

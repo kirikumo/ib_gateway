@@ -1,4 +1,4 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2026 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package TestJavaClient;
@@ -35,7 +35,7 @@ import apidemo.PegBenchPanel;
 import apidemo.util.TCombo;
 
 public class OrderDlg extends JDialog {
-    private static final String ALL_GENERIC_TICK_TAGS = "100,101,104,106,165,221,232,236,258,293,294,295,318,411,460,619";
+    private static final String ALL_GENERIC_TICK_TAGS = "100,101,104,106,165,221,232,236,293,294,295,318,411,460,619";
     private static final int OPERATION_INSERT = 0;
     private static final int OPERATION_UPDATE = 1;
     private static final int OPERATION_DELETE = 2;
@@ -103,6 +103,7 @@ public class OrderDlg extends JDialog {
     private JButton		m_btnPeg2Bench = new JButton("Pegged to benchmark");
     private JButton		m_btnAdjStop = new JButton("Adjustable stops");
     private JButton     m_btnHistoricalData = new JButton("Historical Data Query");
+    private JButton     m_btnAttachedOrders = new JButton("Attached Orders");
     private HistoricalDataDlg m_historicalDataDlg = new HistoricalDataDlg(this);
 
     private JButton 	m_ok = new JButton( "OK");
@@ -248,6 +249,7 @@ public class OrderDlg extends JDialog {
         pOrderButtonPanel.add( m_btnDeltaNeutralContract);
         pOrderButtonPanel.add( m_btnAlgoParams);
         pOrderButtonPanel.add( m_btnSmartComboRoutingParams);
+        pOrderButtonPanel.add( m_btnAttachedOrders);
 
         pMidPanel.add( pOrderButtonPanel, BorderLayout.CENTER);
         
@@ -277,6 +279,7 @@ public class OrderDlg extends JDialog {
         m_btnAlgoParams.addActionListener(e -> onBtnAlgoParams());
         m_btnSmartComboRoutingParams.addActionListener(e -> onBtnSmartComboRoutingParams());
         m_btnOptions.addActionListener(e -> onBtnOptions());
+        m_btnAttachedOrders.addActionListener(e -> onAttachedOrders());
         m_ok.addActionListener(e -> onOk());
         m_cancel.addActionListener(e -> onCancel());
 
@@ -405,6 +408,11 @@ public class OrderDlg extends JDialog {
         smartComboRoutingParamsDlg.setVisible( true);
         
         m_options = smartComboRoutingParamsDlg.smartComboRoutingParams();
+    }
+    
+    void onAttachedOrders() {
+        AttachedOrdersDlg attachedOrdersDlg = new AttachedOrdersDlg(m_order, this);
+        attachedOrdersDlg.setVisible(true);
     }
     
     void onOk() {

@@ -9,18 +9,97 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.ib.client.protobuf.AccountDataRequestProto;
+import com.ib.client.protobuf.AccountSummaryRequestProto;
+import com.ib.client.protobuf.AccountUpdatesMultiRequestProto;
+import com.ib.client.protobuf.AllOpenOrdersRequestProto;
+import com.ib.client.protobuf.AttachedOrdersProto;
+import com.ib.client.protobuf.AutoOpenOrdersRequestProto;
+import com.ib.client.protobuf.CalculateImpliedVolatilityRequestProto;
+import com.ib.client.protobuf.CalculateOptionPriceRequestProto;
+import com.ib.client.protobuf.CancelAccountSummaryProto;
+import com.ib.client.protobuf.CancelAccountUpdatesMultiProto;
+import com.ib.client.protobuf.CancelCalculateImpliedVolatilityProto;
+import com.ib.client.protobuf.CancelCalculateOptionPriceProto;
+import com.ib.client.protobuf.CancelContractDataProto;
+import com.ib.client.protobuf.CancelFundamentalsDataProto;
+import com.ib.client.protobuf.CancelHeadTimestampProto;
+import com.ib.client.protobuf.CancelHistogramDataProto;
+import com.ib.client.protobuf.CancelHistoricalDataProto;
+import com.ib.client.protobuf.CancelHistoricalTicksProto;
+import com.ib.client.protobuf.CancelMarketDataProto;
+import com.ib.client.protobuf.CancelMarketDepthProto;
+import com.ib.client.protobuf.CancelNewsBulletinsProto;
 import com.ib.client.protobuf.CancelOrderRequestProto;
+import com.ib.client.protobuf.CancelPnLProto;
+import com.ib.client.protobuf.CancelPnLSingleProto;
+import com.ib.client.protobuf.CancelPositionsMultiProto;
+import com.ib.client.protobuf.CancelPositionsProto;
+import com.ib.client.protobuf.CancelRealTimeBarsProto;
+import com.ib.client.protobuf.CancelScannerSubscriptionProto;
+import com.ib.client.protobuf.CancelTickByTickProto;
+import com.ib.client.protobuf.CancelWshEventDataProto;
+import com.ib.client.protobuf.CancelWshMetaDataProto;
 import com.ib.client.protobuf.ComboLegProto;
+import com.ib.client.protobuf.CompletedOrdersRequestProto;
+import com.ib.client.protobuf.ContractDataRequestProto;
 import com.ib.client.protobuf.ContractProto;
+import com.ib.client.protobuf.CurrentTimeInMillisRequestProto;
+import com.ib.client.protobuf.CurrentTimeRequestProto;
 import com.ib.client.protobuf.DeltaNeutralContractProto;
 import com.ib.client.protobuf.ExecutionFilterProto;
 import com.ib.client.protobuf.ExecutionRequestProto;
+import com.ib.client.protobuf.ExerciseOptionsRequestProto;
+import com.ib.client.protobuf.FAReplaceProto;
+import com.ib.client.protobuf.FARequestProto;
+import com.ib.client.protobuf.FamilyCodesRequestProto;
+import com.ib.client.protobuf.FundamentalsDataRequestProto;
 import com.ib.client.protobuf.GlobalCancelRequestProto;
+import com.ib.client.protobuf.HeadTimestampRequestProto;
+import com.ib.client.protobuf.HistogramDataRequestProto;
+import com.ib.client.protobuf.HistoricalDataRequestProto;
+import com.ib.client.protobuf.HistoricalNewsRequestProto;
+import com.ib.client.protobuf.HistoricalTicksRequestProto;
+import com.ib.client.protobuf.IdsRequestProto;
+import com.ib.client.protobuf.ManagedAccountsRequestProto;
+import com.ib.client.protobuf.MarketDataRequestProto;
+import com.ib.client.protobuf.MarketDataTypeRequestProto;
+import com.ib.client.protobuf.MarketDepthExchangesRequestProto;
+import com.ib.client.protobuf.MarketDepthRequestProto;
+import com.ib.client.protobuf.MarketRuleRequestProto;
+import com.ib.client.protobuf.MatchingSymbolsRequestProto;
+import com.ib.client.protobuf.NewsArticleRequestProto;
+import com.ib.client.protobuf.NewsBulletinsRequestProto;
+import com.ib.client.protobuf.NewsProvidersRequestProto;
+import com.ib.client.protobuf.OpenOrdersRequestProto;
 import com.ib.client.protobuf.OrderCancelProto;
 import com.ib.client.protobuf.OrderConditionProto;
 import com.ib.client.protobuf.OrderProto;
 import com.ib.client.protobuf.PlaceOrderRequestProto;
+import com.ib.client.protobuf.PnLRequestProto;
+import com.ib.client.protobuf.PnLSingleRequestProto;
+import com.ib.client.protobuf.PositionsMultiRequestProto;
+import com.ib.client.protobuf.PositionsRequestProto;
+import com.ib.client.protobuf.QueryDisplayGroupsRequestProto;
+import com.ib.client.protobuf.RealTimeBarsRequestProto;
+import com.ib.client.protobuf.ScannerParametersRequestProto;
+import com.ib.client.protobuf.ScannerSubscriptionProto;
+import com.ib.client.protobuf.ScannerSubscriptionRequestProto;
+import com.ib.client.protobuf.SecDefOptParamsRequestProto;
+import com.ib.client.protobuf.SetServerLogLevelRequestProto;
+import com.ib.client.protobuf.SmartComponentsRequestProto;
 import com.ib.client.protobuf.SoftDollarTierProto;
+import com.ib.client.protobuf.SoftDollarTiersRequestProto;
+import com.ib.client.protobuf.StartApiRequestProto;
+import com.ib.client.protobuf.SubscribeToGroupEventsRequestProto;
+import com.ib.client.protobuf.TickByTickRequestProto;
+import com.ib.client.protobuf.UnsubscribeFromGroupEventsRequestProto;
+import com.ib.client.protobuf.UpdateDisplayGroupRequestProto;
+import com.ib.client.protobuf.UserInfoRequestProto;
+import com.ib.client.protobuf.VerifyMessageRequestProto;
+import com.ib.client.protobuf.VerifyRequestProto;
+import com.ib.client.protobuf.WshEventDataRequestProto;
+import com.ib.client.protobuf.WshMetaDataRequestProto;
 
 public class EClientUtils {
 
@@ -52,7 +131,19 @@ public class EClientUtils {
         OrderProto.Order orderProto = createOrderProto(order);
         if (orderProto != null) placeOrderRequestBuilder.setOrder(orderProto);
 
+        AttachedOrdersProto.AttachedOrders attachedOrdersProto = createAttachedOrdersProto(order);
+        if (attachedOrdersProto != null) placeOrderRequestBuilder.setAttachedOrders(attachedOrdersProto);
+
         return placeOrderRequestBuilder.build();
+    }
+
+    public static AttachedOrdersProto.AttachedOrders createAttachedOrdersProto(Order order) {
+        AttachedOrdersProto.AttachedOrders.Builder attachedOrdersProtoBuilder = AttachedOrdersProto.AttachedOrders.newBuilder();
+        if (Util.isValidValue(order.slOrderId())) attachedOrdersProtoBuilder.setSlOrderId(order.slOrderId());
+        if (!Util.StringIsEmpty(order.slOrderType())) attachedOrdersProtoBuilder.setSlOrderType(order.slOrderType());
+        if (Util.isValidValue(order.ptOrderId())) attachedOrdersProtoBuilder.setPtOrderId(order.ptOrderId());
+        if (!Util.StringIsEmpty(order.ptOrderType())) attachedOrdersProtoBuilder.setPtOrderType(order.ptOrderType());
+        return attachedOrdersProtoBuilder.build();
     }
 
     public static OrderProto.Order createOrderProto(Order order) throws EClientException {
@@ -116,6 +207,7 @@ public class EClientUtils {
         if (!Util.StringIsEmpty(order.scaleTable())) orderBuilder.setScaleTable(order.scaleTable());
         if (!Util.StringIsEmpty(order.getHedgeType())) orderBuilder.setHedgeType(order.getHedgeType());
         if (!Util.StringIsEmpty(order.hedgeParam())) orderBuilder.setHedgeParam(order.hedgeParam());
+        if (Util.isValidValue(order.hedgeMaxSize())) orderBuilder.setHedgeMaxSize(order.hedgeMaxSize());
 
         if (!Util.StringIsEmpty(order.getAlgoStrategy())) orderBuilder.setAlgoStrategy(order.getAlgoStrategy());
         if (order.algoParams() != null && !order.algoParams().isEmpty()) {
@@ -208,6 +300,13 @@ public class EClientUtils {
         if (!Util.StringIsEmpty(order.submitter())) orderBuilder.setSubmitter(order.submitter());
         if (order.autoCancelParent()) orderBuilder.setAutoCancelParent(order.autoCancelParent());
         if (order.imbalanceOnly()) orderBuilder.setImbalanceOnly(order.imbalanceOnly());
+        if (order.postOnly()) orderBuilder.setPostOnly(order.postOnly());
+        if (order.allowPreOpen()) orderBuilder.setAllowPreOpen(order.allowPreOpen());
+        if (order.ignoreOpenAuction()) orderBuilder.setIgnoreOpenAuction(order.ignoreOpenAuction());
+        if (order.deactivate()) orderBuilder.setDeactivate(order.deactivate());
+        if (order.seekPriceImprovement() != null) orderBuilder.setSeekPriceImprovement(order.seekPriceImprovement() ? 1 : 0);
+        if (Util.isValidValue(order.whatIfType())) orderBuilder.setWhatIfType(order.whatIfType());
+        if (order.routeMarketableToBbo() != null) orderBuilder.setRouteMarketableToBbo(order.routeMarketableToBbo() ? 1 : 0);
 
         return orderBuilder.build();
     }
@@ -244,7 +343,7 @@ public class EClientUtils {
                     }
                 }
             }
-        } catch (InvalidProtocolBufferException e) {
+        } catch (Exception e) {
             throw new EClientException(EClientErrors.ERROR_ENCODING_PROTOBUF, "Error encoding conditions");
         }
         return orderConditionList;
@@ -413,7 +512,7 @@ public class EClientUtils {
         for(int i = 0; i < comboLegs.size(); i++) {
             ComboLeg comboLeg = comboLegs.get(i);
             double perLegPrice = Double.MAX_VALUE;
-            if (i < order.orderComboLegs().size()) {
+            if (order != null && i < order.orderComboLegs().size()) {
                 perLegPrice = order.orderComboLegs().get(i).price();
             }
             ComboLegProto.ComboLeg comboLegProto = createComboLegProto(comboLeg, perLegPrice);
@@ -441,7 +540,7 @@ public class EClientUtils {
         if (Util.isValidValue(id)) cancelOrderRequestBuilder.setOrderId(id);
         OrderCancelProto.OrderCancel orderCancelproto = createOrderCancelProto(orderCancel);
         if (orderCancelproto != null) cancelOrderRequestBuilder.setOrderCancel(orderCancelproto);
-        return cancelOrderRequestBuilder .build();
+        return cancelOrderRequestBuilder.build();
     }
 
     public static GlobalCancelRequestProto.GlobalCancelRequest createGlobalCancelRequestProto(OrderCancel orderCancel) {
@@ -452,10 +551,670 @@ public class EClientUtils {
     }
 
     public static OrderCancelProto.OrderCancel createOrderCancelProto(OrderCancel orderCancel) {
+        if (orderCancel == null) {
+            return null;
+        }
         OrderCancelProto.OrderCancel.Builder orderCancelBuilder = OrderCancelProto.OrderCancel.newBuilder();
         if (!Util.StringIsEmpty(orderCancel.manualOrderCancelTime())) orderCancelBuilder.setManualOrderCancelTime(orderCancel.manualOrderCancelTime());
         if (!Util.StringIsEmpty(orderCancel.extOperator())) orderCancelBuilder.setExtOperator(orderCancel.extOperator());
         if (Util.isValidValue(orderCancel.manualOrderIndicator())) orderCancelBuilder.setManualOrderIndicator(orderCancel.manualOrderIndicator());
         return orderCancelBuilder.build();
+    }
+    
+    public static AllOpenOrdersRequestProto.AllOpenOrdersRequest createAllOpenOrdersRequestProto() {
+        AllOpenOrdersRequestProto.AllOpenOrdersRequest.Builder allOpenOrdersRequestBuilder = AllOpenOrdersRequestProto.AllOpenOrdersRequest.newBuilder();
+        return allOpenOrdersRequestBuilder.build();
+    }
+
+    public static AutoOpenOrdersRequestProto.AutoOpenOrdersRequest createAutoOpenOrdersRequestProto(boolean autoBind) {
+        AutoOpenOrdersRequestProto.AutoOpenOrdersRequest.Builder autoOpenOrdersRequestBuilder = AutoOpenOrdersRequestProto.AutoOpenOrdersRequest.newBuilder();
+        if (autoBind) autoOpenOrdersRequestBuilder.setAutoBind(autoBind);
+        return autoOpenOrdersRequestBuilder.build();
+    }
+
+    public static OpenOrdersRequestProto.OpenOrdersRequest createOpenOrdersRequestProto() {
+        OpenOrdersRequestProto.OpenOrdersRequest.Builder openOrdersRequestBuilder = OpenOrdersRequestProto.OpenOrdersRequest.newBuilder();
+        return openOrdersRequestBuilder.build();
+    }
+
+    public static CompletedOrdersRequestProto.CompletedOrdersRequest createCompletedOrdersRequestProto(boolean apiOnly) {
+        CompletedOrdersRequestProto.CompletedOrdersRequest.Builder completedOrdersRequestBuilder = CompletedOrdersRequestProto.CompletedOrdersRequest.newBuilder();
+        if (apiOnly) completedOrdersRequestBuilder.setApiOnly(apiOnly);
+        return completedOrdersRequestBuilder.build();
+    }
+    
+    public static ContractDataRequestProto.ContractDataRequest createContractDataRequestProto(int reqId, Contract contract) {
+        ContractDataRequestProto.ContractDataRequest.Builder contractDataRequestBuilder = ContractDataRequestProto.ContractDataRequest.newBuilder();
+        if (Util.isValidValue(reqId)) contractDataRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) contractDataRequestBuilder.setContract(contractProto);
+        return contractDataRequestBuilder.build();
+    }
+
+    public static MarketDataRequestProto.MarketDataRequest createMarketDataRequestProto(int reqId, Contract contract, String genericTickList, boolean snapshot, boolean regulatorySnapshot, List<TagValue> marketDataOptionsList) {
+        MarketDataRequestProto.MarketDataRequest.Builder marketDataRequestBuilder = MarketDataRequestProto.MarketDataRequest.newBuilder();
+        if (Util.isValidValue(reqId)) marketDataRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) marketDataRequestBuilder.setContract(contractProto);
+        if (!Util.StringIsEmpty(genericTickList)) marketDataRequestBuilder.setGenericTickList(genericTickList);
+        if (snapshot) marketDataRequestBuilder.setSnapshot(snapshot);
+        if (regulatorySnapshot) marketDataRequestBuilder.setRegulatorySnapshot(regulatorySnapshot);
+        if (marketDataOptionsList != null && !marketDataOptionsList.isEmpty()) {
+            Map<String, String> marketDataOptions = marketDataOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value)); 
+            marketDataRequestBuilder.putAllMarketDataOptions(marketDataOptions);
+        }
+        return marketDataRequestBuilder.build();
+    }
+
+    public static MarketDepthRequestProto.MarketDepthRequest createMarketDepthRequestProto(int reqId, Contract contract, int numRows, boolean isSmartDepth, List<TagValue> marketDepthOptionsList) {
+        MarketDepthRequestProto.MarketDepthRequest.Builder marketDepthRequestBuilder = MarketDepthRequestProto.MarketDepthRequest.newBuilder();
+        if (Util.isValidValue(reqId)) marketDepthRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) marketDepthRequestBuilder.setContract(contractProto);
+        if (Util.isValidValue(numRows)) marketDepthRequestBuilder.setNumRows(numRows);
+        if (isSmartDepth) marketDepthRequestBuilder.setIsSmartDepth(isSmartDepth);
+        
+        if (marketDepthOptionsList != null && !marketDepthOptionsList.isEmpty()) {
+            Map<String, String> marketDepthOptions = marketDepthOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value)); 
+            marketDepthRequestBuilder.putAllMarketDepthOptions(marketDepthOptions);
+        }
+        return marketDepthRequestBuilder.build();
+    }
+
+    public static MarketDataTypeRequestProto.MarketDataTypeRequest createMarketDataTypeRequestProto(int marketDataType) {
+        MarketDataTypeRequestProto.MarketDataTypeRequest.Builder marketDataTypeRequestBuilder = MarketDataTypeRequestProto.MarketDataTypeRequest.newBuilder();
+        if (Util.isValidValue(marketDataType)) marketDataTypeRequestBuilder.setMarketDataType(marketDataType);
+        return marketDataTypeRequestBuilder.build();
+    }
+
+    public static CancelMarketDataProto.CancelMarketData createCancelMarketDataProto(int reqId) {
+        CancelMarketDataProto.CancelMarketData.Builder cancelMarketDataBuilder = CancelMarketDataProto.CancelMarketData.newBuilder();
+        if (Util.isValidValue(reqId)) cancelMarketDataBuilder.setReqId(reqId);
+        return cancelMarketDataBuilder.build();
+    }
+
+    public static CancelMarketDepthProto.CancelMarketDepth createCancelMarketDepthProto(int reqId, boolean isSmartDepth) {
+        CancelMarketDepthProto.CancelMarketDepth.Builder cancelMarketDepthBuilder = CancelMarketDepthProto.CancelMarketDepth.newBuilder();
+        if (Util.isValidValue(reqId)) cancelMarketDepthBuilder.setReqId(reqId);
+        if (isSmartDepth) cancelMarketDepthBuilder.setIsSmartDepth(isSmartDepth);
+        return cancelMarketDepthBuilder.build();
+    }
+    
+    public static AccountDataRequestProto.AccountDataRequest createAccountDataRequestProto(boolean subscribe, String acctCode) {
+        AccountDataRequestProto.AccountDataRequest.Builder accountDataRequestBuilder = AccountDataRequestProto.AccountDataRequest.newBuilder();
+        if (subscribe) accountDataRequestBuilder.setSubscribe(subscribe);
+        if (!Util.StringIsEmpty(acctCode)) accountDataRequestBuilder.setAcctCode(acctCode);
+        return accountDataRequestBuilder.build();
+    }
+
+    public static ManagedAccountsRequestProto.ManagedAccountsRequest createManagedAccountsRequestProto() {
+        ManagedAccountsRequestProto.ManagedAccountsRequest.Builder managedAccountsRequestBuilder = ManagedAccountsRequestProto.ManagedAccountsRequest.newBuilder();
+        return managedAccountsRequestBuilder.build();
+    }
+
+    public static PositionsRequestProto.PositionsRequest createPositionsRequestProto() {
+        PositionsRequestProto.PositionsRequest.Builder positionsRequestBuilder = PositionsRequestProto.PositionsRequest.newBuilder();
+        return positionsRequestBuilder.build();
+    }
+
+    public static CancelPositionsProto.CancelPositions createCancelPositionsRequestProto() {
+        CancelPositionsProto.CancelPositions.Builder cancelPositionsBuilder = CancelPositionsProto.CancelPositions.newBuilder();
+        return cancelPositionsBuilder.build();
+    }
+
+    public static AccountSummaryRequestProto.AccountSummaryRequest createAccountSummaryRequestProto(int reqId, String group, String tags) {
+        AccountSummaryRequestProto.AccountSummaryRequest.Builder accountSummaryRequestBuilder = AccountSummaryRequestProto.AccountSummaryRequest.newBuilder();
+        if (Util.isValidValue(reqId)) accountSummaryRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(group)) accountSummaryRequestBuilder.setGroup(group);
+        if (!Util.StringIsEmpty(tags)) accountSummaryRequestBuilder.setTags(tags);
+        return accountSummaryRequestBuilder.build();
+    }
+
+    public static CancelAccountSummaryProto.CancelAccountSummary createCancelAccountSummaryRequestProto(int reqId) {
+        CancelAccountSummaryProto.CancelAccountSummary.Builder cancelAccountSummaryBuilder = CancelAccountSummaryProto.CancelAccountSummary.newBuilder();
+        if (Util.isValidValue(reqId)) cancelAccountSummaryBuilder.setReqId(reqId);
+        return cancelAccountSummaryBuilder.build();
+    }
+
+    public static PositionsMultiRequestProto.PositionsMultiRequest createPositionsMultiRequestProto(int reqId, String account, String modelCode) {
+        PositionsMultiRequestProto.PositionsMultiRequest.Builder positionsMultiRequestBuilder = PositionsMultiRequestProto.PositionsMultiRequest.newBuilder();
+        if (Util.isValidValue(reqId)) positionsMultiRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(account)) positionsMultiRequestBuilder.setAccount(account);
+        if (!Util.StringIsEmpty(modelCode)) positionsMultiRequestBuilder.setModelCode(modelCode);
+        return positionsMultiRequestBuilder.build();
+    }
+
+    public static CancelPositionsMultiProto.CancelPositionsMulti createCancelPositionsMultiRequestProto(int reqId) {
+        CancelPositionsMultiProto.CancelPositionsMulti.Builder cancelPositionsMultiBuilder = CancelPositionsMultiProto.CancelPositionsMulti.newBuilder();
+        if (Util.isValidValue(reqId)) cancelPositionsMultiBuilder.setReqId(reqId);
+        return cancelPositionsMultiBuilder.build();
+    }
+
+    public static AccountUpdatesMultiRequestProto.AccountUpdatesMultiRequest createAccountUpdatesMultiRequestProto(int reqId, String account, String modelCode, boolean ledgerAndNLV) {
+        AccountUpdatesMultiRequestProto.AccountUpdatesMultiRequest.Builder accountUpdatesMultiRequestBuilder = AccountUpdatesMultiRequestProto.AccountUpdatesMultiRequest.newBuilder();
+        if (Util.isValidValue(reqId)) accountUpdatesMultiRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(account)) accountUpdatesMultiRequestBuilder.setAccount(account);
+        if (!Util.StringIsEmpty(modelCode)) accountUpdatesMultiRequestBuilder.setModelCode(modelCode);
+        if (ledgerAndNLV) accountUpdatesMultiRequestBuilder.setLedgerAndNLV(ledgerAndNLV);
+        return accountUpdatesMultiRequestBuilder.build();
+    }
+
+    public static CancelAccountUpdatesMultiProto.CancelAccountUpdatesMulti createCancelAccountUpdatesMultiRequestProto(int reqId) {
+        CancelAccountUpdatesMultiProto.CancelAccountUpdatesMulti.Builder cancelAccountUpdatesMultiBuilder = CancelAccountUpdatesMultiProto.CancelAccountUpdatesMulti.newBuilder();
+        if (Util.isValidValue(reqId)) cancelAccountUpdatesMultiBuilder.setReqId(reqId);
+        return cancelAccountUpdatesMultiBuilder.build();
+    }
+
+    public static HistoricalDataRequestProto.HistoricalDataRequest createHistoricalDataRequestProto(int reqId, Contract contract, 
+            String endDateTime, String duration, String barSizeSetting, String whatToShow, boolean useRTH, int formatDate, boolean keepUpToDate, List<TagValue> chartOptionsList) {
+        HistoricalDataRequestProto.HistoricalDataRequest.Builder historicalDataRequestBuilder = HistoricalDataRequestProto.HistoricalDataRequest.newBuilder();
+        if (Util.isValidValue(reqId)) historicalDataRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) historicalDataRequestBuilder.setContract(contractProto);
+        if (!Util.StringIsEmpty(endDateTime)) historicalDataRequestBuilder.setEndDateTime(endDateTime);
+        if (!Util.StringIsEmpty(duration)) historicalDataRequestBuilder.setDuration(duration);
+        if (!Util.StringIsEmpty(barSizeSetting)) historicalDataRequestBuilder.setBarSizeSetting(barSizeSetting);
+        if (!Util.StringIsEmpty(whatToShow)) historicalDataRequestBuilder.setWhatToShow(whatToShow);
+        if (useRTH) historicalDataRequestBuilder.setUseRTH(useRTH);
+        if (Util.isValidValue(formatDate)) historicalDataRequestBuilder.setFormatDate(formatDate);
+        if (keepUpToDate) historicalDataRequestBuilder.setKeepUpToDate(keepUpToDate);
+        if (chartOptionsList != null && !chartOptionsList.isEmpty()) {
+            Map<String, String> chartOptionsMap = chartOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            historicalDataRequestBuilder.putAllChartOptions(chartOptionsMap);
+        }
+        return historicalDataRequestBuilder.build();
+    }
+
+    public static RealTimeBarsRequestProto.RealTimeBarsRequest createRealTimeBarsRequestProto(int reqId, Contract contract, int barSize, String whatToShow, boolean useRTH, List<TagValue> realTimeBarsOptionsList) {
+        RealTimeBarsRequestProto.RealTimeBarsRequest.Builder realTimeBarsRequestBuilder = RealTimeBarsRequestProto.RealTimeBarsRequest.newBuilder();
+        if (Util.isValidValue(reqId)) realTimeBarsRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) realTimeBarsRequestBuilder.setContract(contractProto);
+        if (Util.isValidValue(barSize)) realTimeBarsRequestBuilder.setBarSize(barSize);
+        if (!Util.StringIsEmpty(whatToShow)) realTimeBarsRequestBuilder.setWhatToShow(whatToShow);
+        if (useRTH) realTimeBarsRequestBuilder.setUseRTH(useRTH);
+        if (realTimeBarsOptionsList != null && !realTimeBarsOptionsList.isEmpty()) {
+            Map<String, String> realTimeBarsOptionsMap = realTimeBarsOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            realTimeBarsRequestBuilder.putAllRealTimeBarsOptions(realTimeBarsOptionsMap);
+        }
+        return realTimeBarsRequestBuilder.build();
+    }
+
+    public static HeadTimestampRequestProto.HeadTimestampRequest createHeadTimestampRequestProto(int reqId, Contract contract, String whatToShow, boolean useRTH, int formatDate) {
+        HeadTimestampRequestProto.HeadTimestampRequest.Builder headTimestampRequestBuilder = HeadTimestampRequestProto.HeadTimestampRequest.newBuilder();
+        if (Util.isValidValue(reqId)) headTimestampRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) headTimestampRequestBuilder.setContract(contractProto);
+        if (!Util.StringIsEmpty(whatToShow)) headTimestampRequestBuilder.setWhatToShow(whatToShow);
+        if (useRTH) headTimestampRequestBuilder.setUseRTH(useRTH);
+        if (Util.isValidValue(formatDate)) headTimestampRequestBuilder.setFormatDate(formatDate);
+        
+        return headTimestampRequestBuilder.build();
+    }
+
+    public static HistogramDataRequestProto.HistogramDataRequest createHistogramDataRequestProto(int reqId, Contract contract, boolean useRTH, String timePeriod) {
+        HistogramDataRequestProto.HistogramDataRequest.Builder histogramDataRequestBuilder = HistogramDataRequestProto.HistogramDataRequest.newBuilder();
+        if (Util.isValidValue(reqId)) histogramDataRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) histogramDataRequestBuilder.setContract(contractProto);
+        if (useRTH) histogramDataRequestBuilder.setUseRTH(useRTH);
+        if (!Util.StringIsEmpty(timePeriod)) histogramDataRequestBuilder.setTimePeriod(timePeriod);
+        return histogramDataRequestBuilder.build();
+    }
+
+    public static HistoricalTicksRequestProto.HistoricalTicksRequest createHistoricalTicksRequestProto(int reqId, Contract contract, String startDateTime, String endDateTime, 
+            int numberOfTicks, String whatToShow, boolean useRTH, boolean ignoreSize, List<TagValue> miscOptionsList) {
+        HistoricalTicksRequestProto.HistoricalTicksRequest.Builder historicalTicksRequestBuilder = HistoricalTicksRequestProto.HistoricalTicksRequest.newBuilder();
+        if (Util.isValidValue(reqId)) historicalTicksRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) historicalTicksRequestBuilder.setContract(contractProto);
+        if (!Util.StringIsEmpty(startDateTime)) historicalTicksRequestBuilder.setStartDateTime(startDateTime);
+        if (!Util.StringIsEmpty(endDateTime)) historicalTicksRequestBuilder.setEndDateTime(endDateTime);
+        if (Util.isValidValue(numberOfTicks)) historicalTicksRequestBuilder.setNumberOfTicks(numberOfTicks);
+        if (!Util.StringIsEmpty(whatToShow)) historicalTicksRequestBuilder.setWhatToShow(whatToShow);
+        if (useRTH) historicalTicksRequestBuilder.setUseRTH(useRTH);
+        if (ignoreSize) historicalTicksRequestBuilder.setIgnoreSize(ignoreSize);
+        
+        if (miscOptionsList != null && !miscOptionsList.isEmpty()) {
+            Map<String, String> miscOptionsMap = miscOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            historicalTicksRequestBuilder.putAllMiscOptions(miscOptionsMap);
+        }
+
+        return historicalTicksRequestBuilder.build();
+    }
+
+    public static TickByTickRequestProto.TickByTickRequest createTickByTickRequestProto(int reqId, Contract contract, String tickType, int numberOfTicks, boolean ignoreSize) {
+        TickByTickRequestProto.TickByTickRequest.Builder tickByTickRequestBuilder = TickByTickRequestProto.TickByTickRequest.newBuilder();
+        if (Util.isValidValue(reqId)) tickByTickRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) tickByTickRequestBuilder.setContract(contractProto);
+        if (!Util.StringIsEmpty(tickType)) tickByTickRequestBuilder.setTickType(tickType);
+        if (Util.isValidValue(numberOfTicks)) tickByTickRequestBuilder.setNumberOfTicks(numberOfTicks);
+        if (ignoreSize) tickByTickRequestBuilder.setIgnoreSize(ignoreSize);
+        return tickByTickRequestBuilder.build();
+    }
+    
+    public static CancelHistoricalDataProto.CancelHistoricalData createCancelHistoricalDataProto(int reqId) {
+        CancelHistoricalDataProto.CancelHistoricalData.Builder cancelHistoricalDataBuilder = CancelHistoricalDataProto.CancelHistoricalData.newBuilder();
+        if (Util.isValidValue(reqId)) cancelHistoricalDataBuilder.setReqId(reqId);
+        return cancelHistoricalDataBuilder.build();
+    }
+    
+    public static CancelRealTimeBarsProto.CancelRealTimeBars createCancelRealTimeBarsProto(int reqId) {
+        CancelRealTimeBarsProto.CancelRealTimeBars.Builder cancelRealTimeBarsBuilder = CancelRealTimeBarsProto.CancelRealTimeBars.newBuilder();
+        if (Util.isValidValue(reqId)) cancelRealTimeBarsBuilder.setReqId(reqId);
+        return cancelRealTimeBarsBuilder.build();
+    }
+    
+    public static CancelHeadTimestampProto.CancelHeadTimestamp createCancelHeadTimestampProto(int reqId) {
+        CancelHeadTimestampProto.CancelHeadTimestamp.Builder cancelHeadTimestampBuilder = CancelHeadTimestampProto.CancelHeadTimestamp.newBuilder();
+        if (Util.isValidValue(reqId)) cancelHeadTimestampBuilder.setReqId(reqId);
+        return cancelHeadTimestampBuilder.build();
+    }
+    
+    public static CancelHistogramDataProto.CancelHistogramData createCancelHistogramDataProto(int reqId) {
+        CancelHistogramDataProto.CancelHistogramData.Builder cancelHistogramDataBuilder = CancelHistogramDataProto.CancelHistogramData.newBuilder();
+        if (Util.isValidValue(reqId)) cancelHistogramDataBuilder.setReqId(reqId);
+        return cancelHistogramDataBuilder.build();
+    }
+    
+    public static CancelTickByTickProto.CancelTickByTick createCancelTickByTickProto(int reqId) {
+        CancelTickByTickProto.CancelTickByTick.Builder cancelTickByTickBuilder = CancelTickByTickProto.CancelTickByTick.newBuilder();
+        if (Util.isValidValue(reqId)) cancelTickByTickBuilder.setReqId(reqId);
+        return cancelTickByTickBuilder.build();
+    }
+
+    public static NewsBulletinsRequestProto.NewsBulletinsRequest createNewsBulletinsRequestProto(boolean allMessages) {
+        NewsBulletinsRequestProto.NewsBulletinsRequest.Builder newsBulletinsRequestBuilder = NewsBulletinsRequestProto.NewsBulletinsRequest.newBuilder();
+        if (allMessages) newsBulletinsRequestBuilder.setAllMessages(allMessages);
+        return newsBulletinsRequestBuilder.build();
+    }
+
+    public static CancelNewsBulletinsProto.CancelNewsBulletins createCancelNewsBulletinsProto() {
+        CancelNewsBulletinsProto.CancelNewsBulletins.Builder cancelNewsBulletinsBuilder = CancelNewsBulletinsProto.CancelNewsBulletins.newBuilder();
+        return cancelNewsBulletinsBuilder.build();
+    }
+
+    public static NewsArticleRequestProto.NewsArticleRequest createNewsArticleRequestProto(int reqId, String providerCode, String articleId, List<TagValue> newsArticleOptionsList) {
+        NewsArticleRequestProto.NewsArticleRequest.Builder newsArticleRequestBuilder = NewsArticleRequestProto.NewsArticleRequest.newBuilder();
+        if (Util.isValidValue(reqId)) newsArticleRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(providerCode)) newsArticleRequestBuilder.setProviderCode(providerCode);
+        if (!Util.StringIsEmpty(articleId)) newsArticleRequestBuilder.setArticleId(articleId);
+
+        if (newsArticleOptionsList != null && !newsArticleOptionsList.isEmpty()) {
+            Map<String, String> newsArticleOptions = newsArticleOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            newsArticleRequestBuilder.putAllNewsArticleOptions(newsArticleOptions);
+        }
+
+        return newsArticleRequestBuilder.build();
+    }
+
+    public static NewsProvidersRequestProto.NewsProvidersRequest createNewsProvidersRequestProto() {
+        NewsProvidersRequestProto.NewsProvidersRequest.Builder newsProvidersRequestBuilder = NewsProvidersRequestProto.NewsProvidersRequest.newBuilder();
+        return newsProvidersRequestBuilder.build();
+    }
+
+    public static HistoricalNewsRequestProto.HistoricalNewsRequest createHistoricalNewsRequestProto(int reqId, int conId, String providerCodes, 
+            String startDateTime, String endDateTime, int totalResults, List<TagValue> historicalNewsOptionsList) {
+
+        HistoricalNewsRequestProto.HistoricalNewsRequest.Builder historicalNewsRequestBuilder = HistoricalNewsRequestProto.HistoricalNewsRequest.newBuilder();
+        if (Util.isValidValue(reqId)) historicalNewsRequestBuilder.setReqId(reqId);
+        if (Util.isValidValue(conId)) historicalNewsRequestBuilder.setConId(conId);
+        if (!Util.StringIsEmpty(providerCodes)) historicalNewsRequestBuilder.setProviderCodes(providerCodes);
+        if (!Util.StringIsEmpty(startDateTime)) historicalNewsRequestBuilder.setStartDateTime(startDateTime);
+        if (!Util.StringIsEmpty(endDateTime)) historicalNewsRequestBuilder.setEndDateTime(endDateTime);
+        if (Util.isValidValue(totalResults)) historicalNewsRequestBuilder.setTotalResults(totalResults);
+        
+        if (historicalNewsOptionsList != null && !historicalNewsOptionsList.isEmpty()) {
+            Map<String, String> historicalNewsOptions = historicalNewsOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            historicalNewsRequestBuilder.putAllHistoricalNewsOptions(historicalNewsOptions);
+        }
+
+        return historicalNewsRequestBuilder.build();
+    }
+
+    public static WshMetaDataRequestProto.WshMetaDataRequest createWshMetaDataRequestProto(int reqId) {
+        WshMetaDataRequestProto.WshMetaDataRequest.Builder wshMetaDataRequestBuilder = WshMetaDataRequestProto.WshMetaDataRequest.newBuilder();
+        if (Util.isValidValue(reqId)) wshMetaDataRequestBuilder.setReqId(reqId);
+        return wshMetaDataRequestBuilder.build();
+    }
+
+    public static CancelWshMetaDataProto.CancelWshMetaData createCancelWshMetaDataProto(int reqId) {
+        CancelWshMetaDataProto.CancelWshMetaData.Builder cancelWshMetaDataBuilder = CancelWshMetaDataProto.CancelWshMetaData.newBuilder();
+        if (Util.isValidValue(reqId)) cancelWshMetaDataBuilder.setReqId(reqId);
+        return cancelWshMetaDataBuilder.build();
+    }
+
+    public static WshEventDataRequestProto.WshEventDataRequest createWshEventDataRequestProto(int reqId, WshEventData wshEventData) {
+        WshEventDataRequestProto.WshEventDataRequest.Builder wshEventDataRequestBuilder = WshEventDataRequestProto.WshEventDataRequest.newBuilder();
+        if (Util.isValidValue(reqId)) wshEventDataRequestBuilder.setReqId(reqId);
+
+        if (wshEventData != null) {
+            if (Util.isValidValue(wshEventData.conId())) wshEventDataRequestBuilder.setConId(wshEventData.conId());
+            if (!Util.StringIsEmpty(wshEventData.filter())) wshEventDataRequestBuilder.setFilter(wshEventData.filter());
+            if (wshEventData.fillWatchlist()) wshEventDataRequestBuilder.setFillWatchlist(wshEventData.fillWatchlist());
+            if (wshEventData.fillPortfolio()) wshEventDataRequestBuilder.setFillPortfolio(wshEventData.fillPortfolio());
+            if (wshEventData.fillCompetitors()) wshEventDataRequestBuilder.setFillCompetitors(wshEventData.fillCompetitors());
+            if (!Util.StringIsEmpty(wshEventData.startDate())) wshEventDataRequestBuilder.setStartDate(wshEventData.startDate());
+            if (!Util.StringIsEmpty(wshEventData.endDate())) wshEventDataRequestBuilder.setEndDate(wshEventData.endDate());
+            if (Util.isValidValue(wshEventData.totalLimit())) wshEventDataRequestBuilder.setTotalLimit(wshEventData.totalLimit());
+        }
+
+        return wshEventDataRequestBuilder.build();
+    }
+
+    public static CancelWshEventDataProto.CancelWshEventData createCancelWshEventDataProto(int reqId) {
+        CancelWshEventDataProto.CancelWshEventData.Builder cancelWshEventDataBuilder = CancelWshEventDataProto.CancelWshEventData.newBuilder();
+        if (Util.isValidValue(reqId)) cancelWshEventDataBuilder.setReqId(reqId);
+        return cancelWshEventDataBuilder.build();
+    }
+
+    public static ScannerParametersRequestProto.ScannerParametersRequest createScannerParametersRequestProto() {
+        ScannerParametersRequestProto.ScannerParametersRequest.Builder scannerParametersRequestBuilder = ScannerParametersRequestProto.ScannerParametersRequest.newBuilder();
+        return scannerParametersRequestBuilder.build();
+    }
+
+    public static ScannerSubscriptionRequestProto.ScannerSubscriptionRequest createScannerSubscriptionRequestProto(int reqId, ScannerSubscription subscription, 
+            List<TagValue> scannerSubscriptionOptionsList, List<TagValue> scannerSubscriptionFilterOptionsList) {
+        ScannerSubscriptionRequestProto.ScannerSubscriptionRequest.Builder scannerSubscriptionRequestBuilder = ScannerSubscriptionRequestProto.ScannerSubscriptionRequest.newBuilder();
+        if (Util.isValidValue(reqId)) scannerSubscriptionRequestBuilder.setReqId(reqId);
+        ScannerSubscriptionProto.ScannerSubscription scannerSubscriptionProto = createScannerSubscriptionProto(subscription, scannerSubscriptionOptionsList, scannerSubscriptionFilterOptionsList);
+        if (scannerSubscriptionProto != null) scannerSubscriptionRequestBuilder.setScannerSubscription(scannerSubscriptionProto);
+        return scannerSubscriptionRequestBuilder.build();
+    }
+
+    private static ScannerSubscriptionProto.ScannerSubscription createScannerSubscriptionProto(ScannerSubscription subscription,
+            List<TagValue> scannerSubscriptionOptionsList, List<TagValue> scannerSubscriptionFilterOptionsList) {
+        if (subscription == null) {
+            return null;
+        }
+        ScannerSubscriptionProto.ScannerSubscription.Builder scannerSubscriptionBuilder = ScannerSubscriptionProto.ScannerSubscription.newBuilder();
+        if (Util.isValidValue(subscription.numberOfRows())) scannerSubscriptionBuilder.setNumberOfRows(subscription.numberOfRows());
+        if (!Util.StringIsEmpty(subscription.instrument())) scannerSubscriptionBuilder.setInstrument(subscription.instrument());
+        if (!Util.StringIsEmpty(subscription.locationCode())) scannerSubscriptionBuilder.setLocationCode(subscription.locationCode());
+        if (!Util.StringIsEmpty(subscription.scanCode())) scannerSubscriptionBuilder.setScanCode(subscription.scanCode());
+        if (Util.isValidValue(subscription.abovePrice())) scannerSubscriptionBuilder.setAbovePrice(subscription.abovePrice());
+        if (Util.isValidValue(subscription.belowPrice())) scannerSubscriptionBuilder.setBelowPrice(subscription.belowPrice());
+        if (Util.isValidValue(subscription.aboveVolume())) scannerSubscriptionBuilder.setAboveVolume(subscription.aboveVolume());
+        if (Util.isValidValue(subscription.averageOptionVolumeAbove())) scannerSubscriptionBuilder.setAverageOptionVolumeAbove(subscription.averageOptionVolumeAbove());
+        if (Util.isValidValue(subscription.marketCapAbove())) scannerSubscriptionBuilder.setMarketCapAbove(subscription.marketCapAbove());
+        if (Util.isValidValue(subscription.marketCapBelow())) scannerSubscriptionBuilder.setMarketCapBelow(subscription.marketCapBelow());
+        if (!Util.StringIsEmpty(subscription.moodyRatingAbove())) scannerSubscriptionBuilder.setMoodyRatingAbove(subscription.moodyRatingAbove());
+        if (!Util.StringIsEmpty(subscription.moodyRatingBelow())) scannerSubscriptionBuilder.setMoodyRatingBelow(subscription.moodyRatingBelow());
+        if (!Util.StringIsEmpty(subscription.spRatingAbove())) scannerSubscriptionBuilder.setSpRatingAbove(subscription.spRatingAbove());
+        if (!Util.StringIsEmpty(subscription.spRatingBelow())) scannerSubscriptionBuilder.setSpRatingBelow(subscription.spRatingBelow());
+        if (!Util.StringIsEmpty(subscription.maturityDateAbove())) scannerSubscriptionBuilder.setMaturityDateAbove(subscription.maturityDateAbove());
+        if (!Util.StringIsEmpty(subscription.maturityDateBelow())) scannerSubscriptionBuilder.setMaturityDateBelow(subscription.maturityDateBelow());
+        if (Util.isValidValue(subscription.couponRateAbove())) scannerSubscriptionBuilder.setCouponRateAbove(subscription.couponRateAbove());
+        if (Util.isValidValue(subscription.couponRateBelow())) scannerSubscriptionBuilder.setCouponRateBelow(subscription.couponRateBelow());
+        if (subscription.excludeConvertible()) scannerSubscriptionBuilder.setExcludeConvertible(subscription.excludeConvertible());
+        if (!Util.StringIsEmpty(subscription.scannerSettingPairs())) scannerSubscriptionBuilder.setScannerSettingPairs(subscription.scannerSettingPairs());
+        if (!Util.StringIsEmpty(subscription.stockTypeFilter())) scannerSubscriptionBuilder.setStockTypeFilter(subscription.stockTypeFilter());
+        
+        if (scannerSubscriptionOptionsList != null && !scannerSubscriptionOptionsList.isEmpty()) {
+            Map<String, String> scannerSubscriptionOptions = scannerSubscriptionOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            scannerSubscriptionBuilder.putAllScannerSubscriptionOptions(scannerSubscriptionOptions);
+        }
+        if (scannerSubscriptionFilterOptionsList != null && !scannerSubscriptionFilterOptionsList.isEmpty()) {
+            Map<String, String> scannerSubscriptionFilterOptions = scannerSubscriptionFilterOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            scannerSubscriptionBuilder.putAllScannerSubscriptionFilterOptions(scannerSubscriptionFilterOptions);
+        }
+        return scannerSubscriptionBuilder.build();
+    }
+    
+    public static FundamentalsDataRequestProto.FundamentalsDataRequest createFundamentalsDataRequestProto(int reqId, Contract contract, String reportType, List<TagValue> fundamentalsDataOptionsList) {
+        FundamentalsDataRequestProto.FundamentalsDataRequest.Builder fundamentalsDataRequestBuilder = FundamentalsDataRequestProto.FundamentalsDataRequest.newBuilder();
+        if (Util.isValidValue(reqId)) fundamentalsDataRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) fundamentalsDataRequestBuilder.setContract(contractProto);
+        if (!Util.StringIsEmpty(reportType)) fundamentalsDataRequestBuilder.setReportType(reportType);
+        if (fundamentalsDataOptionsList != null && !fundamentalsDataOptionsList.isEmpty()) {
+            Map<String, String> fundamentalsDataOptions = fundamentalsDataOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            fundamentalsDataRequestBuilder.putAllFundamentalsDataOptions(fundamentalsDataOptions);
+        }
+        return fundamentalsDataRequestBuilder.build();
+    }
+
+    public static PnLRequestProto.PnLRequest createPnLRequestProto(int reqId, String account, String modelCode) {
+        PnLRequestProto.PnLRequest.Builder pnlRequestBuilder = PnLRequestProto.PnLRequest.newBuilder();
+        if (Util.isValidValue(reqId)) pnlRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(account)) pnlRequestBuilder.setAccount(account);
+        if (!Util.StringIsEmpty(modelCode)) pnlRequestBuilder.setModelCode(modelCode);
+        return pnlRequestBuilder.build();
+    }
+
+    public static PnLSingleRequestProto.PnLSingleRequest createPnLSingleRequestProto(int reqId, String account, String modelCode, int conId) {
+        PnLSingleRequestProto.PnLSingleRequest.Builder pnlSingleRequestBuilder = PnLSingleRequestProto.PnLSingleRequest.newBuilder();
+        if (Util.isValidValue(reqId)) pnlSingleRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(account)) pnlSingleRequestBuilder.setAccount(account);
+        if (!Util.StringIsEmpty(modelCode)) pnlSingleRequestBuilder.setModelCode(modelCode);
+        if (Util.isValidValue(conId)) pnlSingleRequestBuilder.setConId(conId);
+        return pnlSingleRequestBuilder.build();
+    }
+
+    public static CancelScannerSubscriptionProto.CancelScannerSubscription createCancelScannerSubscriptionProto(int reqId) {
+        CancelScannerSubscriptionProto.CancelScannerSubscription.Builder cancelScannerSubscriptionBuilder = CancelScannerSubscriptionProto.CancelScannerSubscription.newBuilder();
+        if (Util.isValidValue(reqId)) cancelScannerSubscriptionBuilder.setReqId(reqId);
+        return cancelScannerSubscriptionBuilder.build();
+    }
+
+    public static CancelFundamentalsDataProto.CancelFundamentalsData createCancelFundamentalsDataProto(int reqId) {
+        CancelFundamentalsDataProto.CancelFundamentalsData.Builder cancelFundamentalsDataBuilder = CancelFundamentalsDataProto.CancelFundamentalsData.newBuilder();
+        if (Util.isValidValue(reqId)) cancelFundamentalsDataBuilder.setReqId(reqId);
+        return cancelFundamentalsDataBuilder.build();
+    }
+
+    public static CancelPnLProto.CancelPnL createCancelPnLProto(int reqId) {
+        CancelPnLProto.CancelPnL.Builder cancelPnLBuilder = CancelPnLProto.CancelPnL.newBuilder();
+        if (Util.isValidValue(reqId)) cancelPnLBuilder.setReqId(reqId);
+        return cancelPnLBuilder.build();
+    }
+
+    public static CancelPnLSingleProto.CancelPnLSingle createCancelPnLSingleProto(int reqId) {
+        CancelPnLSingleProto.CancelPnLSingle.Builder cancelPnLSingleBuilder = CancelPnLSingleProto.CancelPnLSingle.newBuilder();
+        if (Util.isValidValue(reqId)) cancelPnLSingleBuilder.setReqId(reqId);
+        return cancelPnLSingleBuilder.build();
+    }
+
+    public static FARequestProto.FARequest createFARequestProto(int faDataType) {
+        FARequestProto.FARequest.Builder faRequestBuilder = FARequestProto.FARequest.newBuilder();
+        if (Util.isValidValue(faDataType)) faRequestBuilder.setFaDataType(faDataType);
+        return faRequestBuilder.build();
+    }
+
+    public static FAReplaceProto.FAReplace createFAReplaceProto(int reqId, int faDataType, String xml) {
+        FAReplaceProto.FAReplace.Builder faReplaceBuilder = FAReplaceProto.FAReplace.newBuilder();
+        if (Util.isValidValue(reqId)) faReplaceBuilder.setReqId(reqId);
+        if (Util.isValidValue(faDataType)) faReplaceBuilder.setFaDataType(faDataType);
+        if (!Util.StringIsEmpty(xml)) faReplaceBuilder.setXml(xml);
+        return faReplaceBuilder.build();
+    }
+
+    public static ExerciseOptionsRequestProto.ExerciseOptionsRequest createExerciseOptionsRequestProto(int orderId, Contract contract, int exerciseAction, int exerciseQuantity, 
+            String account, boolean override, String manualOrderTime, String customerAccount, boolean professionalCustomer) {
+        ExerciseOptionsRequestProto.ExerciseOptionsRequest.Builder exerciseOptionsRequestBuilder = ExerciseOptionsRequestProto.ExerciseOptionsRequest.newBuilder();
+        if (Util.isValidValue(orderId)) exerciseOptionsRequestBuilder.setOrderId(orderId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) exerciseOptionsRequestBuilder.setContract(contractProto);
+        if (Util.isValidValue(exerciseAction)) exerciseOptionsRequestBuilder.setExerciseAction(exerciseAction);
+        if (Util.isValidValue(exerciseQuantity)) exerciseOptionsRequestBuilder.setExerciseQuantity(exerciseQuantity);
+        if (!Util.StringIsEmpty(account)) exerciseOptionsRequestBuilder.setAccount(account);
+        if (override) exerciseOptionsRequestBuilder.setOverride(override);
+        if (!Util.StringIsEmpty(manualOrderTime)) exerciseOptionsRequestBuilder.setManualOrderTime(manualOrderTime);
+        if (!Util.StringIsEmpty(customerAccount)) exerciseOptionsRequestBuilder.setCustomerAccount(customerAccount);
+        if (professionalCustomer) exerciseOptionsRequestBuilder.setProfessionalCustomer(professionalCustomer);
+        return exerciseOptionsRequestBuilder.build();
+    }
+
+    public static CalculateImpliedVolatilityRequestProto.CalculateImpliedVolatilityRequest createCalculateImpliedVolatilityRequestProto(int reqId, Contract contract, double optionPrice, double underPrice, List<TagValue> impliedVolatilityOptionsList) {
+        CalculateImpliedVolatilityRequestProto.CalculateImpliedVolatilityRequest.Builder calculateImpliedVolatilityRequestBuilder = CalculateImpliedVolatilityRequestProto.CalculateImpliedVolatilityRequest.newBuilder();
+        if (Util.isValidValue(reqId)) calculateImpliedVolatilityRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) calculateImpliedVolatilityRequestBuilder.setContract(contractProto);
+        if (Util.isValidValue(optionPrice)) calculateImpliedVolatilityRequestBuilder.setOptionPrice(optionPrice);
+        if (Util.isValidValue(underPrice)) calculateImpliedVolatilityRequestBuilder.setUnderPrice(underPrice);
+        if (impliedVolatilityOptionsList != null && !impliedVolatilityOptionsList.isEmpty()) {
+            Map<String, String> impliedVolatilityOptions = impliedVolatilityOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            calculateImpliedVolatilityRequestBuilder.putAllImpliedVolatilityOptions(impliedVolatilityOptions);
+        }
+        return calculateImpliedVolatilityRequestBuilder.build();
+    }
+
+    public static CancelCalculateImpliedVolatilityProto.CancelCalculateImpliedVolatility createCancelCalculateImpliedVolatilityProto(int reqId) {
+        CancelCalculateImpliedVolatilityProto.CancelCalculateImpliedVolatility.Builder cancelCalculateImpliedVolatilityBuilder = CancelCalculateImpliedVolatilityProto.CancelCalculateImpliedVolatility.newBuilder();
+        if (Util.isValidValue(reqId)) cancelCalculateImpliedVolatilityBuilder.setReqId(reqId);
+        return cancelCalculateImpliedVolatilityBuilder.build();
+    }
+
+    public static CalculateOptionPriceRequestProto.CalculateOptionPriceRequest createCalculateOptionPriceRequestProto(int reqId, Contract contract, double volatility, double underPrice, List<TagValue> optionPriceOptionsList) {
+        CalculateOptionPriceRequestProto.CalculateOptionPriceRequest.Builder calculateOptionPriceRequestBuilder = CalculateOptionPriceRequestProto.CalculateOptionPriceRequest.newBuilder();
+        if (Util.isValidValue(reqId)) calculateOptionPriceRequestBuilder.setReqId(reqId);
+        ContractProto.Contract contractProto = createContractProto(contract, null);
+        if (contractProto != null) calculateOptionPriceRequestBuilder.setContract(contractProto);
+        if (Util.isValidValue(volatility)) calculateOptionPriceRequestBuilder.setVolatility(volatility);
+        if (Util.isValidValue(underPrice)) calculateOptionPriceRequestBuilder.setUnderPrice(underPrice);
+        if (optionPriceOptionsList != null && !optionPriceOptionsList.isEmpty()) {
+            Map<String, String> optionPriceOptions = optionPriceOptionsList.stream().collect(Collectors.toMap(e -> e.m_tag, e -> e.m_value));
+            calculateOptionPriceRequestBuilder.putAllOptionPriceOptions(optionPriceOptions);
+        }
+        return calculateOptionPriceRequestBuilder.build();
+    }
+
+    public static CancelCalculateOptionPriceProto.CancelCalculateOptionPrice createCancelCalculateOptionPriceProto(int reqId) {
+        CancelCalculateOptionPriceProto.CancelCalculateOptionPrice.Builder cancelCalculateOptionPriceBuilder = CancelCalculateOptionPriceProto.CancelCalculateOptionPrice.newBuilder();
+        if (Util.isValidValue(reqId)) cancelCalculateOptionPriceBuilder.setReqId(reqId);
+        return cancelCalculateOptionPriceBuilder.build();
+    }
+
+    public static SecDefOptParamsRequestProto.SecDefOptParamsRequest createSecDefOptParamsRequestProto(int reqId, String underlyingSymbol, String futFopExchange, String underlyingSecType, int underlyingConId) {
+        SecDefOptParamsRequestProto.SecDefOptParamsRequest.Builder secDefOptParamsRequestBuilder = SecDefOptParamsRequestProto.SecDefOptParamsRequest.newBuilder();
+        if (Util.isValidValue(reqId)) secDefOptParamsRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(underlyingSymbol)) secDefOptParamsRequestBuilder.setUnderlyingSymbol(underlyingSymbol);
+        if (!Util.StringIsEmpty(futFopExchange)) secDefOptParamsRequestBuilder.setFutFopExchange(futFopExchange);
+        if (!Util.StringIsEmpty(underlyingSecType)) secDefOptParamsRequestBuilder.setUnderlyingSecType(underlyingSecType);
+        if (Util.isValidValue(underlyingConId)) secDefOptParamsRequestBuilder.setUnderlyingConId(underlyingConId);
+        return secDefOptParamsRequestBuilder.build();
+    }
+
+    public static SoftDollarTiersRequestProto.SoftDollarTiersRequest createSoftDollarTiersRequestProto(int reqId) {
+        SoftDollarTiersRequestProto.SoftDollarTiersRequest.Builder softDollarTiersRequestBuilder = SoftDollarTiersRequestProto.SoftDollarTiersRequest.newBuilder();
+        if (Util.isValidValue(reqId)) softDollarTiersRequestBuilder.setReqId(reqId);
+        return softDollarTiersRequestBuilder.build();
+    }
+
+    public static FamilyCodesRequestProto.FamilyCodesRequest createFamilyCodesRequestProto() {
+        FamilyCodesRequestProto.FamilyCodesRequest.Builder familyCodesRequestBuilder = FamilyCodesRequestProto.FamilyCodesRequest.newBuilder();
+        return familyCodesRequestBuilder.build();
+    }
+
+    public static MatchingSymbolsRequestProto.MatchingSymbolsRequest createMatchingSymbolsRequestProto(int reqId, String pattern) {
+        MatchingSymbolsRequestProto.MatchingSymbolsRequest.Builder matchingSymbolsRequestBuilder = MatchingSymbolsRequestProto.MatchingSymbolsRequest.newBuilder();
+        if (Util.isValidValue(reqId)) matchingSymbolsRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(pattern)) matchingSymbolsRequestBuilder.setPattern(pattern);
+        return matchingSymbolsRequestBuilder.build();
+    }
+
+    public static SmartComponentsRequestProto.SmartComponentsRequest createSmartComponentsRequestProto(int reqId, String bboExchange) {
+        SmartComponentsRequestProto.SmartComponentsRequest.Builder smartComponentsRequestBuilder = SmartComponentsRequestProto.SmartComponentsRequest.newBuilder();
+        if (Util.isValidValue(reqId)) smartComponentsRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(bboExchange)) smartComponentsRequestBuilder.setBboExchange(bboExchange);
+        return smartComponentsRequestBuilder.build();
+    }
+
+    public static MarketRuleRequestProto.MarketRuleRequest createMarketRuleRequestProto(int marketRuleId) {
+        MarketRuleRequestProto.MarketRuleRequest.Builder marketRuleRequestBuilder = MarketRuleRequestProto.MarketRuleRequest.newBuilder();
+        if (Util.isValidValue(marketRuleId)) marketRuleRequestBuilder.setMarketRuleId(marketRuleId);
+        return marketRuleRequestBuilder.build();
+    }
+
+    public static UserInfoRequestProto.UserInfoRequest createUserInfoRequestProto(int reqId) {
+        UserInfoRequestProto.UserInfoRequest.Builder userInfoRequestBuilder = UserInfoRequestProto.UserInfoRequest.newBuilder();
+        if (Util.isValidValue(reqId)) userInfoRequestBuilder.setReqId(reqId);
+        return userInfoRequestBuilder.build();
+    }
+
+    public static IdsRequestProto.IdsRequest createIdsRequestProto(int numIds) {
+        IdsRequestProto.IdsRequest.Builder idsRequestBuilder = IdsRequestProto.IdsRequest.newBuilder();
+        if (Util.isValidValue(numIds)) idsRequestBuilder.setNumIds(numIds);
+        return idsRequestBuilder.build();
+    }
+
+    public static CurrentTimeRequestProto.CurrentTimeRequest createCurrentTimeRequestProto() {
+        CurrentTimeRequestProto.CurrentTimeRequest.Builder currentTimeRequestBuilder = CurrentTimeRequestProto.CurrentTimeRequest.newBuilder();
+        return currentTimeRequestBuilder.build();
+    }
+
+    public static CurrentTimeInMillisRequestProto.CurrentTimeInMillisRequest createCurrentTimeInMillisRequestProto() {
+        CurrentTimeInMillisRequestProto.CurrentTimeInMillisRequest.Builder currentTimeInMillisRequestBuilder = CurrentTimeInMillisRequestProto.CurrentTimeInMillisRequest.newBuilder();
+        return currentTimeInMillisRequestBuilder.build();
+    }
+
+    public static StartApiRequestProto.StartApiRequest createStartApiRequestProto(int clientId, String optionalCapabilities) {
+        StartApiRequestProto.StartApiRequest.Builder startApiRequestBuilder = StartApiRequestProto.StartApiRequest.newBuilder();
+        if (Util.isValidValue(clientId)) startApiRequestBuilder.setClientId(clientId);
+        if (!Util.StringIsEmpty(optionalCapabilities)) startApiRequestBuilder.setOptionalCapabilities(optionalCapabilities);
+        return startApiRequestBuilder.build();
+    }
+
+    public static SetServerLogLevelRequestProto.SetServerLogLevelRequest createSetServerLogLevelRequestProto(int logLevel) {
+        SetServerLogLevelRequestProto.SetServerLogLevelRequest.Builder setServerLogLevelRequestBuilder = SetServerLogLevelRequestProto.SetServerLogLevelRequest.newBuilder();
+        if (Util.isValidValue(logLevel)) setServerLogLevelRequestBuilder.setLogLevel(logLevel);
+        return setServerLogLevelRequestBuilder.build();
+    }
+
+    public static VerifyRequestProto.VerifyRequest createVerifyRequestProto(String apiName, String apiVersion) {
+        VerifyRequestProto.VerifyRequest.Builder verifyRequestBuilder = VerifyRequestProto.VerifyRequest.newBuilder();
+        if (!Util.StringIsEmpty(apiName)) verifyRequestBuilder.setApiName(apiName);
+        if (!Util.StringIsEmpty(apiVersion)) verifyRequestBuilder.setApiVersion(apiVersion);
+        return verifyRequestBuilder.build();
+    }
+
+    public static VerifyMessageRequestProto.VerifyMessageRequest createVerifyMessageRequestProto(String apiData) {
+        VerifyMessageRequestProto.VerifyMessageRequest.Builder verifyMessageRequestBuilder = VerifyMessageRequestProto.VerifyMessageRequest.newBuilder();
+        if (!Util.StringIsEmpty(apiData)) verifyMessageRequestBuilder.setApiData(apiData);
+        return verifyMessageRequestBuilder.build();
+    }
+
+    public static QueryDisplayGroupsRequestProto.QueryDisplayGroupsRequest createQueryDisplayGroupsRequestProto(int reqId) {
+        QueryDisplayGroupsRequestProto.QueryDisplayGroupsRequest.Builder queryDisplayGroupsRequestBuilder = QueryDisplayGroupsRequestProto.QueryDisplayGroupsRequest.newBuilder();
+        if (Util.isValidValue(reqId)) queryDisplayGroupsRequestBuilder.setReqId(reqId);
+        return queryDisplayGroupsRequestBuilder.build();
+    }
+
+    public static SubscribeToGroupEventsRequestProto.SubscribeToGroupEventsRequest createSubscribeToGroupEventsRequestProto(int reqId, int groupId) {
+        SubscribeToGroupEventsRequestProto.SubscribeToGroupEventsRequest.Builder subscribeToGroupEventsRequestBuilder = SubscribeToGroupEventsRequestProto.SubscribeToGroupEventsRequest.newBuilder();
+        if (Util.isValidValue(reqId)) subscribeToGroupEventsRequestBuilder.setReqId(reqId);
+        if (Util.isValidValue(groupId)) subscribeToGroupEventsRequestBuilder.setGroupId(groupId);
+        return subscribeToGroupEventsRequestBuilder.build();
+    }
+
+    public static UpdateDisplayGroupRequestProto.UpdateDisplayGroupRequest createUpdateDisplayGroupRequestProto(int reqId, String contractInfo) {
+        UpdateDisplayGroupRequestProto.UpdateDisplayGroupRequest.Builder updateDisplayGroupRequestBuilder = UpdateDisplayGroupRequestProto.UpdateDisplayGroupRequest.newBuilder();
+        if (Util.isValidValue(reqId)) updateDisplayGroupRequestBuilder.setReqId(reqId);
+        if (!Util.StringIsEmpty(contractInfo)) updateDisplayGroupRequestBuilder.setContractInfo(contractInfo);
+        return updateDisplayGroupRequestBuilder.build();
+    }
+
+    public static UnsubscribeFromGroupEventsRequestProto.UnsubscribeFromGroupEventsRequest createUnsubscribeFromGroupEventsRequestProto(int reqId) {
+        UnsubscribeFromGroupEventsRequestProto.UnsubscribeFromGroupEventsRequest.Builder unsubscribeFromGroupEventsRequestBuilder = UnsubscribeFromGroupEventsRequestProto.UnsubscribeFromGroupEventsRequest.newBuilder();
+        if (Util.isValidValue(reqId)) unsubscribeFromGroupEventsRequestBuilder.setReqId(reqId);
+        return unsubscribeFromGroupEventsRequestBuilder.build();
+    }
+
+    public static MarketDepthExchangesRequestProto.MarketDepthExchangesRequest createMarketDepthExchangesRequestProto() {
+        MarketDepthExchangesRequestProto.MarketDepthExchangesRequest.Builder marketDepthExchangesRequestBuilder = MarketDepthExchangesRequestProto.MarketDepthExchangesRequest.newBuilder();
+        return marketDepthExchangesRequestBuilder.build();
+    }
+
+    public static CancelContractDataProto.CancelContractData createCancelContractDataProto(int reqId) {
+        CancelContractDataProto.CancelContractData.Builder builder = CancelContractDataProto.CancelContractData.newBuilder();
+        builder.setReqId(reqId);
+        return builder.build();
+    }
+
+    public static CancelHistoricalTicksProto.CancelHistoricalTicks createCancelHistoricalTicksProto(int reqId) {
+        CancelHistoricalTicksProto.CancelHistoricalTicks.Builder builder = CancelHistoricalTicksProto.CancelHistoricalTicks.newBuilder();
+        builder.setReqId(reqId);
+        return builder.build();
     }
 }

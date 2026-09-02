@@ -192,6 +192,15 @@ public class ContractSamples {
 		//! [optforecastxcontract]
 		return contract;
 	}
+
+	public static Contract OptForecastxByConId() {
+		//! [optforecastxbyconid]
+		Contract contract = new Contract();
+		contract.conid(789013783);
+		contract.exchange("FORECASTX");
+		//! [optforecastxbyconid]
+		return contract;
+	}
 	
 	public static Contract USStockAtSmart() {
 		Contract contract = new Contract();
@@ -264,6 +273,21 @@ public class ContractSamples {
 		contract.exchange("EUREX");
 		contract.currency("EUR");
 		//! [optcontract_localsymbol]
+		return contract;
+	}
+	
+	public static Contract optionSample() {
+		//! [optcontract_localsymbol]
+		Contract contract = new Contract();
+		contract.conid(785790272);
+		contract.symbol("BMW");        // BMW AG
+		contract.secType("OPT");       // Option
+		contract.exchange("EUREX");      // Deutsche Terminbörse (Eurex)
+		contract.currency("EUR");      // Euro
+		contract.lastTradeDateOrContractMonth("202507");  // July 2025
+		contract.strike(83);           // 83 EUR strike price
+		contract.right("P");           // Put option
+		contract.multiplier("100");    // Standard multiplier for German options
 		return contract;
 	}
 	

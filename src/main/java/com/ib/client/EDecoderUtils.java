@@ -5,17 +5,35 @@ package com.ib.client;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.Map.Entry;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.ib.client.Types.FundAssetType;
+import com.ib.client.Types.FundDistributionPolicyIndicator;
 import com.ib.client.protobuf.ComboLegProto;
+import com.ib.client.protobuf.ContractDetailsProto;
 import com.ib.client.protobuf.ContractProto;
 import com.ib.client.protobuf.DeltaNeutralContractProto;
+import com.ib.client.protobuf.DepthMarketDataDescriptionProto;
 import com.ib.client.protobuf.ExecutionProto;
+import com.ib.client.protobuf.FamilyCodeProto;
+import com.ib.client.protobuf.HistogramDataEntryProto;
+import com.ib.client.protobuf.HistoricalDataBarProto;
+import com.ib.client.protobuf.HistoricalTickBidAskProto;
+import com.ib.client.protobuf.HistoricalTickLastProto;
+import com.ib.client.protobuf.HistoricalTickProto;
+import com.ib.client.protobuf.IneligibilityReasonProto;
 import com.ib.client.protobuf.OrderAllocationProto;
 import com.ib.client.protobuf.OrderConditionProto;
 import com.ib.client.protobuf.OrderProto;
 import com.ib.client.protobuf.OrderStateProto;
+import com.ib.client.protobuf.PriceIncrementProto;
+import com.ib.client.protobuf.SmartComponentProto;
+import com.ib.client.protobuf.SmartComponentsProto;
 import com.ib.client.protobuf.SoftDollarTierProto;
 
 public class EDecoderUtils {
@@ -37,8 +55,112 @@ public class EDecoderUtils {
         List<ComboLeg> comboLegs = decodeComboLegs(contractProto); 
         if (comboLegs != null && !comboLegs.isEmpty()) contract.comboLegs(comboLegs);
         DeltaNeutralContract deltaNeutralContract = decodeDeltaNeutralContract(contractProto);
-        if (deltaNeutralContract != null) contract.deltaNeutralContract(deltaNeutralContract); 
+        if (deltaNeutralContract != null) contract.deltaNeutralContract(deltaNeutralContract);
+        if (contractProto.hasLastTradeDate()) contract.lastTradeDate(contractProto.getLastTradeDate());
+        if (contractProto.hasPrimaryExch()) contract.primaryExch(contractProto.getPrimaryExch());
+        if (contractProto.hasIssuerId()) contract.issuerId(contractProto.getIssuerId());
+        if (contractProto.hasDescription()) contract.description(contractProto.getDescription());
         return contract;
+    }
+
+    public static ContractDetails decodeContractDetails(ContractProto.Contract contractProto, ContractDetailsProto.ContractDetails contractDetailsProto, boolean isBond) {
+        ContractDetails contractDetails = new ContractDetails();
+        Contract contract = decodeContract(contractProto);
+        if (contract != null) contractDetails.contract(contract);
+        if (contractDetailsProto.hasMarketName()) contractDetails.marketName(contractDetailsProto.getMarketName());
+        if (contractDetailsProto.hasMinTick()) contractDetails.minTick(Double.parseDouble(contractDetailsProto.getMinTick()));
+        if (contractDetailsProto.hasPriceMagnifier()) contractDetails.priceMagnifier(contractDetailsProto.getPriceMagnifier());
+        if (contractDetailsProto.hasOrderTypes()) contractDetails.orderTypes(contractDetailsProto.getOrderTypes());
+        if (contractDetailsProto.hasValidExchanges()) contractDetails.validExchanges(contractDetailsProto.getValidExchanges());
+        if (contractDetailsProto.hasUnderConId()) contractDetails.underConid(contractDetailsProto.getUnderConId());
+        if (contractDetailsProto.hasLongName()) contractDetails.longName(contractDetailsProto.getLongName());
+        if (contractDetailsProto.hasContractMonth()) contractDetails.contractMonth(contractDetailsProto.getContractMonth());
+        if (contractDetailsProto.hasIndustry()) contractDetails.industry(contractDetailsProto.getIndustry());
+        if (contractDetailsProto.hasCategory()) contractDetails.category(contractDetailsProto.getCategory());
+        if (contractDetailsProto.hasSubcategory()) contractDetails.subcategory(contractDetailsProto.getSubcategory());
+        if (contractDetailsProto.hasTimeZoneId()) contractDetails.timeZoneId(contractDetailsProto.getTimeZoneId());
+        if (contractDetailsProto.hasTradingHours()) contractDetails.tradingHours(contractDetailsProto.getTradingHours());
+        if (contractDetailsProto.hasLiquidHours()) contractDetails.liquidHours(contractDetailsProto.getLiquidHours());
+        if (contractDetailsProto.hasEvRule()) contractDetails.evRule(contractDetailsProto.getEvRule());
+        if (contractDetailsProto.hasEvMultiplier()) contractDetails.evMultiplier(contractDetailsProto.getEvMultiplier());
+
+        if (contractDetailsProto.getSecIdListCount() > 0) {
+            List<TagValue> secIdList = new ArrayList<TagValue>();
+            contractDetailsProto.getSecIdListMap().forEach((k, v) -> secIdList.add(new TagValue(k, v)));
+            contractDetails.secIdList(secIdList);
+        }
+
+        if (contractDetailsProto.hasAggGroup()) contractDetails.aggGroup(contractDetailsProto.getAggGroup());
+        if (contractDetailsProto.hasUnderSymbol()) contractDetails.underSymbol(contractDetailsProto.getUnderSymbol());
+        if (contractDetailsProto.hasUnderSecType()) contractDetails.underSecType(contractDetailsProto.getUnderSecType());
+        if (contractDetailsProto.hasMarketRuleIds()) contractDetails.marketRuleIds(contractDetailsProto.getMarketRuleIds());
+        if (contractDetailsProto.hasRealExpirationDate()) contractDetails.realExpirationDate(contractDetailsProto.getRealExpirationDate());
+        if (contractDetailsProto.hasStockType()) contractDetails.stockType(contractDetailsProto.getStockType());
+        if (contractDetailsProto.hasMinSize()) contractDetails.minSize(Util.stringToDecimal(contractDetailsProto.getMinSize()));
+        if (contractDetailsProto.hasSizeIncrement()) contractDetails.sizeIncrement(Util.stringToDecimal(contractDetailsProto.getSizeIncrement()));
+        if (contractDetailsProto.hasSuggestedSizeIncrement()) contractDetails.suggestedSizeIncrement(Util.stringToDecimal(contractDetailsProto.getSuggestedSizeIncrement()));
+        if (contractDetailsProto.hasMinAlgoSize()) contractDetails.minAlgoSize(Util.stringToDecimal(contractDetailsProto.getMinAlgoSize()));
+        if (contractDetailsProto.hasLastPricePrecision()) contractDetails.lastPricePrecision(Util.stringToDecimal(contractDetailsProto.getLastPricePrecision()));
+        if (contractDetailsProto.hasLastSizePrecision()) contractDetails.lastSizePrecision(Util.stringToDecimal(contractDetailsProto.getLastSizePrecision()));
+
+        setLastTradeDate(contract.lastTradeDateOrContractMonth(), contractDetails, isBond);
+
+        if (contractDetailsProto.hasCusip()) contractDetails.cusip(contractDetailsProto.getCusip());
+        if (contractDetailsProto.hasRatings()) contractDetails.ratings(contractDetailsProto.getRatings());
+        if (contractDetailsProto.hasDescAppend()) contractDetails.descAppend(contractDetailsProto.getDescAppend());
+        if (contractDetailsProto.hasBondType()) contractDetails.bondType(contractDetailsProto.getBondType());
+        if (contractDetailsProto.hasCoupon()) contractDetails.coupon(contractDetailsProto.getCoupon());
+        if (contractDetailsProto.hasCouponType()) contractDetails.couponType(contractDetailsProto.getCouponType());
+        if (contractDetailsProto.hasCallable()) contractDetails.callable(contractDetailsProto.getCallable());
+        if (contractDetailsProto.hasPuttable()) contractDetails.putable(contractDetailsProto.getPuttable());
+        if (contractDetailsProto.hasConvertible()) contractDetails.convertible(contractDetailsProto.getConvertible());
+        if (contractDetailsProto.hasIssueDate()) contractDetails.issueDate(contractDetailsProto.getIssueDate());
+        if (contractDetailsProto.hasNextOptionDate()) contractDetails.nextOptionDate(contractDetailsProto.getNextOptionDate());
+        if (contractDetailsProto.hasNextOptionType()) contractDetails.nextOptionType(contractDetailsProto.getNextOptionType());
+        if (contractDetailsProto.hasNextOptionPartial()) contractDetails.nextOptionPartial(contractDetailsProto.getNextOptionPartial());
+        if (contractDetailsProto.hasBondNotes()) contractDetails.notes(contractDetailsProto.getBondNotes());
+
+        if (contractDetailsProto.hasFundName()) contractDetails.fundName(contractDetailsProto.getFundName());
+        if (contractDetailsProto.hasFundFamily()) contractDetails.fundFamily(contractDetailsProto.getFundFamily());
+        if (contractDetailsProto.hasFundType()) contractDetails.fundType(contractDetailsProto.getFundType());
+        if (contractDetailsProto.hasFundFrontLoad()) contractDetails.fundFrontLoad(contractDetailsProto.getFundFrontLoad());
+        if (contractDetailsProto.hasFundBackLoad()) contractDetails.fundBackLoad(contractDetailsProto.getFundBackLoad());
+        if (contractDetailsProto.hasFundBackLoadTimeInterval()) contractDetails.fundBackLoadTimeInterval(contractDetailsProto.getFundBackLoadTimeInterval());
+        if (contractDetailsProto.hasFundManagementFee()) contractDetails.fundManagementFee(contractDetailsProto.getFundManagementFee());
+        if (contractDetailsProto.hasFundClosed()) contractDetails.fundClosed(contractDetailsProto.getFundClosed());
+        if (contractDetailsProto.hasFundClosedForNewInvestors()) contractDetails.fundClosedForNewInvestors(contractDetailsProto.getFundClosedForNewInvestors());
+        if (contractDetailsProto.hasFundClosedForNewMoney()) contractDetails.fundClosedForNewMoney(contractDetailsProto.getFundClosedForNewMoney());
+        if (contractDetailsProto.hasFundNotifyAmount()) contractDetails.fundNotifyAmount(contractDetailsProto.getFundNotifyAmount());
+        if (contractDetailsProto.hasFundMinimumInitialPurchase()) contractDetails.fundMinimumInitialPurchase(contractDetailsProto.getFundMinimumInitialPurchase());
+        if (contractDetailsProto.hasFundMinimumSubsequentPurchase()) contractDetails.fundSubsequentMinimumPurchase(contractDetailsProto.getFundMinimumSubsequentPurchase());
+        if (contractDetailsProto.hasFundBlueSkyStates()) contractDetails.fundBlueSkyStates(contractDetailsProto.getFundBlueSkyStates());
+        if (contractDetailsProto.hasFundBlueSkyTerritories()) contractDetails.fundBlueSkyTerritories(contractDetailsProto.getFundBlueSkyTerritories());
+        if (contractDetailsProto.hasFundDistributionPolicyIndicator()) contractDetails.fundDistributionPolicyIndicator(FundDistributionPolicyIndicator.get(contractDetailsProto.getFundDistributionPolicyIndicator()));
+        if (contractDetailsProto.hasFundAssetType()) contractDetails.fundAssetType(FundAssetType.get(contractDetailsProto.getFundAssetType()));
+        
+        List<IneligibilityReason> ineligibilityReasonList = decodeIneligibilityReasonList(contractDetailsProto);
+        if (ineligibilityReasonList != null && !ineligibilityReasonList.isEmpty()) contractDetails.ineligibilityReasonList(ineligibilityReasonList);
+        
+        if (contractDetailsProto.hasEventContract1()) contractDetails.eventContract1(contractDetailsProto.getEventContract1());
+        if (contractDetailsProto.hasEventContractDescription1()) contractDetails.eventContractDescription1(contractDetailsProto.getEventContractDescription1());
+        if (contractDetailsProto.hasEventContractDescription2()) contractDetails.eventContractDescription2(contractDetailsProto.getEventContractDescription2());
+
+        return contractDetails;
+    }
+
+    public static List<IneligibilityReason> decodeIneligibilityReasonList(ContractDetailsProto.ContractDetails contractDetailsProto) {
+        List<IneligibilityReason> ineligibilityReasonList = null;
+        if (contractDetailsProto.getIneligibilityReasonListCount() > 0) {
+            ineligibilityReasonList = new ArrayList<IneligibilityReason>();
+            for (IneligibilityReasonProto.IneligibilityReason ineligibilityReasonProto : contractDetailsProto.getIneligibilityReasonListList()) {
+                IneligibilityReason ineligibilityReason = new IneligibilityReason();
+                if (ineligibilityReasonProto.hasId()) ineligibilityReason.id(ineligibilityReasonProto.getId());
+                if (ineligibilityReasonProto.hasDescription()) ineligibilityReason.description(ineligibilityReasonProto.getDescription());
+                
+                ineligibilityReasonList.add(ineligibilityReason);
+            }
+        }
+        return ineligibilityReasonList;
     }
 
     public static List<ComboLeg> decodeComboLegs(ContractProto.Contract contractProto) {
@@ -116,8 +238,10 @@ public class EDecoderUtils {
         return execution;
     }
     
-    public static Order decodeOrder(ContractProto.Contract contractProto, OrderProto.Order orderProto) throws IOException {
+    public static Order decodeOrder(int orderId, ContractProto.Contract contractProto, OrderProto.Order orderProto) throws IOException {
         Order order = new Order();
+        if (Util.isValidValue(orderId)) order.orderId(orderId);
+        if (orderProto.hasOrderId()) order.orderId(orderProto.getOrderId());
         if (orderProto.hasAction()) order.action(orderProto.getAction());
         if (orderProto.hasTotalQuantity()) order.totalQuantity(Util.stringToDecimal(orderProto.getTotalQuantity()));
         if (orderProto.hasOrderType()) order.orderType(orderProto.getOrderType());
@@ -197,6 +321,7 @@ public class EDecoderUtils {
         if (orderProto.hasScaleRandomPercent()) order.scaleRandomPercent(orderProto.getScaleRandomPercent());
         if (orderProto.hasHedgeType()) order.hedgeType(orderProto.getHedgeType());
         if (orderProto.hasHedgeType() && orderProto.hasHedgeParam() && !Util.StringIsEmpty(orderProto.getHedgeType())) order.hedgeParam(orderProto.getHedgeParam());
+        if (orderProto.hasHedgeType() && orderProto.hasHedgeMaxSize()) order.hedgeMaxSize(orderProto.getHedgeMaxSize());
         if (orderProto.hasOptOutSmartRouting()) order.optOutSmartRouting(orderProto.getOptOutSmartRouting());
         if (orderProto.hasClearingAccount()) order.clearingAccount(orderProto.getClearingAccount());
         if (orderProto.hasClearingIntent()) order.clearingIntent(orderProto.getClearingIntent());
@@ -258,6 +383,20 @@ public class EDecoderUtils {
         if (orderProto.hasManualOrderIndicator()) order.manualOrderIndicator(orderProto.getManualOrderIndicator());
         if (orderProto.hasSubmitter()) order.submitter(orderProto.getSubmitter());
         if (orderProto.hasImbalanceOnly()) order.imbalanceOnly(orderProto.getImbalanceOnly());
+        if (orderProto.hasAutoCancelDate()) order.autoCancelDate(orderProto.getAutoCancelDate());
+        if (orderProto.hasFilledQuantity()) order.filledQuantity(Util.stringToDecimal(orderProto.getFilledQuantity()));
+        if (orderProto.hasRefFuturesConId()) order.refFuturesConId(orderProto.getRefFuturesConId());
+        if (orderProto.hasShareholder()) order.shareholder(orderProto.getShareholder());
+        if (orderProto.hasRouteMarketableToBbo()) order.routeMarketableToBbo(orderProto.getRouteMarketableToBbo() != 0);
+        if (orderProto.hasParentPermId()) order.parentPermId(orderProto.getParentPermId());
+        if (orderProto.hasPostOnly()) order.postOnly(orderProto.getPostOnly());
+        if (orderProto.hasAllowPreOpen()) order.allowPreOpen(orderProto.getAllowPreOpen());
+        if (orderProto.hasIgnoreOpenAuction()) order.ignoreOpenAuction(orderProto.getIgnoreOpenAuction());
+        if (orderProto.hasDeactivate()) order.deactivate(orderProto.getDeactivate());
+        if (orderProto.hasActiveStartTime()) order.activeStartTime(orderProto.getActiveStartTime());
+        if (orderProto.hasActiveStopTime()) order.activeStopTime(orderProto.getActiveStopTime());
+        order.seekPriceImprovement(orderProto.getSeekPriceImprovement() != 0);
+        if (orderProto.hasWhatIfType()) order.whatIfType(orderProto.getWhatIfType());
 
         return order;
     }
@@ -366,8 +505,12 @@ public class EDecoderUtils {
     }
 
     public static SoftDollarTier decodeSoftDollarTier(OrderProto.Order order) {
-        SoftDollarTier softDollarTier = null;
         SoftDollarTierProto.SoftDollarTier softDollarTierProto = order.hasSoftDollarTier() ? order.getSoftDollarTier() : null;
+        return softDollarTierProto != null ? decodeSoftDollarTier(softDollarTierProto) : null;
+    }
+
+    public static SoftDollarTier decodeSoftDollarTier(SoftDollarTierProto.SoftDollarTier softDollarTierProto) {
+        SoftDollarTier softDollarTier = null;
         if (softDollarTierProto != null) {
             String name = softDollarTierProto.hasName() ? softDollarTierProto.getName() : null;
             String value = softDollarTierProto.hasValue() ? softDollarTierProto.getValue() : null;
@@ -410,6 +553,9 @@ public class EDecoderUtils {
         List<OrderAllocation> orderAllocations = decodeOrderAllocations(orderStateProto);
         if (orderAllocations != null) orderState.orderAllocations(orderAllocations);
 
+        if (orderStateProto.hasCompletedTime()) orderState.completedTime(orderStateProto.getCompletedTime());
+        if (orderStateProto.hasCompletedStatus()) orderState.completedStatus(orderStateProto.getCompletedStatus());
+
         return orderState;
     }
 
@@ -430,5 +576,118 @@ public class EDecoderUtils {
             }
         }
         return orderAllocations;
+    }
+    
+    public static void setLastTradeDate(String lastTradeDateOrContractMonth, ContractDetails contract, boolean isBond) {
+        if (lastTradeDateOrContractMonth != null) {
+            String[] split = lastTradeDateOrContractMonth.contains("-") ? lastTradeDateOrContractMonth.split("-") : lastTradeDateOrContractMonth.split("\\s+");
+            if (split.length > 0) {
+                if (isBond) {
+                    contract.maturity(split[0]);
+                } else {
+                    contract.contract().lastTradeDateOrContractMonth(split[0]);
+                }
+            }
+            if (split.length > 1) {
+                contract.lastTradeTime(split[1]);
+            }
+            if (isBond && split.length > 2) {
+                contract.timeZoneId(split[2]);
+            }
+        }
+    }
+    
+    public static HistoricalTick decodeHistoricalTick(HistoricalTickProto.HistoricalTick historicalTickProto) {
+        long time = historicalTickProto.hasTime() ? historicalTickProto.getTime() : 0;
+        double price = historicalTickProto.hasPrice() ? historicalTickProto.getPrice() : 0;
+        Decimal size = historicalTickProto.hasSize() ? Util.stringToDecimal(historicalTickProto.getSize()) : Decimal.INVALID;
+        return new HistoricalTick(time, price, size);
+    }
+
+    public static HistoricalTickBidAsk decodeHistoricalTickBidAsk(HistoricalTickBidAskProto.HistoricalTickBidAsk historicalTickBidAskProto) {
+        long time = historicalTickBidAskProto.hasTime() ? historicalTickBidAskProto.getTime() : 0;
+
+        TickAttribBidAsk tickAttribBidAsk = new TickAttribBidAsk();
+        if (historicalTickBidAskProto.hasTickAttribBidAsk()) {
+            tickAttribBidAsk.askPastHigh(historicalTickBidAskProto.getTickAttribBidAsk().hasAskPastHigh() ? historicalTickBidAskProto.getTickAttribBidAsk().getAskPastHigh() : false);
+            tickAttribBidAsk.bidPastLow(historicalTickBidAskProto.getTickAttribBidAsk().hasBidPastLow() ? historicalTickBidAskProto.getTickAttribBidAsk().getBidPastLow() : false);
+        }
+
+        double priceBid = historicalTickBidAskProto.hasPriceBid() ? historicalTickBidAskProto.getPriceBid() : 0;
+        double priceAsk = historicalTickBidAskProto.hasPriceAsk() ? historicalTickBidAskProto.getPriceAsk() : 0;
+        Decimal sizeBid = historicalTickBidAskProto.hasSizeBid() ? Util.stringToDecimal(historicalTickBidAskProto.getSizeBid()) : Decimal.INVALID;
+        Decimal sizeAsk = historicalTickBidAskProto.hasSizeAsk() ? Util.stringToDecimal(historicalTickBidAskProto.getSizeAsk()) : Decimal.INVALID;
+        
+        return new HistoricalTickBidAsk(time, tickAttribBidAsk, priceBid, priceAsk, sizeBid, sizeAsk);
+    }
+
+    public static HistoricalTickLast decodeHistoricalTickLast(HistoricalTickLastProto.HistoricalTickLast historicalTickLastProto) {
+        long time = historicalTickLastProto.hasTime() ? historicalTickLastProto.getTime() : 0;
+
+        TickAttribLast tickAttribLast = new TickAttribLast();
+        if (historicalTickLastProto.hasTickAttribLast()) {
+            tickAttribLast.pastLimit(historicalTickLastProto.getTickAttribLast().hasPastLimit() ? historicalTickLastProto.getTickAttribLast().getPastLimit() : false);
+            tickAttribLast.unreported(historicalTickLastProto.getTickAttribLast().hasUnreported() ? historicalTickLastProto.getTickAttribLast().getUnreported() : false);
+        }
+
+        double price = historicalTickLastProto.hasPrice() ? historicalTickLastProto.getPrice() : 0;
+        Decimal size = historicalTickLastProto.hasSize() ? Util.stringToDecimal(historicalTickLastProto.getSize()) : Decimal.INVALID;
+        String exchange = historicalTickLastProto.hasExchange() ? historicalTickLastProto.getExchange() : "";
+        String specialConditions = historicalTickLastProto.hasSpecialConditions() ? historicalTickLastProto.getSpecialConditions() : "";
+        
+        return new HistoricalTickLast(time, tickAttribLast, price, size, exchange, specialConditions);
+    }
+
+    public static HistogramEntry decodeHistogramDataEntry(HistogramDataEntryProto.HistogramDataEntry histogramDataEntryProto) {
+        double price = histogramDataEntryProto.hasPrice() ? histogramDataEntryProto.getPrice() : 0;
+        Decimal size = histogramDataEntryProto.hasSize() ? Util.stringToDecimal(histogramDataEntryProto.getSize()) : Decimal.INVALID;
+        return new HistogramEntry(price, size);
+    }
+
+    public static Bar decodeHistoricalDataBar(HistoricalDataBarProto.HistoricalDataBar historicalDataBarProto) {
+        String date = historicalDataBarProto.hasDate() ? historicalDataBarProto.getDate() : "";
+        double open = historicalDataBarProto.hasOpen() ? historicalDataBarProto.getOpen() : 0;
+        double high = historicalDataBarProto.hasHigh() ? historicalDataBarProto.getHigh() : 0;
+        double low = historicalDataBarProto.hasLow() ? historicalDataBarProto.getLow() : 0;
+        double close = historicalDataBarProto.hasClose() ? historicalDataBarProto.getClose() : 0;
+        Decimal volume = historicalDataBarProto.hasVolume() ? Util.stringToDecimal(historicalDataBarProto.getVolume()) : Decimal.INVALID;
+        int count = historicalDataBarProto.hasBarCount() ? historicalDataBarProto.getBarCount() : -1;
+        Decimal WAP = historicalDataBarProto.hasWAP() ? Util.stringToDecimal(historicalDataBarProto.getWAP()) : Decimal.INVALID;
+        
+        return new Bar(date, open, high, low, close, volume, count, WAP);
+    }
+
+    public static FamilyCode decodeFamilyCode(FamilyCodeProto.FamilyCode familyCodeProto) {
+        String accountID = familyCodeProto != null && familyCodeProto.hasAccountId() ? familyCodeProto.getAccountId() : "";
+        String familyCode = familyCodeProto != null && familyCodeProto.hasFamilyCode() ? familyCodeProto.getFamilyCode() : "";
+        return new FamilyCode(accountID, familyCode);
+    }
+    
+    public static Map<Integer, Entry<String, Character>> decodeSmartComponents(SmartComponentsProto.SmartComponents smartComponentsProto) {
+        Map<Integer, Entry<String, Character>> theMap = new HashMap<>();
+        if (smartComponentsProto.getSmartComponentsCount() > 0) {
+            for (SmartComponentProto.SmartComponent smartComponentProto : smartComponentsProto.getSmartComponentsList()) {
+                int bitNumber = smartComponentProto.hasBitNumber() ? smartComponentProto.getBitNumber() : 0;
+                String exchange = smartComponentProto.hasExchange() ? smartComponentProto.getExchange() : "";
+                char exchangeLetter = smartComponentProto.hasExchangeLetter() ? smartComponentProto.getExchangeLetter().charAt(0) : ' ';
+                theMap.put(bitNumber, new SimpleEntry<>(exchange, exchangeLetter));
+            }
+        }
+        return theMap;
+    }
+
+    public static PriceIncrement decodePriceIncrement(PriceIncrementProto.PriceIncrement priceIncrementProto) {
+        double lowEdge = priceIncrementProto != null && priceIncrementProto.hasLowEdge() ? priceIncrementProto.getLowEdge() : 0;
+        double increment = priceIncrementProto != null && priceIncrementProto.hasIncrement() ? priceIncrementProto.getIncrement() : 0;
+        return new PriceIncrement(lowEdge, increment);
+    }
+
+    public static DepthMktDataDescription decodeDepthMarketDataDescription(DepthMarketDataDescriptionProto.DepthMarketDataDescription depthMarketDataDescription) {
+        String exchange = depthMarketDataDescription.hasExchange() ? depthMarketDataDescription.getExchange() : "";
+        String secType = depthMarketDataDescription.hasSecType() ? depthMarketDataDescription.getSecType() : "";
+        String listingExch = depthMarketDataDescription.hasListingExch() ? depthMarketDataDescription.getListingExch() : "";
+        String serviceDataType = depthMarketDataDescription.hasServiceDataType() ? depthMarketDataDescription.getServiceDataType() : "";
+        int aggGroup = depthMarketDataDescription.hasAggGroup() ? depthMarketDataDescription.getAggGroup() : Integer.MAX_VALUE;
+        return new DepthMktDataDescription(exchange, secType, listingExch, serviceDataType, aggGroup);
     }
 }

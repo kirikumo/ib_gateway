@@ -5,6 +5,10 @@ import com.ib.controller.Bar;
 
 import static com.bitex.util.DebugUtil.log;
 
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.GregorianCalendar;
+
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.bitex.util.Redis;
@@ -19,20 +23,38 @@ public class HistoricalDataHandler implements ApiController.IHistoricalDataHandl
 
     @Override
     public void historicalData(Bar bar) {
-//      String msg = EWrapperMsgGenerator.historicalData(0,String.valueOf(bar.time()), bar.open(), bar.high(), bar.low(), bar.close(), bar.volume(), bar.count(), bar.wap());
-//    	String msg = bar.toString();
-        // log("len: "+ historyBar.size());
-
         JSONObject j = new JSONObject();
-        j.put("timestamp", bar.time());
+        j.put("timestamp", barEpochSecond(bar));
         j.put("open", bar.open());
         j.put("high", bar.high());
         j.put("low", bar.low());
         j.put("close", bar.close());
         j.put("volume", bar.volume().longValue());
-//        j.put("formattedTime", bar.formattedTime());
         historyBar.add(j);
-//    	log(bar.formattedTime() + " " + msg);
+    }
+
+    /** 1045 Bar(String) 會把 time() 設成 Long.MAX_VALUE，改從 timeStr 轉 epoch second。 */
+    private static long barEpochSecond(Bar bar) {
+        if (bar.time() != Long.MAX_VALUE) return bar.time();
+        String timeStr = bar.timeStr();
+        if (timeStr == null || timeStr.length() == 0) return bar.time();
+        if (timeStr.length() == 8) {
+            int year = Integer.parseInt(timeStr.substring(0, 4));
+            int month = Integer.parseInt(timeStr.substring(4, 6));
+            int day = Integer.parseInt(timeStr.substring(6));
+            return new GregorianCalendar(year, month - 1, day).getTimeInMillis() / 1000;
+        }
+        if (timeStr.contains(" ")) {
+            try {
+                DateTimeFormatter fmt = timeStr.contains("/")
+                        ? DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss VV")
+                        : DateTimeFormatter.ofPattern("yyyyMMdd HH:mm:ss z");
+                return ZonedDateTime.parse(timeStr, fmt).toEpochSecond();
+            } catch (Exception e) {
+                return Long.parseLong(timeStr);
+            }
+        }
+        return Long.parseLong(timeStr);
     }
 
     @Override

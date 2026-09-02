@@ -1,4 +1,4 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
+/* Copyright (C) 2026 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
  * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
 
 package samples.testbed;
@@ -7,12 +7,17 @@ import java.util.*;
 
 import com.ib.client.*;
 import samples.testbed.advisor.FAMethodSamples;
+import samples.testbed.config.ConfigSamples;
 import samples.testbed.contracts.ContractSamples;
+import samples.testbed.contracts.ContractSamplesProto;
+import samples.testbed.news.NewsSamplesProto;
 import samples.testbed.orders.AvailableAlgoParams;
 import samples.testbed.orders.OrderSamples;
+import samples.testbed.orders.OrderSamplesProto;
 import samples.testbed.scanner.ScannerSubscriptionSamples;
 
 import com.ib.client.Types.FADataType;
+import com.ib.client.protobuf.ConfigRequestProto;
 import com.ib.client.protobuf.ExecutionFilterProto;
 import com.ib.client.protobuf.ExecutionRequestProto;
 
@@ -53,7 +58,7 @@ public class Testbed {
 		//tickDataOperations(wrapper.getClient());
 		//tickOptionComputations(wrapper.getClient());
 		//optionsOperations(wrapper.getClient());
-		orderOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
+		//orderOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
 		//contractOperations(wrapper.getClient());
 		//hedgeSample(wrapper.getClient(), wrapper.getCurrentOrderId());
 		//testAlgoSamples(wrapper.getClient(), wrapper.getCurrentOrderId());
@@ -69,7 +74,7 @@ public class Testbed {
 		//rerouteCFDOperations(wrapper.getClient());
 		//marketRuleOperations(wrapper.getClient());
 		//tickDataOperations(wrapper.getClient());
-		//pnlSingle(wrapper.getClient());
+		//pnl(wrapper.getClient());
 		//continuousFuturesOperations(wrapper.getClient());
 		//pnlSingle(wrapper.getClient());
 		//histogram(wrapper.getClient());
@@ -79,6 +84,10 @@ public class Testbed {
 		//realTimeBars(wrapper.getClient());    
 		//wshCalendarOperations(wrapper.getClient());
 		//miscellaneous(wrapper.getClient());
+		//linkingOperations(wrapper.getClient());
+		//configOperations(wrapper.getClient());
+		//orderParentChildOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
+		newsOperationsProto(wrapper.getClient());
 
 		Thread.sleep(100000);
 		m_client.eDisconnect();
@@ -97,13 +106,17 @@ public class Testbed {
         client.cancelHistogramData(4002);
 	}
 	
-	private static void historicalTicks(EClientSocket client) {
-		//! [reqhistoricalticks]
+    private static void historicalTicks(EClientSocket client) {
+        //! [reqhistoricalticks]
         client.reqHistoricalTicks(18001, ContractSamples.USStockAtSmart(), "20220808 10:00:00 US/Eastern", null, 10, "TRADES", 1, true, null);
         client.reqHistoricalTicks(18002, ContractSamples.USStockAtSmart(), "20220808 10:00:00 US/Eastern", null, 10, "BID_ASK", 1, true, null);
         client.reqHistoricalTicks(18003, ContractSamples.USStockAtSmart(), "20220808 10:00:00 US/Eastern", null, 10, "MIDPOINT", 1, true, null);
-		//! [reqhistoricalticks]
-	}
+        //! [reqhistoricalticks]
+
+        //! [cancelhistoricalticks]
+        client.cancelHistoricalTicks(18001);
+        //! [cancelhistoricalticks]
+    }
 
 	private static void pnl(EClientSocket client) throws InterruptedException {
 		//! [reqpnl]
@@ -279,6 +292,10 @@ public class Testbed {
         //! [zero_strike_opt_order]
         client.placeOrder(nextOrderId++, ContractSamples.OptForecastxZeroStrike(), OrderSamples.LimitOrder("BUY", Decimal.get(1), 0.05));
         //! [zero_strike_opt_order]
+
+        //! [limit_order_with_stop_loss_and_profit_taker]
+        client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), OrderSamples.LimitOrderWithStopLossAndProfitTaker("BUY", Decimal.get(100), 40, nextOrderId++, nextOrderId++));
+        //! [limit_order_with_stop_loss_and_profit_taker]
 
         Thread.sleep(10000);
         
@@ -630,12 +647,16 @@ public class Testbed {
 		client.reqContractDetails(219, ContractSamples.USStock());
 		client.reqContractDetails(220, ContractSamples.OptForecastx());
 		client.reqContractDetails(221, ContractSamples.OptForecastxZeroStrike());
+		client.reqContractDetails(222, ContractSamples.OptForecastxByConId());
 		//! [reqcontractdetails]
 
 		//! [reqmatchingsymbols]
 		client.reqMatchingSymbols(211, "IB");
 		//! [reqmatchingsymbols]
 
+		//! [cancelcontractdata]
+		client.cancelContractData(210);
+		//! [cancelcontractdata]
 	}
 	
 	private static void contractNewsFeed(EClientSocket client) {
@@ -948,14 +969,14 @@ public class Testbed {
 		//! [reqsecdefoptparams]
 		
 		//! [calculateimpliedvolatility]
-		client.calculateImpliedVolatility(5001, ContractSamples.OptionWithLocalSymbol(), 0.6, 55, null);
+		client.calculateImpliedVolatility(5001, ContractSamples.optionSample(), 20, 90, null);
 		//! [calculateimpliedvolatility]
 		
 		//** Canceling implied volatility ***
 		client.cancelCalculateImpliedVolatility(5001);
 		
 		//! [calculateoptionprice]
-		client.calculateOptionPrice(5002, ContractSamples.OptionWithLocalSymbol(), 0.5, 55, null);
+		client.calculateOptionPrice(5002, ContractSamples.optionSample(), 0.5, 80, null);
 		//! [calculateoptionprice]
 		
 		//** Canceling option's price calculation ***
@@ -1079,5 +1100,77 @@ public class Testbed {
         //! [reqcurrenttimeinmillis]
         client.reqCurrentTimeInMillis();
         //! [reqcurrenttimeinmillis]
+    }
+    
+    private static void linkingOperations(EClientSocket client) throws InterruptedException {
+        //! [querydisplaygroups]
+        client.queryDisplayGroups(9001);
+        //! [querydisplaygroups]
+
+        Thread.sleep(1000);
+
+        //! [subscribetogroupevents]
+        client.subscribeToGroupEvents(9002, 1);
+        //! [subscribetogroupevents]
+
+        Thread.sleep(1000);
+
+        //! [updatedisplaygroup]
+        client.updateDisplayGroup(9002, "8314@SMART");
+        //! [updatedisplaygroup]
+
+        Thread.sleep(1000);
+
+        //! [subscribefromgroupevents]
+        client.unsubscribeFromGroupEvents(9002);
+        //! [subscribefromgroupevents]
+    }
+
+    private static void configOperations(EClientSocket client) throws InterruptedException {
+        //! [request_config]
+        ConfigRequestProto.ConfigRequest.Builder configRequestBuilder = ConfigRequestProto.ConfigRequest.newBuilder();
+        configRequestBuilder.setReqId(20001);
+        client.reqConfigProtoBuf(configRequestBuilder.build());
+        //! [request_config]
+
+        //! [update_api_settings_config_request]
+        client.updateConfigProtoBuf(ConfigSamples.UpdateConfigApiSettings(20002));
+        //! [update_api_settings_config_request]
+
+        //! [update_orders_config_request]
+        client.updateConfigProtoBuf(ConfigSamples.UpdateOrdersConfig(20003));
+        //! [update_orders_config_request]
+
+        //! [update_message_config_request]
+        client.updateConfigProtoBuf(ConfigSamples.UpdateMessageConfigConfirmMandatoryCapPriceAccepted(20004));
+        //! [update_message_config_request]
+
+        //! [update_config_request_order_id_reset]
+        client.updateConfigProtoBuf(ConfigSamples.UpdateConfigOrderIdReset(20005));
+        //! [update_config_request_order_id_reset]
+        
+        Thread.sleep(1000);
+    }
+    
+    private static void orderParentChildOperations(EClientSocket client, int nextOrderId) throws InterruptedException {
+        //! [beta_hedge_order]
+        int parentOrderId = nextOrderId++;
+        int childOrderId = nextOrderId++;
+        client.placeOrderProtoBuf(OrderSamplesProto.createPlaceOrderRequest(parentOrderId, ContractSamplesProto.IBMStockAtSmart(), OrderSamplesProto.LimitOrder("BUY", Decimal.get(100), 40, false)));
+        Thread.sleep(1000);
+        client.placeOrderProtoBuf(OrderSamplesProto.createPlaceOrderRequest(childOrderId, ContractSamplesProto.MSFTStockAtSmart(), OrderSamplesProto.BetaHedgeOrder(parentOrderId, "SELL", "0.05", 75, true)));
+        //! [beta_hedge_order]
+    }
+
+    private static void newsOperationsProto(EClientSocket client) throws InterruptedException {
+        //! [request_historical_news_with_end_time]
+        client.reqHistoricalNewsProtoBuf(NewsSamplesProto.HistoricalNewsRequestWithEndTime(10001));
+        //! [request_historical_news_with_end_time]
+
+        Thread.sleep(1000);
+
+        //! [request_historical_news_with_start_time]
+        client.reqHistoricalNewsProtoBuf(NewsSamplesProto.HistoricalNewsRequestWithStartTime(10002));
+        //! [request_historical_news_with_start_time]
     }
 }

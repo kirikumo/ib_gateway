@@ -234,7 +234,7 @@ public class OrdersPanel extends JPanel {
 		}
 		
 		@Override public int getColumnCount() {
-			return 17;
+			return 23;
 		}
 		
 		@Override public String getColumnName(int col) {
@@ -256,6 +256,13 @@ public class OrdersPanel extends JPanel {
 				case 14: return "Manual Ind";
 				case 15: return "Submitter";
 				case 16: return "Imbalance Only";
+				case 17: return "Post Only";
+				case 18: return "Allow Pre-Open";
+				case 19: return "Ign Open Auc";
+				case 20: return "Deactivate";
+				case 21: return "Seek Price Impr";
+				case 22: return "Route Mktable to BBO";
+
 				default: return null;
 			}
 		}
@@ -281,6 +288,13 @@ public class OrdersPanel extends JPanel {
 				case 14: return Util.IntMaxString(order.manualOrderIndicator());
 				case 15: return order.submitter();
 				case 16: return order.imbalanceOnly();
+				case 17: return order.postOnly();
+				case 18: return order.allowPreOpen();
+				case 19: return order.ignoreOpenAuction();
+				case 20: return order.deactivate();
+				case 21: return order.seekPriceImprovement();
+				case 22: return order.routeMarketableToBbo();
+
 				default: return null;
 			}
 		}

@@ -3,14 +3,17 @@
 
 package com.ib.client;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import com.google.protobuf.Message;
+import com.google.protobuf.TextFormat;
 import com.ib.client.Types.SecType;
+import com.ib.client.protobuf.ConfigResponseProto;
+import com.ib.client.protobuf.TickReqParamsProto;
+import com.ib.client.protobuf.UpdateConfigResponseProto;
 
 public class EWrapperMsgGenerator {
     public static final String SCANNER_PARAMETERS = "SCANNER PARAMETERS:";
@@ -140,9 +143,15 @@ public class EWrapperMsgGenerator {
         + "minSize = " + contractDetails.minSize() + "\n"
         + "sizeIncrement = " + contractDetails.sizeIncrement() + "\n"
         + "suggestedSizeIncrement = " + contractDetails.suggestedSizeIncrement() + "\n"
+        + "minAlgoSize = " + contractDetails.minAlgoSize() + "\n"
+        + "lastPricePrecision = " + contractDetails.lastPricePrecision() + "\n"
+        + "lastSizePrecision = " + contractDetails.lastSizePrecision() + "\n"
         + contractDetailsFundData(contractDetails)
         + contractDetailsSecIdList(contractDetails) 
-        + contractDetailsIneligibilityReasons(contractDetails);
+        + contractDetailsIneligibilityReasons(contractDetails)
+        + "eventContract1 = " + contractDetails.eventContract1() + "\n"
+        + "eventContractDescription1 = " + contractDetails.eventContractDescription1() + "\n"
+        + "eventContractDescription2 = " + contractDetails.eventContractDescription2() + "\n";
     }
 
     private static String contractDetailsFundData(ContractDetails contractDetails) {
@@ -213,7 +222,7 @@ public class EWrapperMsgGenerator {
         + "marketName = " + contractDetails.marketName() + "\n"
         + "tradingClass = " + contract.tradingClass() + "\n"
         + "conid = " + contract.conid() + "\n"
-        + "minTick = " + Util.DoubleMaxString(contractDetails.minTick()) + "\n"
+        + "minTick = " + Util.formatDouble(contractDetails.minTick()) + "\n"
         + "orderTypes = " + contractDetails.orderTypes() + "\n"
         + "validExchanges = " + contractDetails.validExchanges() + "\n"
         + "nextOptionDate = " + contractDetails.nextOptionDate() + "\n"
@@ -865,6 +874,7 @@ public class EWrapperMsgGenerator {
         Util.appendBooleanFlag(sb, "scaleRandomPercent", order.scaleRandomPercent());
         Util.appendNonEmptyString(sb, "hedgeType", order.getHedgeType());
         Util.appendNonEmptyString(sb, "hedgeParam", order.hedgeParam());
+        Util.appendValidIntValue(sb, "hedgeMaxSize", order.hedgeMaxSize());
         Util.appendNonEmptyString(sb, "account", order.account());
         Util.appendNonEmptyString(sb, "modelCode", order.modelCode());
         Util.appendNonEmptyString(sb, "settlingFirm", order.settlingFirm());
@@ -998,7 +1008,15 @@ public class EWrapperMsgGenerator {
         Util.appendNonEmptyString(sb, "extOperator", order.extOperator());
         Util.appendValidIntValue(sb, "manualOrderIndicator", order.manualOrderIndicator());
         Util.appendNonEmptyString(sb, "submitter", order.submitter());
-        
+        Util.appendBooleanFlag(sb, "postOnly", order.postOnly());
+        Util.appendBooleanFlag(sb, "allowPreOpen", order.allowPreOpen());
+        Util.appendBooleanFlag(sb, "ignoreOpenAuction", order.ignoreOpenAuction());
+        Util.appendBooleanFlag(sb, "deactivate", order.deactivate());
+        Util.appendNonEmptyString(sb, "activeStartTime", order.activeStartTime());
+        Util.appendNonEmptyString(sb, "activeStopTime", order.activeStopTime());
+        Util.appendBooleanFlag(sb, "seekPriceImprovement", order.seekPriceImprovement());
+        Util.appendValidIntValue(sb, "whatIfType", order.whatIfType());
+
         Util.appendNonEmptyString(sb, "status", orderState.getStatus());
         Util.appendNonEmptyString(sb, "completedTime", orderState.completedTime());
         Util.appendNonEmptyString(sb, "completedStatus", orderState.completedStatus());
@@ -1058,4 +1076,38 @@ public class EWrapperMsgGenerator {
     public static String currentTimeInMillis(long timeInMillis) {
         return "current time in millis = " + timeInMillis + " (" + Util.UnixMillisecondsToString(timeInMillis, "MMM dd, yyyy HH:mm:ss.SSS") + ")";
     }
+
+    public static String configResponse(ConfigResponseProto.ConfigResponse configResponseProto) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("==== Config Response Begin ====\n");
+        sb.append(configResponseProto.toString());
+        sb.append("==== Config Response End ====\n");
+        return sb.toString();
+    }
+
+    public static String updateConfigResponse(UpdateConfigResponseProto.UpdateConfigResponse updateConfigResponseProto) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("==== Update Config Response Begin ====\n");
+        sb.append(updateConfigResponseProto.toString());
+        sb.append("==== Update Config Response End ====\n");
+        return sb.toString();
+    }
+
+    public static String tickReqParamsProtoBuf(TickReqParamsProto.TickReqParams tickReqParamsProto) {
+        StringBuilder sb = new StringBuilder();
+        if (tickReqParamsProto.hasReqId()) sb.append("id=").append(tickReqParamsProto.getReqId()).append(" ");
+        if (tickReqParamsProto.hasMinTick()) sb.append("minTick=").append(tickReqParamsProto.getMinTick()).append(" ");
+        if (tickReqParamsProto.hasBboExchange()) sb.append("bboExchange=").append(tickReqParamsProto.getBboExchange()).append(" ");
+        if (tickReqParamsProto.hasSnapshotPermissions()) sb.append("snapshotPermissions=").append(tickReqParamsProto.getSnapshotPermissions()).append(" ");
+        if (tickReqParamsProto.hasLastPricePrecision()) sb.append("lastPricePrecision=").append(tickReqParamsProto.getLastPricePrecision()).append(" ");
+        if (tickReqParamsProto.hasLastSizePrecision()) sb.append("lastSizePrecision=").append(tickReqParamsProto.getLastSizePrecision());
+        return sb.toString();
+    }
+    
+    public static String printProtoSingleLine(String header, Message message) {
+        final StringBuilder sb = new StringBuilder(1024);
+        sb.append(header).append(TextFormat.printer().emittingSingleLine(true).printToString(message));
+        return sb.toString();
+    }
+
 }
