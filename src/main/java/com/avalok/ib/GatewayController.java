@@ -456,9 +456,7 @@ public class GatewayController extends BaseIBController {
 //	}
 
 	protected AccountMVHandler accountMVHandler = new AccountMVHandler();
-	String focusAccount = "";
 
-//	protected Long nextSubAcTs = 0L;
 	public void subscribeAccountMV() { // Is this streaming updating? Yes, with some latency 1~5s.
 		if (_apiController == null) return;
 		log("--> Req account mv multi for all accounts");
@@ -467,33 +465,43 @@ public class GatewayController extends BaseIBController {
 		// account="" 收所有帳戶；ledgerAndNLV=false 才有 CashBalance
 		_apiController.reqAccountUpdatesMulti("", "", false, accountMVHandler);
 		_apiController.reqPositionsMulti("", "", accountMVHandler);
-		if (focusAccount != null && !focusAccount.equals("")) {
-			log("--> Req account mv focus " + focusAccount);
-			_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
-		}
-	}
-
-	public void reqAccountUpdates(JSONArray updateAcList) {
-		subscribeAccountMV();
 	}
 
 	////////////////////////////////////////////////////////////////
 	// Account Summary
 	////////////////////////////////////////////////////////////////
 	protected AccountSummaryHandler accountSummaryHandler = new AccountSummaryHandler();
+	private boolean accountSummaryActive = false;
+	private int lastAccountSummaryReqId = 0;
 
 	protected int queryAccountSummary() {
-		if (!isConnected()) {
+		if (!isConnected() || _apiController == null) {
 			return 0;
 		}
-//		AccountSummaryTag[] a = AccountSummaryTag.values();
-		_apiController.cancelAccountSummary(accountSummaryHandler);
-
+		if (accountSummaryActive) {
+			log("Account summary already subscribed, skip req " + lastAccountSummaryReqId);
+			return lastAccountSummaryReqId;
+		}
+		cancelAccountSummarySub();
 		if (!isConnected()) {
 			return 0;
 		}
 		_apiController.reqAccountSummary("All", AccountSummaryTag.values(), accountSummaryHandler);
-		return _apiController.lastReqId();
+		lastAccountSummaryReqId = _apiController.lastReqId();
+		accountSummaryActive = true;
+		return lastAccountSummaryReqId;
+	}
+
+	private void cancelAccountSummarySub() {
+		if (_apiController == null) {
+			accountSummaryActive = false;
+			return;
+		}
+		if (lastAccountSummaryReqId != 0)
+			_apiController.cancelAccountSummaryByReqId(lastAccountSummaryReqId);
+		_apiController.cancelAccountSummary(accountSummaryHandler);
+		accountSummaryActive = false;
+		lastAccountSummaryReqId = 0;
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -851,6 +859,7 @@ public class GatewayController extends BaseIBController {
 	@Override
 	protected void _postDisconnected() {
 		log("_postDisconnected");
+		accountSummaryActive = false;
 		orderCacheHandler.teardownOMS("_postDisconnected()");
 		orderCacheHandler.resetStatus();
 //		teardownListenOrder();
@@ -933,14 +942,10 @@ public class GatewayController extends BaseIBController {
 					response = JSON.toJSONString(accList);
 					break;
 				case "UPDATE_ACCOUNT_MV":
-//					subscribeAccountMV();
-					reqAccountUpdates(j.getJSONArray("updateAcList"));
+					subscribeAccountMV();
 					break;
 				case "UPDATE_FOCUS_ACCOUNT":
-					focusAccount = j.getString("focusAccount");
-					if (_apiController != null) {
-					_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
-					}
+					log("UPDATE_FOCUS_ACCOUNT ignored, all accounts already subscribed via UpdatesMulti");
 					break;
 				case "FIND_ACCOUNT_SUMMARY":
 					apiReqId = queryAccountSummary();
@@ -1086,6 +1091,16 @@ public class GatewayController extends BaseIBController {
 			j.put("msg", errorMsg);
 			Redis.pub(ackChannel, j);
 			warn("Unhandled Message: id:" + id + ", code:" + errorCode + ", msg:" + errorMsg);
+			break;
+		case 322:
+			if (errorMsg != null && errorMsg.toLowerCase().contains("account summary")) {
+				warn("Account summary already subscribed, cancel then skip: id:" + id + " " + errorMsg);
+				cancelAccountSummarySub();
+				break;
+			}
+			super.message(id, errorTime, errorCode, errorMsg, advancedOrderRejectJson);
+			if (super.latestMsgIsOkay == false)
+				Redis.pub(ackChannel, j);
 			break;
 		default:
 			super.message(id, errorTime, errorCode, errorMsg, advancedOrderRejectJson);

@@ -43,10 +43,13 @@ public class IBApiController {
 		_api = new ApiController(handler, inLogger, outLogger);
 	}
 	private static final Field REQ_ID_FIELD;
+	private static final Field CLIENT_FIELD;
 	static {
 		try {
 			REQ_ID_FIELD = ApiController.class.getDeclaredField("m_reqId");
 			REQ_ID_FIELD.setAccessible(true);
+			CLIENT_FIELD = ApiController.class.getDeclaredField("m_client");
+			CLIENT_FIELD.setAccessible(true);
 		} catch (Exception e) {
 			throw new ExceptionInInitializerError(e);
 		}
@@ -278,6 +281,17 @@ public class IBApiController {
 		twsAPIRateControl();
 		recordOperationHistory("cancelAccountSummary");
 		_api.cancelAccountSummary(handler);
+	}
+	public void cancelAccountSummaryByReqId(int reqId) {
+		if (reqId <= 0) return;
+		twsAPIRateControl();
+		recordOperationHistory("cancelAccountSummaryByReqId:" + reqId);
+		try {
+			ApiConnection client = (ApiConnection) CLIENT_FIELD.get(_api);
+			client.cancelAccountSummary(reqId);
+		} catch (Exception e) {
+			err("cancelAccountSummaryByReqId failed " + reqId + " " + e.getMessage());
+		}
 	}
 	public  void reqOptionVolatility(Contract c, double optPrice, double underPrice, IOptHandler handler) {
 		twsAPIRateControl();
