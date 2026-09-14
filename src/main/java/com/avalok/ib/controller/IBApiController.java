@@ -40,7 +40,7 @@ import com.ib.client.OrderCancel;
 public class IBApiController {
 	private ApiController _api;
 	public IBApiController(IConnectionHandler handler, ILogger inLogger, ILogger outLogger) {
-		_api = new ApiController(handler, inLogger, outLogger);
+		_api = new ResilientApiController(handler, inLogger, outLogger);
 	}
 	private static final Field REQ_ID_FIELD;
 	private static final Field CLIENT_FIELD;

@@ -169,78 +169,28 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	public void tickPrice(TickType tickType, double price, TickAttrib attribs) {
 		if (_debug)
 			info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
-		switch (tickType) {
-			case BID:
-				bidPrice = price;
-				topBids[0].put("p", price);
-				// if (topBids[0].getDouble("s") == null) break;
-				// if (tickDataInited) broadcastTop(false);
-				break;
-			case ASK:
-				askPrice = price;
-				topAsks[0].put("p", price);
-				// if (topAsks[0].getDouble("s") == null) break;
-				// if (tickDataInited) broadcastTop(false);
-				break;
-			case LAST:
-				lastTickPrice = price;
-				break;
-			case OPEN:
-				break;
-			case CLOSE:
-				close = price;
-				break;
-			case LOW:
-				if (price > 0) dayLow = price;
-				break;
-			case HIGH:
-				if (price > 0) dayHigh = price;
-				break;
-			case HALTED:
-				break;
-			//	Bond
-			case BID_YIELD:
-				break;
-			case ASK_YIELD:
-				break;
-			case LAST_YIELD:
-				break;
-			// Refer https://interactivebrokers.github.io/tws-api/market_data_type.html
-			// If live data is available a request for delayed data would be ignored by TWS
-			// DELAYED types
-			case DELAYED_BID:
-				bidPrice = price;
-				topBids[0].put("p", price);
-				// if (topBids[0].getDouble("s") == null) break;
-				// if (tickDataInited) broadcastTop(false);
-				break;
-			case DELAYED_ASK:
-				askPrice = price;
-				topAsks[0].put("p", price);
-				// if (topAsks[0].getDouble("s") == null) break;
-				// if (tickDataInited) broadcastTop(false);
-				break;
-			case DELAYED_LAST:
-				// if have market data subscription only type LAST, don't have type DELAYED_LAST
-				lastTickPrice = price;
-				// info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
-				break;
-			case DELAYED_OPEN:
-				break;
-			case DELAYED_CLOSE:
-				close = price;
-				break;
-			case DELAYED_LOW:
-				if (price > 0) dayLow = price;
-				break;
-			case DELAYED_HIGH:
-				if (price > 0) dayHigh = price;
-				break;
-			case DELAYED_HALTED:
-				break;
-			default:
-				info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
-				break;
+		// 不用 enum switch，避免 javac 合成 $SwitchMap 內部類（缺檔會打死 IB inbound 執行緒）
+		if (tickType == TickType.BID || tickType == TickType.DELAYED_BID) {
+			bidPrice = price;
+			topBids[0].put("p", price);
+		} else if (tickType == TickType.ASK || tickType == TickType.DELAYED_ASK) {
+			askPrice = price;
+			topAsks[0].put("p", price);
+		} else if (tickType == TickType.LAST || tickType == TickType.DELAYED_LAST) {
+			lastTickPrice = price;
+		} else if (tickType == TickType.CLOSE || tickType == TickType.DELAYED_CLOSE) {
+			close = price;
+		} else if (tickType == TickType.LOW || tickType == TickType.DELAYED_LOW) {
+			if (price > 0) dayLow = price;
+		} else if (tickType == TickType.HIGH || tickType == TickType.DELAYED_HIGH) {
+			if (price > 0) dayHigh = price;
+		} else if (tickType == TickType.OPEN || tickType == TickType.DELAYED_OPEN
+				|| tickType == TickType.HALTED || tickType == TickType.DELAYED_HALTED
+				|| tickType == TickType.BID_YIELD || tickType == TickType.ASK_YIELD
+				|| tickType == TickType.LAST_YIELD) {
+			// ignore
+		} else {
+			info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
 		}
 	}
 
@@ -258,59 +208,24 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 		}
 		if (_debug)
 			info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
-		switch (tickType) {
-			case BID_SIZE:
-				topBids[0].put("s", size);
-				if (topBids[0].getDouble("p") == null) break;
-				if (tickDataInited) broadcastTop(false);
-				break;
-			case ASK_SIZE:
-				topAsks[0].put("s", size);
-				if (topAsks[0].getDouble("p") == null) break;
-				if (tickDataInited) broadcastTop(false);
-				break;
-			case LAST_SIZE:
-				lastTickSize = size;
-				// recordLastTrade();
-				break;
-			case VOLUME:
-				lastTickVolume = size;
-				recordLastTrade();
-				break;
-			case OPEN:
-				break;
-			case CLOSE:
-				break;
-			case HALTED:
-				break;
-			// Refer https://interactivebrokers.github.io/tws-api/market_data_type.html
-			// If live data is available a request for delayed data would be ignored by TWS
-			// DELAYED types
-			case DELAYED_BID_SIZE:
-				topBids[0].put("s", size);
-				if (topBids[0].getDouble("p") == null) break;
-				if (tickDataInited) broadcastTop(false);
-				break;
-			case DELAYED_ASK_SIZE:
-				topAsks[0].put("s", size);
-				if (topAsks[0].getDouble("p") == null) break;
-				if (tickDataInited) broadcastTop(false);
-				break;
-			case DELAYED_LAST_SIZE:
-				// if have market data subscription only type LAST, don't have type DELAYED_LAST_SIZE
-				lastTickSize = size;
-				// recordLastTrade();
-				// info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
-				break;
-			case DELAYED_VOLUME:
-				lastTickVolume = size;
-				recordLastTrade();
-				break;
-			case DELAYED_HALTED:
-				break;
-			default:
-				info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
-				break;
+		if (tickType == TickType.BID_SIZE || tickType == TickType.DELAYED_BID_SIZE) {
+			topBids[0].put("s", size);
+			if (topBids[0].getDouble("p") != null && tickDataInited)
+				broadcastTop(false);
+		} else if (tickType == TickType.ASK_SIZE || tickType == TickType.DELAYED_ASK_SIZE) {
+			topAsks[0].put("s", size);
+			if (topAsks[0].getDouble("p") != null && tickDataInited)
+				broadcastTop(false);
+		} else if (tickType == TickType.LAST_SIZE || tickType == TickType.DELAYED_LAST_SIZE) {
+			lastTickSize = size;
+		} else if (tickType == TickType.VOLUME || tickType == TickType.DELAYED_VOLUME) {
+			lastTickVolume = size;
+			recordLastTrade();
+		} else if (tickType == TickType.OPEN || tickType == TickType.CLOSE
+				|| tickType == TickType.HALTED || tickType == TickType.DELAYED_HALTED) {
+			// ignore
+		} else {
+			info(_contract.shownName() + " tickSize() tickType " + tickType + " size " + size);
 		}
 	}
 
@@ -406,34 +321,25 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	public void tickString(TickType tickType, String value) {
 		if (_debug)
 			info(_contract.shownName() + " tickString() tickType " + tickType + " VALUE: " + value);
-		switch (tickType) {
-			case LAST_TIMESTAMP:
-				lastTickTime = Long.parseLong(value) * 1000;
-				// lastTickPrice = null; // Could be reused by next tick
-				if (delayMs == null || delayMs != 0L)
-					delayMs = 0L;
-				if (lastTickSize != null)
-					recordLastTrade();
-				lastTickSize = null; // <- maybe no need
-				break;
-			// Refer https://interactivebrokers.github.io/tws-api/market_data_type.html
-			// If live data is available a request for delayed data would be ignored by TWS
-			// DELAYED types
-			case DELAYED_LAST_TIMESTAMP:
-				lastTickTime = Long.parseLong(value) * 1000;
-
-				long exchangeTimeMs = Long.parseLong(value) * 1000L;
-				long currentTimeMs = System.currentTimeMillis();
-				long tmpDelayMs = ((currentTimeMs - exchangeTimeMs) / 60000) * 60000;
-				if (delayMs == null || tmpDelayMs < delayMs)
-					delayMs = tmpDelayMs;
-				if (lastTickSize != null)
-					recordLastTrade();
-				lastTickSize = null; // <- maybe no need
-				break;
-			default:
-				info(_contract.shownName() + " tickString() tickType " + tickType + " VALUE: " + value);
-				break;
+		if (tickType == TickType.LAST_TIMESTAMP) {
+			lastTickTime = Long.parseLong(value) * 1000;
+			if (delayMs == null || delayMs != 0L)
+				delayMs = 0L;
+			if (lastTickSize != null)
+				recordLastTrade();
+			lastTickSize = null;
+		} else if (tickType == TickType.DELAYED_LAST_TIMESTAMP) {
+			lastTickTime = Long.parseLong(value) * 1000;
+			long exchangeTimeMs = Long.parseLong(value) * 1000L;
+			long currentTimeMs = System.currentTimeMillis();
+			long tmpDelayMs = ((currentTimeMs - exchangeTimeMs) / 60000) * 60000;
+			if (delayMs == null || tmpDelayMs < delayMs)
+				delayMs = tmpDelayMs;
+			if (lastTickSize != null)
+				recordLastTrade();
+			lastTickSize = null;
+		} else {
+			info(_contract.shownName() + " tickString() tickType " + tickType + " VALUE: " + value);
 		}
 	}
 
