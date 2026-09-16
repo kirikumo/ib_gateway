@@ -25,7 +25,7 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 	public final int max_depth = 30;
 	protected IBContract _contract;
 	protected final double multiplier;
-	protected final long marketDataSizeMultiplier;
+	protected final double marketDataSizeMultiplier;
 	protected final String publishODBKChannel; // Publish odbk to universal system
 	
 	protected boolean depthInited = false; // Wait until all ASK/BID filled
@@ -40,7 +40,7 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 	protected boolean askDepthInited = true;
 
 	private Consumer<Jedis> broadcastLambda;
-	public DeepMktDataHandler(IBContract contract, String gwName, long sizeMultiplier, boolean broadcast) {
+	public DeepMktDataHandler(IBContract contract, String gwName, double sizeMultiplier, boolean broadcast) {
 		_contract = contract;
 		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":full_odbk_channel";
 //		publishODBKChannel = "URANUS:"+contract.pair()+":full_odbk_channel";
@@ -219,7 +219,7 @@ public class DeepMktDataHandler implements IDeepMktDataHandler {
 		}
 	}
 
-	public long getSizeMultiplier() {
+	public double getSizeMultiplier() {
 		return marketDataSizeMultiplier;
 	}
 }

@@ -504,7 +504,7 @@ key = `IBGateway:Contract:{exchange}:{secType}:{pair}`。對外有用的欄位�
 |---|---|
 | `contract.conid` | 之後 PLACE 可帶上，最穩 |
 | `minTick` | 最小跳動（粗對齊；精確檔位看 MarketRule） |
-| `minSize` / `sizeIncrement` | 最小數量、數量步進 |
+| `minSize` / `sizeIncrement` / `suggestedSizeIncrement` | 最小數量、數量步進、建議步進。可為小數；`null` 表示 IB 未填或 invalid；`0` 是有效零。`suggestedSizeIncrement` 只供下單對齊，**不是**行情張數倍率 |
 | `marketRuleIds` | 逗號分隔的規則 id |
 | `validExchanges` | 可下單的交易所 |
 

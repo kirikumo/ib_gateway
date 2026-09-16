@@ -27,7 +27,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	public final int max_depth = 1;
 	protected IBContract _contract;
 	public final double multiplier;
-	protected final long marketDataSizeMultiplier;
+	protected final double marketDataSizeMultiplier;
 	protected final String publishODBKChannel; // Publish odbk to universal system
 	protected final String publishTickChannel; // Publish odbk to universal system
 	protected final String setexTickChannel;
@@ -51,7 +51,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	private Consumer<Jedis> broadcastTopLambda;
 	private Consumer<Jedis> broadcastTickLambda;
 	private Consumer<Jedis> cacheTickLambda;
-	public TopMktDataHandler(IBContract contract, String gwName, long sizeMultiplier, boolean broadcastTop, boolean broadcastTick) {
+	public TopMktDataHandler(IBContract contract, String gwName, double sizeMultiplier, boolean broadcastTop, boolean broadcastTick) {
 		_contract = contract;
 		publishODBKChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":full_odbk_channel";
 		publishTickChannel = "URANUS:"+contract.exchange()+":"+contract.pair()+":"+gwName+":full_tick_channel";
@@ -387,7 +387,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	public void tickReqParamsProtoBuf(com.ib.client.protobuf.TickReqParamsProto.TickReqParams tickReqParamsProto) {
 	}
 
-	public long getSizeMultiplier() {
+	public double getSizeMultiplier() {
 		return marketDataSizeMultiplier;
 	}
 

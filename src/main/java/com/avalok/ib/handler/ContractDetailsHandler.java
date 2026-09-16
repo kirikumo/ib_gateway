@@ -204,9 +204,9 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("nextOptionType", detail.nextOptionType());
 		j.put("nextOptionPartial", detail.nextOptionPartial());
 		j.put("notes", detail.notes());
-		j.put("minSize", detail.minSize().longValue());
-		j.put("sizeIncrement", detail.sizeIncrement().longValue());
-		j.put("suggestedSizeIncrement", detail.suggestedSizeIncrement().longValue());
+		j.put("minSize", jsonSize(detail.minSize()));
+		j.put("sizeIncrement", jsonSize(detail.sizeIncrement()));
+		j.put("suggestedSizeIncrement", jsonSize(detail.suggestedSizeIncrement()));
 		j.put("_timestamp", System.currentTimeMillis()); // Write generated timestamp to redis
 		
 //		if (detail.contract().secType() == SecType.OPT) {
@@ -226,7 +226,7 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 	}
 
 	// direct copy writeDetail
-	private JSONObject detailToJSONObject(ContractDetails detail) {
+	JSONObject detailToJSONObject(ContractDetails detail) {
 		JSONObject j = new JSONObject();
 		// vim marco helps a lot from ContractDetails source code.
 		j.put("contract", new IBContract(detail.contract()).toJSON());
@@ -268,9 +268,9 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		j.put("nextOptionType", detail.nextOptionType());
 		j.put("nextOptionPartial", detail.nextOptionPartial());
 		j.put("notes", detail.notes());
-		j.put("minSize", detail.minSize().longValue());
-		j.put("sizeIncrement", detail.sizeIncrement().longValue());
-		j.put("suggestedSizeIncrement", detail.suggestedSizeIncrement().longValue());
+		j.put("minSize", jsonSize(detail.minSize()));
+		j.put("sizeIncrement", jsonSize(detail.sizeIncrement()));
+		j.put("suggestedSizeIncrement", jsonSize(detail.suggestedSizeIncrement()));
 		j.put("_timestamp", System.currentTimeMillis()); // Write generated timestamp to redis
 
 //		if (detail.contract().secType() == SecType.OPT) {
@@ -295,6 +295,13 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		String key = "IBGateway:ReqIdContract:" + id;
 		log("Redis -> " + key);
 		Redis.setex(key, 300, JSON.toJSONString(array));
+	}
+
+	/** IB 數量規則原值；未填或 invalid 為 null，避免 longValue 把小數切成 0。 */
+	static Object jsonSize(Decimal d) {
+		if (!Decimal.isValid(d))
+			return null;
+		return d.value().stripTrailingZeros();
 	}
 
 	public static void retainNeededContracts(Set<String> neededShownNameSet) {

@@ -150,7 +150,7 @@ public class GatewayController extends BaseIBController {
 		}
 	}
 
-	private int subscribeDepthData(IBContract contract, long sizeMultiplier) {
+	private int subscribeDepthData(IBContract contract, double sizeMultiplier) {
 		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		// if (_depthTasks.get(jobKey) != null) {
@@ -198,9 +198,8 @@ public class GatewayController extends BaseIBController {
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		shareHostSet(_depthShareHost, jobKey).add(hostName);
 
-		long sizeMultiplier = contractDetail.getLongValue("suggestedSizeIncrement");
 		unsubscribeDepthData(contract);
-		int qid = subscribeDepthData(contract, sizeMultiplier);
+		int qid = subscribeDepthData(contract, sizeMultiplierOf(contractDetail));
 		cacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey, "1");
 
 //		remove cache qid data before mark new qid data
@@ -263,7 +262,14 @@ public class GatewayController extends BaseIBController {
 		return map.computeIfAbsent(jobKey, k -> ConcurrentHashMap.newKeySet());
 	}
 
-	private int subscribeTopData(IBContract contract, Long sizeMultiplier) {
+	/** 合約 JSON 的 suggestedSizeIncrement 原值；未填為 0，handler 乘積為 0 時 fallback。 */
+	private static double sizeMultiplierOf(JSONObject contractDetail) {
+		if (contractDetail == null || contractDetail.get("suggestedSizeIncrement") == null)
+			return 0;
+		return contractDetail.getDoubleValue("suggestedSizeIncrement");
+	}
+
+	private int subscribeTopData(IBContract contract, double sizeMultiplier) {
 		// String jobKey = contract.pair();
 		String jobKey = contract.exchange() + ":" + contract.pair();
 		boolean isOptType = contract.secType() == SecType.OPT || contract.secType() == SecType.FOP;
@@ -331,10 +337,9 @@ public class GatewayController extends BaseIBController {
 		if (contractDetail == null) return 0;
 
 		shareHostSet(_topShareHost, jobKey).add(hostName);
-		long sizeMultiplier = contractDetail.getLongValue("suggestedSizeIncrement");
 
 		unsubscribeTopData(contract);
-		int qid = subscribeTopData(contract, sizeMultiplier);
+		int qid = subscribeTopData(contract, sizeMultiplierOf(contractDetail));
 		cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
 
 //		remove cache qid data before mark new qid data
@@ -417,10 +422,9 @@ public class GatewayController extends BaseIBController {
 		DeepMktDataHandler[] handlers1 = _depthTasks.values().toArray(new DeepMktDataHandler[0]);
 		for (DeepMktDataHandler h : handlers1) {
 			IBContract contract = h.contract();
-			long sizeMultiplier = h.getSizeMultiplier();
 
 			unsubscribeDepthData(contract);
-			subscribeDepthData(contract, sizeMultiplier);
+			subscribeDepthData(contract, h.getSizeMultiplier());
 			String jobKey = contract.exchange() + ":" + contract.pair();
 			cacheSubKey(CACHE_SUB_DEPTH_KEY, jobKey, "1");
 		}
@@ -428,10 +432,9 @@ public class GatewayController extends BaseIBController {
 		TopMktDataHandler[] handlers2 = _topTasks.values().toArray(new TopMktDataHandler[0]);
 		for (TopMktDataHandler h : handlers2) {
 			IBContract contract = h.contract();
-			long sizeMultiplier = h.getSizeMultiplier();
 
 			unsubscribeTopData(contract);
-			subscribeTopData(contract, sizeMultiplier);
+			subscribeTopData(contract, h.getSizeMultiplier());
 			String jobKey = contract.exchange() + ":" + contract.pair();
 			cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
 		}
@@ -440,7 +443,7 @@ public class GatewayController extends BaseIBController {
 		for (OptionTopMktDataHandler h : handlers3) {
 			IBContract contract = h.contract();
 			unsubscribeTopData(contract);
-			subscribeTopData(contract, null);
+			subscribeTopData(contract, 1.0);
 			String jobKey = contract.exchange() + ":" + contract.pair();
 			cacheSubKey(CACHE_SUB_TOP_KEY, jobKey, "1");
 		}
