@@ -39,8 +39,12 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
     public void accountSummary(String account, AccountSummaryTag tag, String value, String currency) {
         Map<String, String> summary = m_map.get(account);
         if (summary == null) summary = new HashMap<>();
-        if (!summary.containsKey("BaseCurrency") && currency != null) {
-            summary.put("BaseCurrency", currency);
+        // protobuf omits currency on non-price tags (e.g. AccountType); do not lock in ""
+        if (currency != null && !currency.isEmpty()) {
+            String existing = summary.get("BaseCurrency");
+            if (existing == null || existing.isEmpty()) {
+                summary.put("BaseCurrency", currency);
+            }
         }
 
         switch (tag){
