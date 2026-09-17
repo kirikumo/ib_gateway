@@ -12,6 +12,27 @@ import com.bitex.util.Redis;
 
 public class AccountSummaryHandler implements IAccountSummaryHandler{
     Map<String, Map<String, String>> m_map = new HashMap<>();
+    private boolean snapshotComplete = false;
+    private final SummaryWriter writer;
+
+    interface SummaryWriter {
+        void write(String key, String json);
+    }
+
+    public AccountSummaryHandler() {
+        this((key, json) -> {
+            Redis.setex(key, 2764800, json);
+            log("Redis -> " + key);
+        });
+    }
+
+    AccountSummaryHandler(SummaryWriter writer) {
+        this.writer = writer;
+    }
+
+    public void beginSnapshot() {
+        snapshotComplete = false;
+    }
 
 //    https://ibkrcampus.com/ibkr-api-page/trader-workstation-api/#account-value-keys
     @Override
@@ -124,19 +145,25 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
 
         }
         m_map.put(account, summary);
-//        log("account: "+account+" tag: "+tag + " value: " + value + " currency: "+currency);
-
+        if (snapshotComplete) {
+            writeAccount(account);
+        }
     }
 
     @Override
     public void accountSummaryEnd() {
+        snapshotComplete = true;
+        for (String account : m_map.keySet()) {
+            writeAccount(account);
+        }
+    }
+
+    private void writeAccount(String account) {
+        Map<String, String> v = m_map.get(account);
+        if (v == null) return;
         JSONObject j = new JSONObject();
-        m_map.forEach((account,v)-> {
-            String key = "IBGateway:Summary:" + account;
-            j.put("data", v);
-            j.put("updateTime", System.currentTimeMillis());
-            Redis.setex(key, 2764800, j.toJSONString());
-            log("Redis -> " + key);
-        });
+        j.put("data", v);
+        j.put("updateTime", System.currentTimeMillis());
+        writer.write("IBGateway:Summary:" + account, j.toJSONString());
     }
 }

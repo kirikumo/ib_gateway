@@ -4,6 +4,7 @@ import static com.bitex.util.DebugUtil.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import com.alibaba.fastjson.JSON;
@@ -62,6 +63,14 @@ public class GatewayController extends BaseIBController {
 				}
 			}
 		}, 0, liveStatusInvertal);
+		new Timer("GatewayControllerAccountMVRefresh", true).scheduleAtFixedRate(new TimerTask() {
+			@Override
+			public void run() {
+				if (!isConnected() || accList == null || _apiController == null)
+					return;
+				subscribeAccountMV();
+			}
+		}, ACCOUNT_MV_REFRESH_MS, ACCOUNT_MV_REFRESH_MS);
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -460,44 +469,58 @@ public class GatewayController extends BaseIBController {
 
 	protected AccountMVHandler accountMVHandler = new AccountMVHandler();
 	String focusAccount = "";
+	private static final long ACCOUNT_MV_REFRESH_MS = 30000L;
+	private static final long ACCOUNT_MV_ACCOUNT_DELAY_MS = 3000L;
+	private final AtomicBoolean accountMvCycleRunning = new AtomicBoolean(false);
 
-	public void subscribeAccountMV() { // Is this streaming updating? Yes, with some latency 1~5s.
-		boolean subscribe = true;
-		log("--> Req account mv default");
-		if (accList != null) {
-			long delay = 3000L;
-			String lastAccount = "";
-			for (String account : accList) {
-				log("--> Req account mv " + account);
-				if (_apiController == null)
-					continue;
-				_apiController.reqAccountUpdates(subscribe, account, accountMVHandler);
-				lastAccount = account;
-				sleep(delay);
-			}
-			if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
-				_apiController.reqAccountUpdates(subscribe, focusAccount, accountMVHandler);
-			}
-		} else {
-			log("--> Req account mv default");
-			_apiController.reqAccountUpdates(subscribe, focusAccount, accountMVHandler);
-		}
+	public void subscribeAccountMV() {
+		List<String> accounts = accList == null ? Collections.emptyList() : new ArrayList<>(accList);
+		startAccountMvCycle(accounts);
 	}
 
 	public void reqAccountUpdates(JSONArray updateAcList) {
-		long delay = 3000L;
-		new Thread(() -> {
-			String lastAccount = "";
+		List<String> accounts = new ArrayList<>();
+		if (updateAcList != null) {
 			for (Object account : updateAcList) {
+				accounts.add((String) account);
+			}
+		}
+		startAccountMvCycle(accounts);
+	}
+
+	private void startAccountMvCycle(List<String> accounts) {
+		if (!accountMvCycleRunning.compareAndSet(false, true)) {
+			log("Account MV cycle already running, skip");
+			return;
+		}
+		new Thread(() -> {
+			try {
+				runAccountMvCycle(accounts);
+			} finally {
+				accountMvCycleRunning.set(false);
+			}
+		}, "GatewayControllerAccountMVCycle").start();
+	}
+
+	private void runAccountMvCycle(List<String> accounts) {
+		String lastAccount = "";
+		if (accounts != null) {
+			for (String account : accounts) {
+				if (!isConnected() || _apiController == null) {
+					log("Account MV cycle aborted, disconnected");
+					return;
+				}
 				log("--> Req account mv " + account);
-				_apiController.reqAccountUpdates(true, (String) account, accountMVHandler);
-				sleep(delay);
-				lastAccount = (String) account;
+				_apiController.reqAccountUpdates(true, account, accountMVHandler);
+				lastAccount = account;
+				sleep(ACCOUNT_MV_ACCOUNT_DELAY_MS);
 			}
-			if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
-				_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
-			}
-		}).start();
+		}
+		if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
+			if (!isConnected() || _apiController == null)
+				return;
+			_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
+		}
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -519,6 +542,7 @@ public class GatewayController extends BaseIBController {
 		if (!isConnected()) {
 			return 0;
 		}
+		accountSummaryHandler.beginSnapshot();
 		_apiController.reqAccountSummary("All", AccountSummaryTag.values(), accountSummaryHandler);
 		lastAccountSummaryReqId = _apiController.lastReqId();
 		accountSummaryActive = true;
@@ -980,7 +1004,7 @@ public class GatewayController extends BaseIBController {
 					break;
 				case "UPDATE_FOCUS_ACCOUNT":
 					focusAccount = j.getString("focusAccount");
-					if (_apiController != null) {
+					if (_apiController != null && !accountMvCycleRunning.get()) {
 						_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
 					}
 					break;
