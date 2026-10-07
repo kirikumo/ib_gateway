@@ -1,5 +1,21 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java TWS API Samples
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package samples.testbed.contracts;
 
@@ -226,9 +242,9 @@ public class ContractSamples {
 		contract.secType("OPT");
 		contract.currency("USD");
 		contract.exchange("SMART");
-		contract.lastTradeDateOrContractMonth("20170120");
-		contract.strike(615);
-		contract.right("C");
+		contract.lastTradeDateOrContractMonth("20271217");
+		contract.strike(340);
+		contract.right("P");
 		contract.multiplier("100");
 		return contract;
 	}
@@ -625,40 +641,6 @@ public class ContractSamples {
         //! [contandexpiringfut]
         return contract;
     }
-	
-	public static Contract JefferiesContract() {
-		//! [jefferies_contract]
-		Contract contract = new Contract();
-		contract.symbol("AAPL");
-		contract.secType("STK");
-		contract.exchange("JEFFALGO"); // must be direct-routed to JEFFALGO
-		contract.currency("USD");    // only available for US stocks
-		//! [jefferies_contract]
-		return contract;
-	}
-
-	public static Contract CSFBContract() {
-		//! [csfb_contract]
-		Contract contract = new Contract();
-		contract.symbol("IBKR");
-		contract.secType("STK");
-		contract.exchange("CSFBALGO"); // must be direct-routed to CSFBALGO
-		contract.currency("USD");    // only available for US stocks
-		//! [csfb_contract]
-		return contract;
-	}
-	
-	public static Contract QBAlgoContract() {
-		//! [qbalgo_contract]
-		Contract contract = new Contract();
-		contract.symbol("ES");
-		contract.secType("FUT");
-		contract.exchange("QBALGO");
-		contract.currency("USD");
-		contract.lastTradeDateOrContractMonth("202003");
-		//! [qbalgo_contract]
-		return contract;
-	}
 	
 	public static Contract IBKRATSContract() {
 		//! [ibkrats_contract]

@@ -1,5 +1,21 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java ApiDemo
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package apidemo;
 
@@ -32,6 +48,7 @@ public class ConditionsPanel extends OnOKPanel {
 	private final JTable m_conditions;
 	private final TCombo<String> m_cancelOrder = new TCombo<>("Submit order", "Cancel order");
 	private final JCheckBox m_ignoreRth = new JCheckBox("Allow condition to be satisfied and activate order outside of regular trading hours");
+	private final JCheckBox m_includeOvernight = new JCheckBox("Include OVERNIGHT trading session");
 
 	public ConditionsPanel(JDialog parentDlg, Order order, final ContractLookuper lookuper) {
 		this.parentDlg = parentDlg;
@@ -74,10 +91,12 @@ public class ConditionsPanel extends OnOKPanel {
 		
 		m_cancelOrder.setSelectedIndex(m_order.conditionsCancelOrder() ? 1 : 0);
 		m_ignoreRth.setSelected(m_order.conditionsIgnoreRth());
-		
+		m_includeOvernight.setSelected(m_order.conditionsIncludeOvernight());
+
 		buttons.add(m_cancelOrder);
 		buttons.add(m_ignoreRth);			
-		
+		buttons.add(m_includeOvernight);
+
 		buttons.add(new HtmlButton("Add") { @Override
 			protected void actionPerformed() {
 				ConditionDlg dlg = new ConditionDlg(OrderCondition.create(OrderConditionType.Price), lookuper);
@@ -111,7 +130,8 @@ public class ConditionsPanel extends OnOKPanel {
 	public OrderCondition onOK() {
 		m_order.conditionsCancelOrder(m_cancelOrder.getSelectedIndex() == 1);
 		m_order.conditionsIgnoreRth(m_ignoreRth.isSelected());
-		
+		m_order.conditionsIncludeOvernight(m_includeOvernight.isSelected());
+
 		return null;
 	}
 }

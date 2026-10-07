@@ -1,5 +1,21 @@
-/* Copyright (C) 2026 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java TWS API Samples
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package samples.testbed;
 import java.text.SimpleDateFormat;
@@ -10,6 +26,7 @@ import samples.testbed.advisor.FAMethodSamples;
 import samples.testbed.config.ConfigSamples;
 import samples.testbed.contracts.ContractSamples;
 import samples.testbed.contracts.ContractSamplesProto;
+import samples.testbed.marketdata.MarketDataSamplesProto;
 import samples.testbed.news.NewsSamplesProto;
 import samples.testbed.orders.AvailableAlgoParams;
 import samples.testbed.orders.OrderSamples;
@@ -23,7 +40,20 @@ import com.ib.client.protobuf.ExecutionRequestProto;
 
 public class Testbed {
 
+	private static final String APP_NAME = "TWS API Java Testbed";  
+
+	private static final String[] LICENSE = {
+		"Copyright (C) 2013-2026  Interactive Brokers LLC",
+		"This program comes with ABSOLUTELY NO WARRANTY.",
+		"This is free software, and you are welcome to redistribute it",
+		"under certain conditions; see LICENSE or <https://www.gnu.org/licenses/gpl-3.0.html>."
+	};
+
 	public static void main(String[] args) throws InterruptedException {
+		System.out.println(APP_NAME);
+		for (String line : LICENSE) System.out.println(line);
+		System.out.println();
+
 		EWrapperImpl wrapper = new EWrapperImpl();
 		
 		final EClientSocket m_client = wrapper.getClient();
@@ -61,10 +91,9 @@ public class Testbed {
 		//orderOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
 		//contractOperations(wrapper.getClient());
 		//hedgeSample(wrapper.getClient(), wrapper.getCurrentOrderId());
-		//testAlgoSamples(wrapper.getClient(), wrapper.getCurrentOrderId());
+		testAlgoSamples(wrapper.getClient(), wrapper.getCurrentOrderId());
 		//bracketSample(wrapper.getClient(), wrapper.getCurrentOrderId());
 		//bulletins(wrapper.getClient());
-		//fundamentals(wrapper.getClient());
 		//marketScanners(wrapper.getClient());
 		//marketDataType(wrapper.getClient());
 		//historicalDataRequests(wrapper.getClient());
@@ -87,7 +116,8 @@ public class Testbed {
 		//linkingOperations(wrapper.getClient());
 		//configOperations(wrapper.getClient());
 		//orderParentChildOperations(wrapper.getClient(), wrapper.getCurrentOrderId());
-		newsOperationsProto(wrapper.getClient());
+		//newsOperationsProto(wrapper.getClient());
+		//tickDataOperationsProto(wrapper.getClient());
 
 		Thread.sleep(100000);
 		m_client.eDisconnect();
@@ -676,7 +706,7 @@ public class Testbed {
 		parent.orderId(nextOrderId++);
 		parent.transmit(false);
 		//Hedge on the currency conversion
-		Order hedge = OrderSamples.MarketFHedge(parent.orderId(), "BUY");
+		Order hedge = OrderSamples.MarketFxHedge(parent.orderId(), "BUY");
 		//Place the parent first...
 		client.placeOrder(parent.orderId(), ContractSamples.EuropeanStock(), parent);
 		//Then the hedge order
@@ -698,6 +728,11 @@ public class Testbed {
 		//! [algo_base_order]
 		Order baseOrder = OrderSamples.LimitOrder("BUY", Decimal.get(1000), 1);
 		//! [algo_base_order]
+		
+		//! [accudistr]
+		AvailableAlgoParams.FillAccuDistrParams(baseOrder, 5, "MKT", 100, "10:00:00", "11:00:00", "EST");
+		client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), baseOrder);
+		//! [accudistr]
 		
 		//! [arrivalpx]
 		AvailableAlgoParams.FillArrivalPriceParams(baseOrder, 0.1, "Aggressive", "09:00:00 US/Eastern", "16:00:00 US/Eastern", true, true);
@@ -722,7 +757,7 @@ public class Testbed {
 		Thread.sleep(500);
 		
 		//! [twap]
-		AvailableAlgoParams.FillTwapParams(baseOrder, "Marketable", "10:00:00 US/Eastern", "11:00:00 US/Eastern", true);
+		AvailableAlgoParams.FillTwapParams(baseOrder, "10:00:00 US/Eastern", "11:00:00 US/Eastern", true);
 		client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), baseOrder);
 		//! [twap]
 		
@@ -776,22 +811,6 @@ public class Testbed {
 		AvailableAlgoParams.FillTimeVariantPctVolParams(baseOrder, 0.2, 0.4, "12:00:00 US/Eastern", "14:00:00 US/Eastern", true);
 		client.placeOrder(nextOrderId++, ContractSamples.USStockAtSmart(), baseOrder);
 		//! [pctvoltm]
-                
-		//! [jeff_vwap_algo]
-		AvailableAlgoParams.FillJefferiesVWAPParams(baseOrder, "10:00:00 US/Eastern", "16:00:00 US/Eastern", 10, 10, "Exclude_Both", 130, 135, 1, 10, "Patience", false, "Midpoint");
-		client.placeOrder(nextOrderId++, ContractSamples.JefferiesContract(), baseOrder);
-		//! [jeff_vwap_algo]
-
-		//! [csfb_inline_algo]
-		AvailableAlgoParams.FillCSFBInlineParams(baseOrder, "10:00:00 US/Eastern", "16:00:00 US/Eastern", "Patient", 10, 20, 100, "Default", false, 40, 100, 100, 35 );
-		client.placeOrder(nextOrderId++, ContractSamples.CSFBContract(), baseOrder);
-		//! [csfb_inline_algo]
-
-		//! [qbalgo_strobe_algo]
-		AvailableAlgoParams.FillQBAlgoInlineParams(baseOrder, "10:00:00 US/Eastern", "16:00:00 US/Eastern", -99, "TWAP", 0.25, true );
-		client.placeOrder(nextOrderId++, ContractSamples.QBAlgoContract(), baseOrder);
-		//! [qbalgo_strobe_algo]
-		
 	}
 	
 	private static void bracketSample(EClientSocket client, int nextOrderId) {
@@ -817,28 +836,6 @@ public class Testbed {
 		//! [cancelnewsbulletins]
 		client.cancelNewsBulletins();
 		//! [cancelnewsbulletins]
-		
-	}
-	
-	private static void fundamentals(EClientSocket client) throws InterruptedException {
-		
-		//! [reqfundamentaldata]
-		client.reqFundamentalData(8001, ContractSamples.USStock(), "ReportsFinSummary", null);
-		//! [reqfundamentaldata]
-		
-		Thread.sleep(2000);
-		
-		//! [fundamentalexamples]
-		client.reqFundamentalData(8002, ContractSamples.USStock(), "ReportSnapshot", null); //for company overview
-		client.reqFundamentalData(8003, ContractSamples.USStock(), "ReportRatios", null); //for financial ratios
-		client.reqFundamentalData(8004, ContractSamples.USStock(), "ReportsFinStatements", null); //for financial statements
-		client.reqFundamentalData(8005, ContractSamples.USStock(), "RESC", null); //for analyst estimates
-		client.reqFundamentalData(8006, ContractSamples.USStock(), "CalendarReport", null); //for company calendar
-		//! [fundamentalexamples]
-		
-		//! [cancelfundamentaldata]
-		client.cancelFundamentalData(8001);
-		//! [cancelfundamentaldata]
 		
 	}
 	
@@ -1172,5 +1169,27 @@ public class Testbed {
         //! [request_historical_news_with_start_time]
         client.reqHistoricalNewsProtoBuf(NewsSamplesProto.HistoricalNewsRequestWithStartTime(10002));
         //! [request_historical_news_with_start_time]
+    }
+
+    private static void tickDataOperationsProto(EClientSocket client) throws InterruptedException {
+        //! [reqmktdata_proto_genticks]
+        // Requesting odd lot bid/ask quotes generic tick
+        client.reqMarketDataProtoBuf(MarketDataSamplesProto.OddLotBidAskQuotesRequest(20001, ContractSamplesProto.IBMStockAtSmart()));
+        //! [reqmktdata_proto_genticks]
+
+        Thread.sleep(10000);
+
+        //! [cancelmktdata_proto]
+        client.cancelMarketDataProtoBuf(MarketDataSamplesProto.CancelMarketDataRequest(20001));
+        //! [cancelmktdata_proto]
+        
+        Thread.sleep(1000);
+
+        //! [reqmktdata_proto_regulatory_snapshot]
+        // Each regulatory snapshot request incurs a 0.01 USD fee
+        client.reqMarketDataProtoBuf(MarketDataSamplesProto.RegulatorySnapshotRequest(20002, ContractSamplesProto.IBMStockAtSmart()));
+        //! [reqmktdata_proto_regulatory_snapshot]
+
+        Thread.sleep(10000);
     }
 }

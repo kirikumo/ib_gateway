@@ -1,5 +1,21 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java ApiDemo
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package apidemo.util;
 
@@ -28,28 +44,17 @@ public class VerticalPanel extends JPanel {
 			return super.getPreferredSize();
 		}
 
-		int wid() {
-			return getComponent( 0).getPreferredSize().width;
-		}
-		
-		int wid2() {
-			return getComponentCount() > 1 ? getComponent(1).getPreferredSize().width : 0;
+		int widAt(int index) {
+			return getComponentCount() > index ? getComponent( index).getPreferredSize().width : 0;
 		}
 
-		void wid( int i) {
-			Dimension d = getComponent( 0).getPreferredSize();
-			d.width = i;
-			getComponent( 0).setPreferredSize( d);
-		}
-		
-		void wid2(int i) {
-			if (getComponentCount() < 2) {
+		void widAt(int index, int w) {
+			if (getComponentCount() <= index) {
 				return;
 			}
-			
-			Dimension d = getComponent(1).getPreferredSize();
-			d.width = i;
-			getComponent(1).setPreferredSize( d);
+			Dimension d = getComponent( index).getPreferredSize();
+			d.width = w;
+			getComponent( index).setPreferredSize( d);
 		}
 	}
 
@@ -90,26 +95,22 @@ public class VerticalPanel extends JPanel {
 	}
 
 	private void recalculateChildSizes() {
-		int max = 0;
+		int maxCols = 0;
 		for (int i = 0; i < getComponentCount(); i++) {
 			FlowPanel comp = (FlowPanel)getComponent( i);
-			max = Math.max( comp.wid(), max);
+			maxCols = Math.max( comp.getComponentCount(), maxCols);
 		}
 
-		for (int i = 0; i < getComponentCount(); i++) {
-			FlowPanel comp = (FlowPanel)getComponent( i);
-			comp.wid( max);
-		}
-		
-		max = 0;
-		for (int i = 0; i < getComponentCount(); i++) {
-			FlowPanel comp = (FlowPanel)getComponent( i);
-			max = Math.max( comp.wid2(), max);
-		}
-
-		for (int i = 0; i < getComponentCount(); i++) {
-			FlowPanel comp = (FlowPanel)getComponent( i);
-			comp.wid2( max);
+		for (int col = 0; col < maxCols; col++) {
+			int max = 0;
+			for (int i = 0; i < getComponentCount(); i++) {
+				FlowPanel comp = (FlowPanel)getComponent( i);
+				max = Math.max( comp.widAt( col), max);
+			}
+			for (int i = 0; i < getComponentCount(); i++) {
+				FlowPanel comp = (FlowPanel)getComponent( i);
+				comp.widAt( col, max);
+			}
 		}
 	}
 

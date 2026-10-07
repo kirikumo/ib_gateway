@@ -1,5 +1,21 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java TWS API Client
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package com.ib.client;
 
@@ -42,7 +58,6 @@ import com.ib.client.protobuf.ErrorMessageProto;
 import com.ib.client.protobuf.ExecutionDetailsEndProto;
 import com.ib.client.protobuf.ExecutionDetailsProto;
 import com.ib.client.protobuf.FamilyCodesProto;
-import com.ib.client.protobuf.FundamentalsDataProto;
 import com.ib.client.protobuf.HeadTimestampProto;
 import com.ib.client.protobuf.HistogramDataEntryProto;
 import com.ib.client.protobuf.HistogramDataProto;
@@ -114,95 +129,6 @@ import com.ib.client.protobuf.WshEventDataProto;
 import com.ib.client.protobuf.WshMetaDataProto;
 
 class EDecoder implements ObjectInput {
-    // incoming msg id's
-    private static final int END_CONN           = -1;
-    private static final int TICK_PRICE		= 1;
-    private static final int TICK_SIZE		= 2;
-    private static final int ORDER_STATUS	= 3;
-    private static final int ERR_MSG		= 4;
-    private static final int OPEN_ORDER         = 5;
-    private static final int ACCT_VALUE         = 6;
-    private static final int PORTFOLIO_VALUE    = 7;
-    private static final int ACCT_UPDATE_TIME   = 8;
-    private static final int NEXT_VALID_ID      = 9;
-    private static final int CONTRACT_DATA      = 10;
-    private static final int EXECUTION_DATA     = 11;
-    private static final int MARKET_DEPTH     	= 12;
-    private static final int MARKET_DEPTH_L2    = 13;
-    private static final int NEWS_BULLETINS    	= 14;
-    private static final int MANAGED_ACCTS    	= 15;
-    private static final int RECEIVE_FA    	    = 16;
-    private static final int HISTORICAL_DATA    = 17;
-    private static final int BOND_CONTRACT_DATA = 18;
-    private static final int SCANNER_PARAMETERS = 19;
-    private static final int SCANNER_DATA       = 20;
-    private static final int TICK_OPTION_COMPUTATION = 21;
-    private static final int TICK_GENERIC = 45;
-    private static final int TICK_STRING = 46;
-    private static final int TICK_EFP = 47;
-    private static final int CURRENT_TIME = 49;
-    private static final int REAL_TIME_BARS = 50;
-    private static final int FUNDAMENTAL_DATA = 51;
-    private static final int CONTRACT_DATA_END = 52;
-    private static final int OPEN_ORDER_END = 53;
-    private static final int ACCT_DOWNLOAD_END = 54;
-    private static final int EXECUTION_DATA_END = 55;
-    private static final int DELTA_NEUTRAL_VALIDATION = 56;
-    private static final int TICK_SNAPSHOT_END = 57;
-    private static final int MARKET_DATA_TYPE = 58;
-    private static final int COMMISSION_AND_FEES_REPORT = 59;
-    private static final int POSITION = 61;
-    private static final int POSITION_END = 62;
-    private static final int ACCOUNT_SUMMARY = 63;
-    private static final int ACCOUNT_SUMMARY_END = 64;
-    private static final int VERIFY_MESSAGE_API = 65;
-    private static final int VERIFY_COMPLETED = 66;
-    private static final int DISPLAY_GROUP_LIST = 67;
-    private static final int DISPLAY_GROUP_UPDATED = 68;
-    private static final int VERIFY_AND_AUTH_MESSAGE_API = 69;
-    private static final int VERIFY_AND_AUTH_COMPLETED = 70;
-    private static final int POSITION_MULTI = 71;
-    private static final int POSITION_MULTI_END = 72;
-    private static final int ACCOUNT_UPDATE_MULTI = 73;
-    private static final int ACCOUNT_UPDATE_MULTI_END = 74;
-    private static final int SECURITY_DEFINITION_OPTION_PARAMETER = 75;
-    private static final int SECURITY_DEFINITION_OPTION_PARAMETER_END = 76;
-    private static final int SOFT_DOLLAR_TIERS = 77;
-    private static final int FAMILY_CODES = 78;
-    private static final int SYMBOL_SAMPLES = 79;
-    private static final int MKT_DEPTH_EXCHANGES = 80;
-    private static final int TICK_REQ_PARAMS = 81;
-    private static final int SMART_COMPONENTS = 82;
-    private static final int NEWS_ARTICLE = 83;
-    private static final int TICK_NEWS = 84;
-    private static final int NEWS_PROVIDERS = 85;
-    private static final int HISTORICAL_NEWS = 86;
-    private static final int HISTORICAL_NEWS_END = 87;
-    private static final int HEAD_TIMESTAMP = 88;
-    private static final int HISTOGRAM_DATA = 89;
-    private static final int HISTORICAL_DATA_UPDATE = 90;
-    private static final int REROUTE_MKT_DATA_REQ = 91;
-    private static final int REROUTE_MKT_DEPTH_REQ = 92;
-    private static final int MARKET_RULE = 93;
-    private static final int PNL = 94;
-    private static final int PNL_SINGLE = 95;
-    private static final int HISTORICAL_TICKS = 96;
-    private static final int HISTORICAL_TICKS_BID_ASK = 97;
-    private static final int HISTORICAL_TICKS_LAST = 98;
-    private static final int TICK_BY_TICK = 99;
-    private static final int ORDER_BOUND = 100;
-    private static final int COMPLETED_ORDER = 101;
-    private static final int COMPLETED_ORDERS_END = 102;
-    private static final int REPLACE_FA_END = 103;
-    private static final int WSH_META_DATA = 104;
-    private static final int WSH_EVENT_DATA = 105;
-    private static final int HISTORICAL_SCHEDULE = 106;
-    private static final int USER_INFO = 107;
-    private static final int HISTORICAL_DATA_END = 108;
-    private static final int CURRENT_TIME_IN_MILLIS = 109;
-    private static final int CONFIG_RESPONSE = 110;
-    private static final int UPDATE_CONFIG_RESPONSE = 111;
-
     static final int MAX_MSG_LENGTH = 0xffffff;
 
     private EClientMsgSink m_clientMsgSink;
@@ -258,610 +184,196 @@ class EDecoder implements ObjectInput {
             }
     	}
     	
-        int msgId = m_serverVersion >= EClient.MIN_SERVER_VER_PROTOBUF ? readRawInt() : readInt();
+        int rawMsgId = m_serverVersion >= EClient.MIN_SERVER_VER_PROTOBUF ? readRawInt() : readInt();
         boolean useProtoBuf = false;
-        if (msgId > EClient.PROTOBUF_MSG_ID) {
+        if (rawMsgId > EClient.PROTOBUF_MSG_ID) {
             useProtoBuf = true;
-            msgId -= EClient.PROTOBUF_MSG_ID;
+            rawMsgId -= EClient.PROTOBUF_MSG_ID;
         }
-        
+        IncomingMsgId msgId = IncomingMsgId.fromId(rawMsgId);
+        if (msgId == null) {
+            m_EWrapper.error(EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.UNKNOWN_ID.code(),
+                    EClientErrors.UNKNOWN_ID.msg() + rawMsgId, null);
+            return 0;
+        }
+
         if (useProtoBuf) {
-            switch( msgId) {
-                case ORDER_STATUS:
-                    processOrderStatusMsgProtoBuf();
-                    break;
-                case ERR_MSG:
-                    processErrorMsgProtoBuf();
-                    break;
-                case OPEN_ORDER:
-                    processOpenOrderMsgProtoBuf();
-                    break;
-                case EXECUTION_DATA:
-                    processExecutionDataMsgProtoBuf();
-                    break;
-                case OPEN_ORDER_END:
-                    processOpenOrderEndMsgProtoBuf();
-                    break;
-                case EXECUTION_DATA_END:
-                    processExecutionDataEndMsgProtoBuf();
-                    break;
-                case COMPLETED_ORDER:
-                    processCompletedOrderMsgProtoBuf();
-                    break;
-                case COMPLETED_ORDERS_END:
-                    processCompletedOrdersEndMsgProtoBuf();
-                    break;
-                case ORDER_BOUND:
-                    processOrderBoundMsgProtoBuf();
-                    break;
-                case CONTRACT_DATA:
-                    processContractDataMsgProtoBuf();
-                    break;
-                case BOND_CONTRACT_DATA:
-                    processBondContractDataMsgProtoBuf();
-                    break;
-                case CONTRACT_DATA_END:
-                    processContractDataEndMsgProtoBuf();
-                    break;
-                case TICK_PRICE:
-                    processTickPriceMsgProtoBuf();
-                    break;
-                case TICK_SIZE:
-                    processTickSizeMsgProtoBuf();
-                    break;
-                case MARKET_DEPTH:
-                    processMarketDepthMsgProtoBuf();
-                    break;
-                case MARKET_DEPTH_L2:
-                    processMarketDepthL2MsgProtoBuf();
-                    break;
-                case TICK_OPTION_COMPUTATION:
-                    processTickOptionComputationMsgProtoBuf();
-                    break;
-                case TICK_GENERIC:
-                    processTickGenericMsgProtoBuf();
-                    break;
-                case TICK_STRING:
-                    processTickStringMsgProtoBuf();
-                    break;
-                case TICK_SNAPSHOT_END:
-                    processTickSnapshotEndMsgProtoBuf();
-                    break;
-                case MARKET_DATA_TYPE:
-                    processMarketDataTypeMsgProtoBuf();
-                    break;
-                case TICK_REQ_PARAMS:
-                    processTickReqParamsMsgProtoBuf();
-                    break;
-                case ACCT_VALUE:
-                    processAccountValueMsgProtoBuf();
-                    break;
-                case PORTFOLIO_VALUE:
-                    processPortfolioValueMsgProtoBuf();
-                    break;
-                case ACCT_UPDATE_TIME:
-                    processAcctUpdateTimeMsgProtoBuf();
-                    break;
-                case ACCT_DOWNLOAD_END:
-                    processAccountDataEndMsgProtoBuf();
-                    break;
-                case MANAGED_ACCTS:
-                    processManagedAccountsMsgProtoBuf();
-                    break;
-                case POSITION:
-                    processPositionMsgProtoBuf();
-                    break;
-                case POSITION_END:
-                    processPositionEndMsgProtoBuf();
-                    break;
-                case ACCOUNT_SUMMARY:
-                    processAccountSummaryMsgProtoBuf();
-                    break;
-                case ACCOUNT_SUMMARY_END:
-                    processAccountSummaryEndMsgProtoBuf();
-                    break;
-                case POSITION_MULTI:
-                    processPositionMultiMsgProtoBuf();
-                    break;
-                case POSITION_MULTI_END:
-                    processPositionMultiEndMsgProtoBuf();
-                    break;
-                case ACCOUNT_UPDATE_MULTI:
-                    processAccountUpdateMultiMsgProtoBuf();
-                    break;
-                case ACCOUNT_UPDATE_MULTI_END:
-                    processAccountUpdateMultiEndMsgProtoBuf();
-                    break;
-                case HISTORICAL_DATA:
-                    processHistoricalDataMsgProtoBuf();
-                    break;
-                case HISTORICAL_DATA_UPDATE:
-                    processHistoricalDataUpdateMsgProtoBuf();
-                    break;
-                case HISTORICAL_DATA_END:
-                    processHistoricalDataEndMsgProtoBuf();
-                    break;
-                case REAL_TIME_BARS:
-                    processRealTimeBarMsgProtoBuf();
-                    break;
-                case HEAD_TIMESTAMP:
-                    processHeadTimestampMsgProtoBuf();
-                    break;
-                case HISTOGRAM_DATA:
-                    processHistogramDataMsgProtoBuf();
-                    break;
-                case HISTORICAL_TICKS:
-                    processHistoricalTicksMsgProtoBuf();
-                    break;
-                case HISTORICAL_TICKS_BID_ASK:
-                    processHistoricalTicksBidAskMsgProtoBuf();
-                    break;
-                case HISTORICAL_TICKS_LAST:
-                    processHistoricalTicksLastMsgProtoBuf();
-                    break;
-                case TICK_BY_TICK:
-                    processTickByTickMsgProtoBuf();
-                    break;
-                case NEWS_BULLETINS:
-                    processNewsBulletinMsgProtoBuf();
-                    break;
-                case NEWS_ARTICLE:
-                    processNewsArticleMsgProtoBuf();
-                    break;
-                case NEWS_PROVIDERS:
-                    processNewsProvidersMsgProtoBuf();
-                    break;
-                case HISTORICAL_NEWS:
-                    processHistoricalNewsMsgProtoBuf();
-                    break;
-                case HISTORICAL_NEWS_END:
-                    processHistoricalNewsEndMsgProtoBuf();
-                    break;
-                case WSH_META_DATA:
-                    processWshMetaDataMsgProtoBuf();
-                    break;
-                case WSH_EVENT_DATA:
-                    processWshEventDataMsgProtoBuf();
-                    break;
-                case TICK_NEWS:
-                    processTickNewsMsgProtoBuf();
-                    break;
-                case SCANNER_PARAMETERS:
-                    processScannerParametersMsgProtoBuf();
-                    break;
-                case SCANNER_DATA:
-                    processScannerDataMsgProtoBuf();
-                    break;
-                case FUNDAMENTAL_DATA:
-                    processFundamentalsDataMsgProtoBuf();
-                    break;
-                case PNL:
-                    processPnLMsgProtoBuf();
-                    break;
-                case PNL_SINGLE:
-                    processPnLSingleMsgProtoBuf();
-                    break;
-                case RECEIVE_FA:
-                    processReceiveFAMsgProtoBuf();
-                    break;
-                case REPLACE_FA_END:
-                    processReplaceFAEndMsgProtoBuf();
-                    break;
-                case COMMISSION_AND_FEES_REPORT:
-                    processCommissionAndFeesReportMsgProtoBuf();
-                    break;
-                case HISTORICAL_SCHEDULE:
-                    processHistoricalScheduleMsgProtoBuf();
-                    break;
-                case REROUTE_MKT_DATA_REQ:
-                    processRerouteMktDataReqMsgProtoBuf();
-                    break;
-                case REROUTE_MKT_DEPTH_REQ:
-                    processRerouteMktDepthReqMsgProtoBuf();
-                    break;
-                case SECURITY_DEFINITION_OPTION_PARAMETER:
-                    processSecurityDefinitionOptionParameterMsgProtoBuf();
-                    break;
-                case SECURITY_DEFINITION_OPTION_PARAMETER_END:
-                    processSecurityDefinitionOptionParameterEndMsgProtoBuf();
-                    break;
-                case SOFT_DOLLAR_TIERS:
-                    processSoftDollarTiersMsgProtoBuf();
-                    break;
-                case FAMILY_CODES:
-                    processFamilyCodesMsgProtoBuf();
-                    break;
-                case SYMBOL_SAMPLES:
-                    processSymbolSamplesMsgProtoBuf();
-                    break;
-                case SMART_COMPONENTS:
-                    processSmartComponentsMsgProtoBuf();
-                    break;
-                case MARKET_RULE:
-                    processMarketRuleMsgProtoBuf();
-                    break;
-                case USER_INFO:
-                    processUserInfoMsgProtoBuf();
-                    break;
-                case NEXT_VALID_ID:
-                    processNextValidIdMsgProtoBuf();
-                    break;
-                case CURRENT_TIME:
-                    processCurrentTimeMsgProtoBuf();
-                    break;
-                case CURRENT_TIME_IN_MILLIS:
-                    processCurrentTimeInMillisMsgProtoBuf();
-                    break;
-                case VERIFY_MESSAGE_API:
-                    processVerifyMessageApiMsgProtoBuf();
-                    break;
-                case VERIFY_COMPLETED:
-                    processVerifyCompletedMsgProtoBuf();
-                    break;
-                case DISPLAY_GROUP_LIST:
-                    processDisplayGroupListMsgProtoBuf();
-                    break;
-                case DISPLAY_GROUP_UPDATED:
-                    processDisplayGroupUpdatedMsgProtoBuf();
-                    break;
-                case MKT_DEPTH_EXCHANGES:
-                    processMktDepthExchangesMsgProtoBuf();
-                    break;
-                case CONFIG_RESPONSE:
-                    processConfigMsgProtoBuf();
-                    break;
-                case UPDATE_CONFIG_RESPONSE:
-                    processUpdateConfigMsgProtoBuf();
-                    break;
+            switch (msgId) {
+                case ORDER_STATUS -> processOrderStatusMsgProtoBuf();
+                case ERR_MSG -> processErrorMsgProtoBuf();
+                case OPEN_ORDER -> processOpenOrderMsgProtoBuf();
+                case EXECUTION_DATA -> processExecutionDataMsgProtoBuf();
+                case OPEN_ORDER_END -> processOpenOrderEndMsgProtoBuf();
+                case EXECUTION_DATA_END -> processExecutionDataEndMsgProtoBuf();
+                case COMPLETED_ORDER -> processCompletedOrderMsgProtoBuf();
+                case COMPLETED_ORDERS_END -> processCompletedOrdersEndMsgProtoBuf();
+                case ORDER_BOUND -> processOrderBoundMsgProtoBuf();
+                case CONTRACT_DATA -> processContractDataMsgProtoBuf();
+                case BOND_CONTRACT_DATA -> processBondContractDataMsgProtoBuf();
+                case CONTRACT_DATA_END -> processContractDataEndMsgProtoBuf();
+                case TICK_PRICE -> processTickPriceMsgProtoBuf();
+                case TICK_SIZE -> processTickSizeMsgProtoBuf();
+                case MARKET_DEPTH -> processMarketDepthMsgProtoBuf();
+                case MARKET_DEPTH_L2 -> processMarketDepthL2MsgProtoBuf();
+                case TICK_OPTION_COMPUTATION -> processTickOptionComputationMsgProtoBuf();
+                case TICK_GENERIC -> processTickGenericMsgProtoBuf();
+                case TICK_STRING -> processTickStringMsgProtoBuf();
+                case TICK_SNAPSHOT_END -> processTickSnapshotEndMsgProtoBuf();
+                case MARKET_DATA_TYPE -> processMarketDataTypeMsgProtoBuf();
+                case TICK_REQ_PARAMS -> processTickReqParamsMsgProtoBuf();
+                case ACCT_VALUE -> processAccountValueMsgProtoBuf();
+                case PORTFOLIO_VALUE -> processPortfolioValueMsgProtoBuf();
+                case ACCT_UPDATE_TIME -> processAcctUpdateTimeMsgProtoBuf();
+                case ACCT_DOWNLOAD_END -> processAccountDataEndMsgProtoBuf();
+                case MANAGED_ACCTS -> processManagedAccountsMsgProtoBuf();
+                case POSITION -> processPositionMsgProtoBuf();
+                case POSITION_END -> processPositionEndMsgProtoBuf();
+                case ACCOUNT_SUMMARY -> processAccountSummaryMsgProtoBuf();
+                case ACCOUNT_SUMMARY_END -> processAccountSummaryEndMsgProtoBuf();
+                case POSITION_MULTI -> processPositionMultiMsgProtoBuf();
+                case POSITION_MULTI_END -> processPositionMultiEndMsgProtoBuf();
+                case ACCOUNT_UPDATE_MULTI -> processAccountUpdateMultiMsgProtoBuf();
+                case ACCOUNT_UPDATE_MULTI_END -> processAccountUpdateMultiEndMsgProtoBuf();
+                case HISTORICAL_DATA -> processHistoricalDataMsgProtoBuf();
+                case HISTORICAL_DATA_UPDATE -> processHistoricalDataUpdateMsgProtoBuf();
+                case HISTORICAL_DATA_END -> processHistoricalDataEndMsgProtoBuf();
+                case REAL_TIME_BARS -> processRealTimeBarMsgProtoBuf();
+                case HEAD_TIMESTAMP -> processHeadTimestampMsgProtoBuf();
+                case HISTOGRAM_DATA -> processHistogramDataMsgProtoBuf();
+                case HISTORICAL_TICKS -> processHistoricalTicksMsgProtoBuf();
+                case HISTORICAL_TICKS_BID_ASK -> processHistoricalTicksBidAskMsgProtoBuf();
+                case HISTORICAL_TICKS_LAST -> processHistoricalTicksLastMsgProtoBuf();
+                case TICK_BY_TICK -> processTickByTickMsgProtoBuf();
+                case NEWS_BULLETINS -> processNewsBulletinMsgProtoBuf();
+                case NEWS_ARTICLE -> processNewsArticleMsgProtoBuf();
+                case NEWS_PROVIDERS -> processNewsProvidersMsgProtoBuf();
+                case HISTORICAL_NEWS -> processHistoricalNewsMsgProtoBuf();
+                case HISTORICAL_NEWS_END -> processHistoricalNewsEndMsgProtoBuf();
+                case WSH_META_DATA -> processWshMetaDataMsgProtoBuf();
+                case WSH_EVENT_DATA -> processWshEventDataMsgProtoBuf();
+                case TICK_NEWS -> processTickNewsMsgProtoBuf();
+                case SCANNER_PARAMETERS -> processScannerParametersMsgProtoBuf();
+                case SCANNER_DATA -> processScannerDataMsgProtoBuf();
+                case PNL -> processPnLMsgProtoBuf();
+                case PNL_SINGLE -> processPnLSingleMsgProtoBuf();
+                case RECEIVE_FA -> processReceiveFAMsgProtoBuf();
+                case REPLACE_FA_END -> processReplaceFAEndMsgProtoBuf();
+                case COMMISSION_AND_FEES_REPORT -> processCommissionAndFeesReportMsgProtoBuf();
+                case HISTORICAL_SCHEDULE -> processHistoricalScheduleMsgProtoBuf();
+                case REROUTE_MKT_DATA_REQ -> processRerouteMktDataReqMsgProtoBuf();
+                case REROUTE_MKT_DEPTH_REQ -> processRerouteMktDepthReqMsgProtoBuf();
+                case SECURITY_DEFINITION_OPTION_PARAMETER -> processSecurityDefinitionOptionParameterMsgProtoBuf();
+                case SECURITY_DEFINITION_OPTION_PARAMETER_END -> processSecurityDefinitionOptionParameterEndMsgProtoBuf();
+                case SOFT_DOLLAR_TIERS -> processSoftDollarTiersMsgProtoBuf();
+                case FAMILY_CODES -> processFamilyCodesMsgProtoBuf();
+                case SYMBOL_SAMPLES -> processSymbolSamplesMsgProtoBuf();
+                case SMART_COMPONENTS -> processSmartComponentsMsgProtoBuf();
+                case MARKET_RULE -> processMarketRuleMsgProtoBuf();
+                case USER_INFO -> processUserInfoMsgProtoBuf();
+                case NEXT_VALID_ID -> processNextValidIdMsgProtoBuf();
+                case CURRENT_TIME -> processCurrentTimeMsgProtoBuf();
+                case CURRENT_TIME_IN_MILLIS -> processCurrentTimeInMillisMsgProtoBuf();
+                case VERIFY_MESSAGE_API -> processVerifyMessageApiMsgProtoBuf();
+                case VERIFY_COMPLETED -> processVerifyCompletedMsgProtoBuf();
+                case DISPLAY_GROUP_LIST -> processDisplayGroupListMsgProtoBuf();
+                case DISPLAY_GROUP_UPDATED -> processDisplayGroupUpdatedMsgProtoBuf();
+                case MKT_DEPTH_EXCHANGES -> processMktDepthExchangesMsgProtoBuf();
+                case CONFIG_RESPONSE -> processConfigMsgProtoBuf();
+                case UPDATE_CONFIG_RESPONSE -> processUpdateConfigMsgProtoBuf();
                     
-                default: {
-                    m_EWrapper.error( EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.UNKNOWN_ID.code(), EClientErrors.UNKNOWN_ID.msg(), null);
+                default -> {
+                    m_EWrapper.error(EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.UNKNOWN_ID.code(), EClientErrors.UNKNOWN_ID.msg(), null);
                     return 0;
                 }
             }
         } else {
-            switch( msgId) {
-                case END_CONN:
-                    return 0;
-
-                case TICK_PRICE:
-                    processTickPriceMsg();
-                    break;
-
-                case TICK_SIZE:
-                    processTickSizeMsg();
-                    break;
-
-                case POSITION:
-                    processPositionMsg();
-                    break;
-
-                case POSITION_END:
-                    processPositionEndMsg();
-                    break;
-
-                case ACCOUNT_SUMMARY:
-                    processAccountSummaryMsg();
-                    break;
-
-                case ACCOUNT_SUMMARY_END:
-                    processAccountSummaryEndMsg();
-                    break;
-
-                case TICK_OPTION_COMPUTATION:
-                    processTickOptionComputationMsg();
-                    break;
-
-                case TICK_GENERIC:
-                    processTickGenericMsg();
-                    break;
-
-                case TICK_STRING:
-                    processTickStringMsg();
-                    break;
-
-                case TICK_EFP:
-                    processTickEFPMsg();
-                    break;
-
-                case ORDER_STATUS:
-                    processOrderStatusMsg();
-                    break;
-
-                case ACCT_VALUE:
-                    processAcctValueMsg();
-                    break;
-
-                case PORTFOLIO_VALUE:
-                    processPortfolioValueMsg();
-                    break;
-
-                case ACCT_UPDATE_TIME:
-                    processAcctUpdateTimeMsg();
-                    break;
-
-                case ERR_MSG:
-                    processErrorMsg();
-                    break;
-
-                case OPEN_ORDER:
-                    processOpenOrderMsg();
-                    break;
-
-                case NEXT_VALID_ID:
-                    processNextValidIdMsg();
-                    break;
-
-                case SCANNER_DATA:
-                    processScannerDataMsg();
-                    break;
-
-                case CONTRACT_DATA:
-                    processContractDataMsg();
-                    break;
-
-                case BOND_CONTRACT_DATA:
-                    processBondContractDataMsg();
-                    break;
-
-                case EXECUTION_DATA:
-                    processExecutionDataMsg();
-                    break;
-
-                case MARKET_DEPTH:
-                    processMarketDepthMsg();
-                    break;
-
-                case MARKET_DEPTH_L2:
-                    processMarketDepthL2Msg();
-                    break;
-
-                case NEWS_BULLETINS:
-                    processNewsBulletinsMsg();
-                    break;
-
-                case MANAGED_ACCTS:
-                    processManagedAcctsMsg();
-                    break;
-
-                case RECEIVE_FA:
-                    processReceiveFaMsg();
-                    break;
-
-                case HISTORICAL_DATA:
-                    processHistoricalDataMsg();
-                    break;
-
-                case SCANNER_PARAMETERS:
-                    processScannerParametersMsg();
-                    break;
-
-                case CURRENT_TIME:
-                    processCurrentTimeMsg();
-                    break;
-
-                case REAL_TIME_BARS:
-                    processRealTimeBarsMsg();
-                    break;
-
-                case FUNDAMENTAL_DATA:
-                    processFundamentalDataMsg();
-                    break;
-
-                case CONTRACT_DATA_END:
-                    processContractDataEndMsg();
-                    break;
-
-                case OPEN_ORDER_END:
-                    processOpenOrderEndMsg();
-                    break;
-
-                case ACCT_DOWNLOAD_END:
-                    processAcctDownloadEndMsg();
-                    break;
-
-                case EXECUTION_DATA_END:
-                    processExecutionDataEndMsg();
-                    break;
-
-                case DELTA_NEUTRAL_VALIDATION:
-                    processDeltaNeutralValidationMsg();
-                    break;
-
-                case TICK_SNAPSHOT_END:
-                    processTickSnapshotEndMsg();
-                    break;
-
-                case MARKET_DATA_TYPE:
-                    processMarketDataTypeMsg();
-                    break;
-
-                case COMMISSION_AND_FEES_REPORT:
-                    processCommissionAndFeesReportMsg();
-                    break;
-
-                case VERIFY_MESSAGE_API:
-                    processVerifyMessageApiMsg();
-                    break;
-
-                case VERIFY_COMPLETED:
-                    processVerifyCompletedMsg();
-                    break;
-
-                case DISPLAY_GROUP_LIST:
-                    processDisplayGroupListMsg();
-                    break;
-
-                case DISPLAY_GROUP_UPDATED:
-                    processDisplayGroupUpdatedMsg();
-                    break;
-
-                case VERIFY_AND_AUTH_MESSAGE_API:
-                    processVerifyAndAuthMessageMsg();
-                    break;
-
-                case VERIFY_AND_AUTH_COMPLETED:
-                    processVerifyAndAuthCompletedMsg();
-                    break;
-
-                case POSITION_MULTI:
-                    processPositionMultiMsg();
-                    break;
-
-                case POSITION_MULTI_END:
-                    processPositionMultiEndMsg();
-                    break;
-
-                case ACCOUNT_UPDATE_MULTI:
-                    processAccountUpdateMultiMsg();
-                    break;
-
-                case ACCOUNT_UPDATE_MULTI_END:
-                    processAccountUpdateMultiEndMsg();
-                    break;
-
-                case SECURITY_DEFINITION_OPTION_PARAMETER:
-                    processSecurityDefinitionOptionalParameterMsg();
-                    break;
-
-                case SECURITY_DEFINITION_OPTION_PARAMETER_END:
-                    processSecurityDefinitionOptionalParameterEndMsg();
-                    break;
-
-                case SOFT_DOLLAR_TIERS:
-                    processSoftDollarTiersMsg();
-                    break;
-
-                case FAMILY_CODES:
-                    processFamilyCodesMsg();
-                    break;
-
-                case SMART_COMPONENTS:
-                    processSmartComponentsMsg();
-                    break;
-
-                case TICK_REQ_PARAMS:
-                    processTickReqParamsMsg();
-                    break;
-
-                case SYMBOL_SAMPLES:
-                    processSymbolSamplesMsg();
-                    break;
-
-                case MKT_DEPTH_EXCHANGES:
-                    processMktDepthExchangesMsg();
-                    break;
-
-                case HEAD_TIMESTAMP:
-                    processHeadTimestampMsg();
-                    break;
-
-                case TICK_NEWS:
-                    processTickNewsMsg();
-                    break;
-
-                case NEWS_PROVIDERS:
-                    processNewsProvidersMsg();
-                    break;
-
-                case NEWS_ARTICLE:
-                    processNewsArticleMsg();
-                    break;
-
-                case HISTORICAL_NEWS:
-                    processHistoricalNewsMsg();
-                    break;
-
-                case HISTORICAL_NEWS_END:
-                    processHistoricalNewsEndMsg();
-                    break;
-
-                case HISTOGRAM_DATA:
-                    processHistogramDataMsg();
-                    break;
-
-                case HISTORICAL_DATA_UPDATE:
-                    processHistoricalDataUpdateMsg();
-                    break;
-
-                case REROUTE_MKT_DATA_REQ:
-                    processRerouteMktDataReq();
-                    break;
-
-                case REROUTE_MKT_DEPTH_REQ:
-                    processRerouteMktDepthReq();
-                    break;
-
-                case MARKET_RULE:
-                    processMarketRuleMsg();
-                    break;
-
-                case PNL:
-                    processPnLMsg();
-                    break;
-
-                case PNL_SINGLE:
-                    processPnLSingleMsg();
-                    break;
-
-                case HISTORICAL_TICKS:
-                    processHistoricalTicks();
-                    break;
-
-                case HISTORICAL_TICKS_BID_ASK:
-                    processHistoricalTicksBidAsk();
-                    break;
-
-                case HISTORICAL_TICKS_LAST:
-                    processHistoricalTicksLast();
-                    break;
-
-                case TICK_BY_TICK:
-                    processTickByTickMsg();
-                    break;
-
-                case ORDER_BOUND:
-                    processOrderBoundMsg();
-                    break;
-
-                case COMPLETED_ORDER:
-                    processCompletedOrderMsg();
-                    break;
-
-                case COMPLETED_ORDERS_END:
-                    processCompletedOrdersEndMsg();
-                    break;
-
-                case REPLACE_FA_END:
-                    processReplaceFAEndMsg();
-                    break;
-
-                case WSH_META_DATA:
-                    processWshMetaData();
-                    break;
-
-                case WSH_EVENT_DATA:
-                    processWshEventData();
-                    break;
-
-                case HISTORICAL_SCHEDULE:
-                    processHistoricalSchedule();
-                    break;
-
-                case USER_INFO:
-                    processUserInfo();
-                    break;
-
-                case HISTORICAL_DATA_END:
-                    processHistoricalDataEndMsg();
-                    break;
-
-                case CURRENT_TIME_IN_MILLIS:
-                    processCurrentTimeInMillisMsg();
-                    break;
-
-                default: {
-                    m_EWrapper.error( EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.UNKNOWN_ID.code(), EClientErrors.UNKNOWN_ID.msg(), null);
+            switch (msgId) {
+                case END_CONN -> { return 0; }
+                case TICK_PRICE -> processTickPriceMsg();
+                case TICK_SIZE -> processTickSizeMsg();
+                case POSITION -> processPositionMsg();
+                case POSITION_END -> processPositionEndMsg();
+                case ACCOUNT_SUMMARY -> processAccountSummaryMsg();
+                case ACCOUNT_SUMMARY_END -> processAccountSummaryEndMsg();
+                case TICK_OPTION_COMPUTATION -> processTickOptionComputationMsg();
+                case TICK_GENERIC -> processTickGenericMsg();
+                case TICK_STRING -> processTickStringMsg();
+                case TICK_EFP -> processTickEFPMsg();
+                case ORDER_STATUS -> processOrderStatusMsg();
+                case ACCT_VALUE -> processAcctValueMsg();
+                case PORTFOLIO_VALUE -> processPortfolioValueMsg();
+                case ACCT_UPDATE_TIME -> processAcctUpdateTimeMsg();
+                case ERR_MSG -> processErrorMsg();
+                case OPEN_ORDER -> processOpenOrderMsg();
+                case NEXT_VALID_ID -> processNextValidIdMsg();
+                case SCANNER_DATA -> processScannerDataMsg();
+                case CONTRACT_DATA -> processContractDataMsg();
+                case BOND_CONTRACT_DATA -> processBondContractDataMsg();
+                case EXECUTION_DATA -> processExecutionDataMsg();
+                case MARKET_DEPTH -> processMarketDepthMsg();
+                case MARKET_DEPTH_L2 -> processMarketDepthL2Msg();
+                case NEWS_BULLETINS -> processNewsBulletinsMsg();
+                case MANAGED_ACCTS -> processManagedAcctsMsg();
+                case RECEIVE_FA -> processReceiveFaMsg();
+                case HISTORICAL_DATA -> processHistoricalDataMsg();
+                case SCANNER_PARAMETERS -> processScannerParametersMsg();
+                case CURRENT_TIME -> processCurrentTimeMsg();
+                case REAL_TIME_BARS -> processRealTimeBarsMsg();
+                case CONTRACT_DATA_END -> processContractDataEndMsg();
+                case OPEN_ORDER_END -> processOpenOrderEndMsg();
+                case ACCT_DOWNLOAD_END -> processAcctDownloadEndMsg();
+                case EXECUTION_DATA_END -> processExecutionDataEndMsg();
+                case DELTA_NEUTRAL_VALIDATION -> processDeltaNeutralValidationMsg();
+                case TICK_SNAPSHOT_END -> processTickSnapshotEndMsg();
+                case MARKET_DATA_TYPE -> processMarketDataTypeMsg();
+                case COMMISSION_AND_FEES_REPORT -> processCommissionAndFeesReportMsg();
+                case VERIFY_MESSAGE_API -> processVerifyMessageApiMsg();
+                case VERIFY_COMPLETED -> processVerifyCompletedMsg();
+                case DISPLAY_GROUP_LIST -> processDisplayGroupListMsg();
+                case DISPLAY_GROUP_UPDATED -> processDisplayGroupUpdatedMsg();
+                case VERIFY_AND_AUTH_MESSAGE_API -> processVerifyAndAuthMessageMsg();
+                case VERIFY_AND_AUTH_COMPLETED -> processVerifyAndAuthCompletedMsg();
+                case POSITION_MULTI -> processPositionMultiMsg();
+                case POSITION_MULTI_END -> processPositionMultiEndMsg();
+                case ACCOUNT_UPDATE_MULTI -> processAccountUpdateMultiMsg();
+                case ACCOUNT_UPDATE_MULTI_END -> processAccountUpdateMultiEndMsg();
+                case SECURITY_DEFINITION_OPTION_PARAMETER -> processSecurityDefinitionOptionalParameterMsg();
+                case SECURITY_DEFINITION_OPTION_PARAMETER_END -> processSecurityDefinitionOptionalParameterEndMsg();
+                case SOFT_DOLLAR_TIERS -> processSoftDollarTiersMsg();
+                case FAMILY_CODES -> processFamilyCodesMsg();
+                case SMART_COMPONENTS -> processSmartComponentsMsg();
+                case TICK_REQ_PARAMS -> processTickReqParamsMsg();
+                case SYMBOL_SAMPLES -> processSymbolSamplesMsg();
+                case MKT_DEPTH_EXCHANGES -> processMktDepthExchangesMsg();
+                case HEAD_TIMESTAMP -> processHeadTimestampMsg();
+                case TICK_NEWS -> processTickNewsMsg();
+                case NEWS_PROVIDERS -> processNewsProvidersMsg();
+                case NEWS_ARTICLE -> processNewsArticleMsg();
+                case HISTORICAL_NEWS -> processHistoricalNewsMsg();
+                case HISTORICAL_NEWS_END -> processHistoricalNewsEndMsg();
+                case HISTOGRAM_DATA -> processHistogramDataMsg();
+                case HISTORICAL_DATA_UPDATE -> processHistoricalDataUpdateMsg();
+                case REROUTE_MKT_DATA_REQ -> processRerouteMktDataReq();
+                case REROUTE_MKT_DEPTH_REQ -> processRerouteMktDepthReq();
+                case MARKET_RULE -> processMarketRuleMsg();
+                case PNL -> processPnLMsg();
+                case PNL_SINGLE -> processPnLSingleMsg();
+                case HISTORICAL_TICKS -> processHistoricalTicks();
+                case HISTORICAL_TICKS_BID_ASK -> processHistoricalTicksBidAsk();
+                case HISTORICAL_TICKS_LAST -> processHistoricalTicksLast();
+                case TICK_BY_TICK -> processTickByTickMsg();
+                case ORDER_BOUND -> processOrderBoundMsg();
+                case COMPLETED_ORDER -> processCompletedOrderMsg();
+                case COMPLETED_ORDERS_END -> processCompletedOrdersEndMsg();
+                case REPLACE_FA_END -> processReplaceFAEndMsg();
+                case WSH_META_DATA -> processWshMetaData();
+                case WSH_EVENT_DATA -> processWshEventData();
+                case HISTORICAL_SCHEDULE -> processHistoricalSchedule();
+                case USER_INFO -> processUserInfo();
+                case HISTORICAL_DATA_END -> processHistoricalDataEndMsg();
+                case CURRENT_TIME_IN_MILLIS -> processCurrentTimeInMillisMsg();
+                default -> {
+                    m_EWrapper.error(EClientErrors.NO_VALID_ID, Util.currentTimeMillis(), EClientErrors.UNKNOWN_ID.code(), EClientErrors.UNKNOWN_ID.msg(), null);
                     return 0;
                 }
             }
@@ -1826,25 +1338,6 @@ class EDecoder implements ObjectInput {
         m_EWrapper.contractDataEndProtoBuf(contractDataEndProto);
         int reqId = contractDataEndProto.hasReqId() ? contractDataEndProto.getReqId() : EClientErrors.NO_VALID_ID;
         m_EWrapper.contractDetailsEnd(reqId);
-    }
-
-	private void processFundamentalDataMsg() throws IOException {
-		/*int version =*/ readInt();
-		int reqId = readInt();
-		String data = readStr();
-		m_EWrapper.fundamentalData(reqId, data);
-	}
-
-    private void processFundamentalsDataMsgProtoBuf() throws IOException {
-        byte[] byteArray = readByteArray();
-
-        FundamentalsDataProto.FundamentalsData fundamentalsDataProto = FundamentalsDataProto.FundamentalsData.parseFrom(byteArray);
-        m_EWrapper.fundamentalsDataProtoBuf(fundamentalsDataProto);
-
-        int reqId = fundamentalsDataProto.hasReqId() ? fundamentalsDataProto.getReqId() : EClientErrors.NO_VALID_ID;
-        String data = fundamentalsDataProto.hasData() ? fundamentalsDataProto.getData() : "";
-
-        m_EWrapper.fundamentalData(reqId, data);
     }
 
 	private void processRealTimeBarsMsg() throws IOException {

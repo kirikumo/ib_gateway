@@ -1,5 +1,21 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java TWS API Client
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package com.ib.client;
 
@@ -185,7 +201,8 @@ public class Order {
 	private List<OrderCondition> m_conditions = new ArrayList<>();
 	private boolean m_conditionsCancelOrder;
 	private boolean m_conditionsIgnoreRth;
-    
+	private boolean m_conditionsIncludeOvernight;
+
     // models
     private String m_modelCode;
     
@@ -362,6 +379,7 @@ public class Order {
 	public double lmtPriceOffset()                  { return m_lmtPriceOffset; }
 	public List<OrderCondition> conditions()        { return m_conditions; }
 	public boolean conditionsIgnoreRth()            { return m_conditionsIgnoreRth; }
+	public boolean conditionsIncludeOvernight()     { return m_conditionsIncludeOvernight; }
 	public boolean conditionsCancelOrder()          { return m_conditionsCancelOrder; }
     public String modelCode()                       { return m_modelCode; }
     public String extOperator()                     { return m_extOperator; }
@@ -530,6 +548,7 @@ public class Order {
 	public void lmtPriceOffset(double v)                                { m_lmtPriceOffset = v; }
 	public void conditions(List<OrderCondition> v)                      { m_conditions = v; }
 	public void conditionsIgnoreRth(boolean v)                          { m_conditionsIgnoreRth = v; }
+	public void conditionsIncludeOvernight(boolean v)                   { m_conditionsIncludeOvernight = v; }
 	public void conditionsCancelOrder(boolean v)                        { m_conditionsCancelOrder = v; }
 	public void extOperator(String v)                                   { m_extOperator = v; }
 	public void softDollarTier(SoftDollarTier v)                        { m_softDollarTier = v; }

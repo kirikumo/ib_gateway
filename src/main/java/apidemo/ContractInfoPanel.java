@@ -1,14 +1,26 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java ApiDemo
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package apidemo;
 
 import java.awt.BorderLayout;
-import java.awt.Desktop;
 import java.awt.Dimension;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintStream;
 import java.text.DecimalFormat;
 import java.util.HashSet;
 import java.util.List;
@@ -26,15 +38,12 @@ import javax.swing.JTextArea;
 import com.ib.client.Contract;
 import com.ib.client.ContractDetails;
 import com.ib.client.PriceIncrement;
-import com.ib.client.Types.FundamentalType;
 import com.ib.controller.ApiController.IContractDetailsHandler;
-import com.ib.controller.ApiController.IFundamentalsHandler;
 import com.ib.controller.ApiController.IMarketRuleHandler;
 
 import apidemo.util.HtmlButton;
 import apidemo.util.NewTabbedPanel;
 import apidemo.util.NewTabbedPanel.INewTab;
-import apidemo.util.TCombo;
 import apidemo.util.VerticalPanel;
 
 class ContractInfoPanel extends JPanel {
@@ -46,7 +55,6 @@ class ContractInfoPanel extends JPanel {
 	ContractInfoPanel() {
 	    NewTabbedPanel m_requestPanels = new NewTabbedPanel();
 		m_requestPanels.addTab( "Contract details", new DetailsRequestPanel() );
-		m_requestPanels.addTab( "Fundamentals", new FundaRequestPanel() );
 		m_requestPanels.addTab( "Market Rules", m_marketRuleRequestPanel );
 
 		setLayout( new BorderLayout() );
@@ -123,81 +131,6 @@ class ContractInfoPanel extends JPanel {
         }
 
         @Override public void activated() { }
-	}
-
-	public class FundaRequestPanel extends JPanel {
-		ContractPanel m_contractPanel = new ContractPanel( m_contract);
-		TCombo<FundamentalType> m_type = new TCombo<>( FundamentalType.values() );
-
-		FundaRequestPanel() {
-			HtmlButton but = new HtmlButton( "Query") {
-				@Override protected void actionPerformed() {
-					onQuery();
-				}
-			};
-
-			VerticalPanel rightPanel = new VerticalPanel();
-			rightPanel.add( "Report type", m_type);
-
-			setLayout( new BoxLayout( this, BoxLayout.X_AXIS));
-			add( m_contractPanel);
-			add( Box.createHorizontalStrut(20));
-			add( rightPanel);
-			add( Box.createHorizontalStrut(10));
-			add( but);
-		}
-
-		void onQuery() {
-			m_contractPanel.onOK();
-			FundaResultPanel panel = new FundaResultPanel();
-			FundamentalType type = m_type.getSelectedItem();
-			m_resultsPanels.addTab( m_contract.symbol() + " " + type, panel, true, true);
-			ApiDemo.INSTANCE.controller().reqFundamentals( m_contract, type, panel);
-		}
-	}
-
-	class FundaResultPanel extends JPanel implements INewTab, IFundamentalsHandler {
-		String m_data;
-		JTextArea m_text = new JTextArea();
-
-		FundaResultPanel() {
-			HtmlButton b = new HtmlButton( "View in browser") {
-				@Override protected void actionPerformed() {
-					onView();
-				}
-			};
-
-			JScrollPane scroll = new JScrollPane( m_text);
-			setLayout( new BorderLayout() );
-			add( scroll);
-			add( b, BorderLayout.EAST);
-		}
-
-		void onView() {
-			try {
-				File file = File.createTempFile( "tws", ".xml");
-				try (PrintStream ps = new PrintStream( file, "UTF-8")) {
-					ps.println(m_text.getText());
-				}
-				Desktop.getDesktop().open( file);
-			} catch(IOException e) {
-				e.printStackTrace();
-			}
-		}
-
-		/** Called when the tab is first visited. */
-		@Override public void activated() {
-			ApiDemo.INSTANCE.controller().reqFundamentals(m_contract, FundamentalType.ReportRatios, this);
-		}
-
-		/** Called when the tab is closed by clicking the X. */
-		@Override public void closed() {
-		}
-
-		@Override public void fundamentals(String str) {
-			m_data = str;
-			m_text.setText( str);
-		}
 	}
 
 	class MarketRuleRequestPanel extends JPanel {

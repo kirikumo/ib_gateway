@@ -1,5 +1,21 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java ApiDemo
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package apidemo;
 
@@ -29,6 +45,14 @@ import apidemo.util.VerticalPanel;
 public class ApiDemo implements IConnectionHandler {
 	static { NewLookAndFeel.register(); }
 	public static ApiDemo INSTANCE;
+
+	private static final String APP_NAME = "TWS API Java ApiDemo";
+	private static final String[] LICENSE = {
+		"Copyright (C) 2013-2026  Interactive Brokers LLC",
+		"This program comes with ABSOLUTELY NO WARRANTY.",
+		"This is free software, and you are welcome to redistribute it",
+		"under certain conditions; see LICENSE or <https://www.gnu.org/licenses/gpl-3.0.html>."
+	};
 
 	private final IConnectionConfiguration m_connectionConfiguration;
 	private final JTextArea m_inLog = new JTextArea();
@@ -93,7 +117,20 @@ public class ApiDemo implements IConnectionHandler {
 		// m_tabbedPanel.addTab( "Strategy", m_stratPanel); in progress
 		m_tabbedPanel.addTab( "News", m_newsPanel);
 		m_tabbedPanel.addTab( "Config", m_configPanel);
-			
+		m_tabbedPanel.addTab( "About", new JPanel() {
+			@Override public void setVisible(boolean aFlag) {
+				super.setVisible(aFlag);
+				if (aFlag) {
+					SwingUtilities.invokeLater(() -> {
+						JOptionPane.showMessageDialog(m_frame,
+							APP_NAME + "\n" + String.join("\n", LICENSE),
+							APP_NAME, JOptionPane.INFORMATION_MESSAGE);
+						m_tabbedPanel.select("Config");
+					});
+				}
+			}
+		});
+
 		m_msg.setEditable( false);
 		m_msg.setLineWrap( true);
 		JScrollPane msgScroll = new JScrollPane( m_msg);
@@ -175,9 +212,7 @@ public class ApiDemo implements IConnectionHandler {
 		private final JTextField m_clientId = new JTextField("0", 7);
 		private final JLabel m_status = new JLabel("Disconnected");
 		private final JLabel m_defaultPortNumberLabel = new JLabel("<html>Live Trading ports:<b> TWS: 7496; IB Gateway: 4001.</b><br>"
-			    + "Simulated Trading ports for new installations of "
-				+ "version 954.1 or newer: "
-				+ "<b>TWS: 7497; IB Gateway: 4002</b></html>");
+			    + "Simulated Trading ports:<b> TWS: 7497; IB Gateway: 4002</b></html>");
 		
 		ConnectionPanel() {
 			HtmlButton connect = new HtmlButton("Connect") {
@@ -260,8 +295,6 @@ public class ApiDemo implements IConnectionHandler {
 // BUGS
 // When API sends multiple snapshot requests, TWS sends error "Snapshot exceeds 100/sec" even when it doesn't
 // When API requests SSF contracts, TWS sends both dividend protected and non-dividend protected contracts. They are indistinguishable except for having different conids.
-// Fundamentals financial summary works from TWS but not from API 
-// When requesting fundamental data for IBM, the data is returned but also an error
 // The "Request option computation" method seems to have no effect; no data is ever returned
 // When an order is submitted with the "End time" field, it seems to be ignored; it is not submitted but also no error is returned to API.
 // Most error messages from TWS contain the class name where the error occurred which gets garbled to gibberish during obfuscation; the class names should be removed from the error message 

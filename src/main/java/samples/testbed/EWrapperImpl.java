@@ -1,5 +1,21 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java TWS API Samples
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package samples.testbed;
 
@@ -30,7 +46,6 @@ import com.ib.client.protobuf.ErrorMessageProto;
 import com.ib.client.protobuf.ExecutionDetailsEndProto;
 import com.ib.client.protobuf.ExecutionDetailsProto;
 import com.ib.client.protobuf.FamilyCodesProto;
-import com.ib.client.protobuf.FundamentalsDataProto;
 import com.ib.client.protobuf.HeadTimestampProto;
 import com.ib.client.protobuf.HistogramDataProto;
 import com.ib.client.protobuf.HistoricalDataEndProto;
@@ -119,48 +134,12 @@ public class EWrapperImpl implements EWrapper {
 		return currentOrderId;
 	}
 	
-	 //! [tickprice]
-	@Override
-	public void tickPrice(int tickerId, int field, double price, TickAttrib attribs) {
-		System.out.println("Tick Price: " + EWrapperMsgGenerator.tickPrice( tickerId, field, price, attribs));
-	}
-	//! [tickprice]
-	
-	//! [ticksize]
-	@Override
-	public void tickSize(int tickerId, int field, Decimal size) {
-		System.out.println("Tick Size: " + EWrapperMsgGenerator.tickSize( tickerId, field, size));
-	}
-	//! [ticksize]
-	
-	//! [tickoptioncomputation]
-	@Override
-	public void tickOptionComputation(int tickerId, int field, int tickAttrib, double impliedVol, double delta, double optPrice,
-			double pvDividend, double gamma, double vega, double theta, double undPrice) {
-		System.out.println("TickOptionComputation: " + EWrapperMsgGenerator.tickOptionComputation( tickerId, field, tickAttrib, impliedVol, delta, optPrice, pvDividend, gamma, vega, theta, undPrice));
-	}
-	//! [tickoptioncomputation]
-	
-	//! [tickgeneric]
-	@Override
-	public void tickGeneric(int tickerId, int tickType, double value) {
-		System.out.println("Tick Generic: " + EWrapperMsgGenerator.tickGeneric(tickerId, tickType, value));
-	}
-	//! [tickgeneric]
-	
-	//! [tickstring]
-	@Override
-	public void tickString(int tickerId, int tickType, String value) {
-		System.out.println("Tick String: " + EWrapperMsgGenerator.tickString(tickerId, tickType, value));
-	}
-	//! [tickstring]
-	@Override
-	public void tickEFP(int tickerId, int tickType, double basisPoints, String formattedBasisPoints, double impliedFuture, int holdDays,
-			String futureLastTradeDate, double dividendImpact, double dividendsToLastTradeDate) {
-		System.out.println("TickEFP: " + EWrapperMsgGenerator.tickEFP(tickerId, tickType, basisPoints, formattedBasisPoints,
-				impliedFuture, holdDays, futureLastTradeDate, dividendImpact, dividendsToLastTradeDate));
-	}
-
+	@Override public void tickPrice(int tickerId, int field, double price, TickAttrib attribs) { }
+	@Override public void tickSize(int tickerId, int field, Decimal size) { }
+	@Override public void tickOptionComputation(int tickerId, int field, int tickAttrib, double impliedVol, double delta, double optPrice, double pvDividend, double gamma, double vega, double theta, double undPrice) { }
+	@Override public void tickGeneric(int tickerId, int tickType, double value) { }
+	@Override public void tickString(int tickerId, int tickType, String value) { }
+	@Override public void tickEFP(int tickerId, int tickType, double basisPoints, String formattedBasisPoints, double impliedFuture, int holdDays, String futureLastTradeDate, double dividendImpact, double dividendsToLastTradeDate) { }
 	@Override public void orderStatus(int orderId, String status, Decimal filled, Decimal remaining, double avgFillPrice, long permId, int parentId, double lastFillPrice, int clientId, String whyHeld, double mktCapPrice) { }
 	@Override public void openOrder(int orderId, Contract contract, Order order, OrderState orderState) { }
 	@Override public void openOrderEnd() { }
@@ -314,23 +293,14 @@ public class EWrapperImpl implements EWrapper {
 	public void currentTime(long time) {
 		System.out.println(EWrapperMsgGenerator.currentTime(time));
 	}
-	//! [fundamentaldata]
-	@Override
-	public void fundamentalData(int reqId, String data) {
-		System.out.println("FundamentalData: " + EWrapperMsgGenerator.fundamentalData(reqId, data));
-	}
-	//! [fundamentaldata]
+
 	@Override
 	public void deltaNeutralValidation(int reqId, DeltaNeutralContract deltaNeutralContract) {
 		System.out.println("Delta Neutral Validation: " + EWrapperMsgGenerator.deltaNeutralValidation(reqId, deltaNeutralContract));
 	}
-	//! [ticksnapshotend]
-	@Override
-	public void tickSnapshotEnd(int reqId) {
-		System.out.println("TickSnapshotEnd: " + EWrapperMsgGenerator.tickSnapshotEnd(reqId));
-	}
-	//! [ticksnapshotend]
-	
+
+	@Override public void tickSnapshotEnd(int reqId) { }
+
 	//! [marketdatatype]
 	@Override
 	public void marketDataType(int reqId, int marketDataType) {
@@ -765,27 +735,39 @@ public class EWrapperImpl implements EWrapper {
     //! [contractDataEnd]
 
     //! [tickPrice]
-    @Override public void tickPriceProtoBuf(TickPriceProto.TickPrice tickPriceProto) { }
+    @Override public void tickPriceProtoBuf(TickPriceProto.TickPrice tickPriceProto) {
+        System.out.println(EWrapperMsgGenerator.printProtoSingleLine("tick price:", tickPriceProto));
+    }
     //! [tickPrice]
 
-    //! [tickPrice]
-    @Override public void tickSizeProtoBuf(TickSizeProto.TickSize tickSizeProto) { }
-    //! [tickPrice]
+    //! [tickSize]
+    @Override public void tickSizeProtoBuf(TickSizeProto.TickSize tickSizeProto) {
+        System.out.println(EWrapperMsgGenerator.printProtoSingleLine("tick size:", tickSizeProto));
+    }
+    //! [tickSize]
 
     //! [tickOptionComputation]
-    @Override public void tickOptionComputationProtoBuf(TickOptionComputationProto.TickOptionComputation tickOptionComputationProto) { }
+    @Override public void tickOptionComputationProtoBuf(TickOptionComputationProto.TickOptionComputation tickOptionComputationProto) {
+        System.out.println(EWrapperMsgGenerator.printProtoSingleLine("tick option computation:", tickOptionComputationProto));
+    }
     //! [tickOptionComputation]
 
     //! [tickGeneric]
-    @Override public void tickGenericProtoBuf(TickGenericProto.TickGeneric tickGenericProto) { }
+    @Override public void tickGenericProtoBuf(TickGenericProto.TickGeneric tickGenericProto) {
+        System.out.println(EWrapperMsgGenerator.printProtoSingleLine("tick generic:", tickGenericProto));
+    }
     //! [tickGeneric]
 
     //! [tickString]
-    @Override public void tickStringProtoBuf(TickStringProto.TickString tickStringProto) { }
+    @Override public void tickStringProtoBuf(TickStringProto.TickString tickStringProto) {
+        System.out.println(EWrapperMsgGenerator.printProtoSingleLine("tick string:", tickStringProto));
+    }
     //! [tickString]
 
     //! [tickSnapshotEnd]
-    @Override public void tickSnapshotEndProtoBuf(TickSnapshotEndProto.TickSnapshotEnd tickSnapshotEndProto) { }
+    @Override public void tickSnapshotEndProtoBuf(TickSnapshotEndProto.TickSnapshotEnd tickSnapshotEndProto) { 
+        System.out.println(EWrapperMsgGenerator.printProtoSingleLine("tick snapshot end:", tickSnapshotEndProto));
+    }
     //! [tickSnapshotEnd]
 
     //! [updateMarketDepth]
@@ -941,10 +923,6 @@ public class EWrapperImpl implements EWrapper {
     //! [scannerData]
     @Override public void scannerDataProtoBuf(ScannerDataProto.ScannerData scannerDataProto) { }
     //! [scannerData]
-
-    //! [fundamentalsData]
-    @Override public void fundamentalsDataProtoBuf(FundamentalsDataProto.FundamentalsData fundamentalsDataProto) { }
-    //! [fundamentalsData]
 
     //! [pnl]
     @Override public void pnlProtoBuf(PnLProto.PnL pnlProto) { }

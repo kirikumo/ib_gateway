@@ -1,5 +1,21 @@
-/* Copyright (C) 2024 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java TWS API Client
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package com.ib.client;
 
@@ -81,6 +97,7 @@ public class ContractDetails {
     private String   m_eventContract1;
     private String   m_eventContractDescription1;
     private String   m_eventContractDescription2;
+    private String   m_settlementMethod;
 
     // Get
     public int conid()                  { return m_contract.conid(); }
@@ -153,7 +170,8 @@ public class ContractDetails {
     public String eventContract1()                { return m_eventContract1; }
     public String eventContractDescription1()     { return m_eventContractDescription1; }
     public String eventContractDescription2()     { return m_eventContractDescription2; }
-    
+    public String settlementMethod()              { return m_settlementMethod; }
+
     // Set
     public void contract(Contract contract)         { m_contract = contract; }
     public void marketName(String marketName)       { m_marketName = marketName; }
@@ -224,7 +242,8 @@ public class ContractDetails {
     public void eventContract1(String eventContract1)                         { this.m_eventContract1 = eventContract1; }
     public void eventContractDescription1(String eventContractDescription1)   { this.m_eventContractDescription1 = eventContractDescription1; }
     public void eventContractDescription2(String eventContractDescription2)   { this.m_eventContractDescription2 = eventContractDescription2; }
-    
+    public void settlementMethod(String settlementMethod)                     { m_settlementMethod = settlementMethod; }
+
     public ContractDetails() {
         m_contract = new Contract();
         m_minTick = 0;
@@ -306,6 +325,7 @@ public class ContractDetails {
         add( sb, "eventContract1", m_eventContract1);
         add( sb, "eventContractDescription1", m_eventContractDescription1);
         add( sb, "eventContractDescription2", m_eventContractDescription2);
+        add( sb, "settlementMethod", m_settlementMethod);
 
         return sb.toString();
     }

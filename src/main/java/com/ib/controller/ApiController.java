@@ -1,5 +1,21 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java TWS API Client
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package com.ib.controller;
 
@@ -20,7 +36,6 @@ import com.ib.client.Types.DeepType;
 import com.ib.client.Types.DurationUnit;
 import com.ib.client.Types.ExerciseType;
 import com.ib.client.Types.FADataType;
-import com.ib.client.Types.FundamentalType;
 import com.ib.client.Types.NewsType;
 import com.ib.client.Types.WhatToShow;
 import com.ib.client.protobuf.AccountDataEndProto;
@@ -45,7 +60,6 @@ import com.ib.client.protobuf.ErrorMessageProto;
 import com.ib.client.protobuf.ExecutionDetailsEndProto;
 import com.ib.client.protobuf.ExecutionDetailsProto;
 import com.ib.client.protobuf.FamilyCodesProto;
-import com.ib.client.protobuf.FundamentalsDataProto;
 import com.ib.client.protobuf.HeadTimestampProto;
 import com.ib.client.protobuf.HistogramDataProto;
 import com.ib.client.protobuf.HistoricalDataEndProto;
@@ -136,7 +150,6 @@ public class ApiController implements EWrapper {
 	private final Map<Integer, IHistoricalDataHandler> m_historicalDataMap = new HashMap<>();
 	private final Map<Integer, IHeadTimestampHandler> m_headTimestampMap = new HashMap<>();
 	private final Map<Integer, IHistogramDataHandler> m_histogramDataMap = new HashMap<>();
-	private final Map<Integer, IFundamentalsHandler> m_fundMap = new HashMap<>();
 	private final Map<Integer, IOrderHandler> m_orderHandlers = new HashMap<>();
     private final Map<Integer, IOrderCancelHandler> m_orderCancelHandlers = new HashMap<>();
 	private final Map<Integer,IAccountSummaryHandler> m_acctSummaryHandlers = new HashMap<>();
@@ -1206,29 +1219,6 @@ public class ApiController implements EWrapper {
 		if (handler != null) {
 			Bar bar = new Bar( time, high, low, open, close, wap, volume, count);
 			handler.realtimeBar( bar);
-		}
-		recEOM();
-	}
-
-    // ----------------------------------------- Fundamentals handling ----------------------------------------
-	public interface IFundamentalsHandler {
-		void fundamentals( String str);
-	}
-
-    public void reqFundamentals( Contract contract, FundamentalType reportType, IFundamentalsHandler handler) {
-		if (!checkConnection())
-			return;
-
-    	int reqId = m_reqId++;
-    	m_fundMap.put( reqId, handler);
-    	m_client.reqFundamentalData( reqId, contract, reportType.getApiString(), null);
-		sendEOM();
-    }
-
-    @Override public void fundamentalData(int reqId, String data) {
-		IFundamentalsHandler handler = m_fundMap.get( reqId);
-		if (handler != null) {
-			handler.fundamentals( data);
 		}
 		recEOM();
 	}
@@ -2322,7 +2312,6 @@ public class ApiController implements EWrapper {
     @Override public void tickNewsProtoBuf(TickNewsProto.TickNews tickNewsProto) { }
     @Override public void scannerParametersProtoBuf(ScannerParametersProto.ScannerParameters scannerParametersProto) { }
     @Override public void scannerDataProtoBuf(ScannerDataProto.ScannerData scannerDataProto) { }
-    @Override public void fundamentalsDataProtoBuf(FundamentalsDataProto.FundamentalsData fundamentalsDataProto) { }
     @Override public void pnlProtoBuf(PnLProto.PnL pnlProto) { }
     @Override public void pnlSingleProtoBuf(PnLSingleProto.PnLSingle pnlSingleProto) { }
     @Override public void receiveFAProtoBuf(ReceiveFAProto.ReceiveFA receiveFAProto) { }

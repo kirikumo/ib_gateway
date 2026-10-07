@@ -1,5 +1,21 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java ApiDemo
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package apidemo;
 
@@ -767,11 +783,18 @@ class TicketDlg extends JDialog {
 
 		AlgoPanel() {
 			add( "Algo strategy", m_strategy);
-			
-			for (AlgoParam param : AlgoParam.values() ) {
-				int i = param.ordinal();
-				m_params[i] = new UpperField(11, true);
-				add( param.toString(), m_params[param.ordinal()]);
+
+			AlgoParam[] allParams = AlgoParam.values();
+			for (int i = 0; i < allParams.length; i++) {
+				m_params[allParams[i].ordinal()] = new UpperField(11, true);
+			}
+			for (int i = 0; i < allParams.length; i += 2) {
+				if (i + 1 < allParams.length) {
+					add( new JLabel(allParams[i].toString()), m_params[allParams[i].ordinal()],
+						 new JLabel(allParams[i+1].toString()), m_params[allParams[i+1].ordinal()]);
+				} else {
+					add( allParams[i].toString(), m_params[allParams[i].ordinal()]);
+				}
 			}
 			
 			m_strategy.setSelectedItem( m_order.algoStrategy() );

@@ -1,5 +1,21 @@
-/* Copyright (C) 2019 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java ApiDemo
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package apidemo;
 
@@ -26,7 +42,7 @@ import com.ib.controller.ApiController.TopMktDataAdapter;
 class TopModel extends AbstractTableModel {
 	private List<TopRow> m_rows = new ArrayList<>();
 	private MarketDataPanel m_parentPanel;
-	private static final int CANCEL_CHBX_COL_INDEX = 33;
+	private static final int CANCEL_CHBX_COL_INDEX = 39;
 	String m_genericTicks = "";
 
 	TopModel(MarketDataPanel parentPanel) {
@@ -83,7 +99,7 @@ class TopModel extends AbstractTableModel {
 	}
 	
 	@Override public int getColumnCount() {
-		return 34;
+		return 40;
 	}
 	
 	@Override public String getColumnName(int col) {
@@ -121,6 +137,12 @@ class TopModel extends AbstractTableModel {
             case 30: return "Yield Ask";
             case 31: return "Last Price Precision";
             case 32: return "Last Size Precision";
+            case 33: return "Odd Lot Bid";
+            case 34: return "Odd Lot Ask";
+            case 35: return "Odd Lot Bid Size";
+            case 36: return "Odd Lot Ask Size";
+            case 37: return "Odd Lot Bid Exch";
+            case 38: return "Odd Lot Ask Exch";
 			case CANCEL_CHBX_COL_INDEX: return "Cancel";
 
 			default: return null;
@@ -163,6 +185,12 @@ class TopModel extends AbstractTableModel {
             case 30: return row.m_yieldAsk;
             case 31: return row.m_lastPricePrecision;
             case 32: return row.m_lastSizePrecision;
+            case 33: return fmt( row.m_oddLotBid);
+            case 34: return fmt( row.m_oddLotAsk);
+            case 35: return row.m_oddLotBidSize;
+            case 36: return row.m_oddLotAskSize;
+            case 37: return row.m_oddLotBidExch;
+            case 38: return row.m_oddLotAskExch;
 
 			case CANCEL_CHBX_COL_INDEX: return row.m_cancel;
 			default: return null;
@@ -217,6 +245,12 @@ class TopModel extends AbstractTableModel {
 		double m_yieldAsk;
         Decimal m_lastPricePrecision;
         Decimal m_lastSizePrecision;
+		double m_oddLotBid;
+		double m_oddLotAsk;
+		Decimal m_oddLotBidSize;
+		Decimal m_oddLotAskSize;
+		String m_oddLotBidExch;
+		String m_oddLotAskExch;
 
 		TopRow( AbstractTableModel model, String description, MarketDataPanel parentPanel) {
 			m_model = model;
@@ -279,7 +313,13 @@ class TopModel extends AbstractTableModel {
 				case DELAYED_YIELD_ASK:
 					m_yieldAsk = price;
 					break;
-				default: break;	
+				case ODD_LOT_BID:
+					m_oddLotBid = price;
+					break;
+				case ODD_LOT_ASK:
+					m_oddLotAsk = price;
+					break;
+				default: break;
 			}
 			m_model.fireTableDataChanged(); // should use a timer to be more efficient
 		}
@@ -318,7 +358,13 @@ class TopModel extends AbstractTableModel {
 				case SHORTABLE_SHARES:
 				    m_shortableShares = size;
 				    break;
-				default: break; 
+				case ODD_LOT_BID_SIZE:
+					m_oddLotBidSize = size;
+					break;
+				case ODD_LOT_ASK_SIZE:
+					m_oddLotAskSize = size;
+					break;
+				default: break;
 			}
 			m_model.fireTableDataChanged();
 		}
@@ -329,7 +375,13 @@ class TopModel extends AbstractTableModel {
 				case DELAYED_LAST_TIMESTAMP:
 					m_lastTime = Long.parseLong( value) * 1000;
 					break;
-                default: break; 
+				case ODD_LOT_BID_EXCH:
+					m_oddLotBidExch = value;
+					break;
+				case ODD_LOT_ASK_EXCH:
+					m_oddLotAskExch = value;
+					break;
+                default: break;
 			}
 		}
 

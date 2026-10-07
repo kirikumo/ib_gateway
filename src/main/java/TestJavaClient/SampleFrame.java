@@ -1,5 +1,21 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java TestJavaClient
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package TestJavaClient;
 
@@ -22,8 +38,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.*;
 
-import com.google.protobuf.TextFormat;
-import com.google.protobuf.TextFormat.ParseException;
 import com.ib.client.*;
 import com.ib.client.protobuf.AccountDataEndProto;
 import com.ib.client.protobuf.AccountSummaryEndProto;
@@ -47,7 +61,6 @@ import com.ib.client.protobuf.ErrorMessageProto;
 import com.ib.client.protobuf.ExecutionDetailsEndProto;
 import com.ib.client.protobuf.ExecutionDetailsProto;
 import com.ib.client.protobuf.FamilyCodesProto;
-import com.ib.client.protobuf.FundamentalsDataProto;
 import com.ib.client.protobuf.HeadTimestampProto;
 import com.ib.client.protobuf.HistogramDataProto;
 import com.ib.client.protobuf.HistoricalDataEndProto;
@@ -110,6 +123,14 @@ import com.ib.client.protobuf.WshEventDataProto;
 import com.ib.client.protobuf.WshMetaDataProto;
 
 class SampleFrame extends JFrame implements EWrapper {
+    private static final String APP_NAME = "TWS API Java TestJavaClient";
+    private static final String[] LICENSE = {
+        "Copyright (C) 2013-2026  Interactive Brokers LLC",
+        "This program comes with ABSOLUTELY NO WARRANTY.",
+        "This is free software, and you are welcome to redistribute it",
+        "under certain conditions; see LICENSE or <https://www.gnu.org/licenses/gpl-3.0.html>."
+    };
+
     private static final int NOT_AN_FA_ACCOUNT_ERROR = 321 ;
     private int faErrorCodes[] = { 503, 504, 505, 522, 1100, NOT_AN_FA_ACCOUNT_ERROR } ;
     private boolean faError ;
@@ -231,10 +252,6 @@ class SampleFrame extends JFrame implements EWrapper {
         butHistoricalData.addActionListener(e -> onHistoricalData());
         JButton butCancelHistoricalData = new JButton( "Cancel Hist. Data");
         butCancelHistoricalData.addActionListener(e -> onCancelHistoricalData());
-        JButton butFundamentalData = new JButton( "Fundamental Data");
-        butFundamentalData.addActionListener(e -> onFundamentalData());
-        JButton butCancelFundamentalData = new JButton( "Cancel Fund. Data");
-        butCancelFundamentalData.addActionListener(e -> onCancelFundamentalData());
         JButton butRealTimeBars = new JButton( "Req Real Time Bars");
         butRealTimeBars.addActionListener(e -> onReqRealTimeBars());
         JButton butCancelRealTimeBars = new JButton( "Cancel Real Time Bars");
@@ -367,6 +384,8 @@ class SampleFrame extends JFrame implements EWrapper {
         JButton butReqUserInfo = new JButton("Req User Info");
         butReqUserInfo.addActionListener(e -> onReqUserInfo());
 
+        JButton butAbout = new JButton( "About");
+        butAbout.addActionListener(e -> onAbout());
         JButton butClear = new JButton( "Clear");
         butClear.addActionListener(e -> onClear());
         JButton butClose = new JButton( "Close");
@@ -380,7 +399,6 @@ class SampleFrame extends JFrame implements EWrapper {
         pairSlot.add(butMktData, butCancelMktData);
         pairSlot.add(butMktDepth, butCancelMktDepth);
         pairSlot.add(butHistoricalData, butCancelHistoricalData);
-        pairSlot.add(butFundamentalData, butCancelFundamentalData);
         pairSlot.add(butRealTimeBars, butCancelRealTimeBars);
         pairSlot.add(butRealTimeBars, butCancelRealTimeBars);
         pairSlot.add(butCurrentTime, butCurrentTimeInMillis);
@@ -432,6 +450,7 @@ class SampleFrame extends JFrame implements EWrapper {
         pairSlot.add(butReqWshEventData, butCancelWshEventData);
 
         buttonPanel.add( new JPanel() );
+        buttonPanel.add( butAbout);
         pairSlot.add(butClear, butClose);
 
         return buttonPanel;
@@ -800,28 +819,6 @@ class SampleFrame extends JFrame implements EWrapper {
         m_client.cancelHistoricalData( m_orderDlg.id() );
     }
 
-    private void onFundamentalData() {
-        // run m_orderDlg
-        m_orderDlg.init("Options", false);
-        m_orderDlg.setVisible(true);
-        if( !m_orderDlg.m_rc ) {
-            return;
-        }
-       	m_client.reqFundamentalData(m_orderDlg.id(), m_orderDlg.contract(),
-        			/* reportType */ m_orderDlg.whatToShow(), null);
-    }
-
-    private void onCancelFundamentalData() {
-        // run m_orderDlg
-        m_orderDlg.init("Options", false);
-        m_orderDlg.setVisible(true);
-        if( !m_orderDlg.m_rc ) {
-            return;
-        }
-
-        m_client.cancelFundamentalData(m_orderDlg.id());
-    }
-
     private void onReqContractData() {
         // run m_orderDlg
         m_orderDlg.init("Options", false);
@@ -1039,6 +1036,10 @@ class SampleFrame extends JFrame implements EWrapper {
     private void onReqManagedAccts() {
         // request the list of managed accounts
         m_client.reqManagedAccts();
+    }
+
+    private void onAbout() {
+        JOptionPane.showMessageDialog(this, APP_NAME + "\n" + String.join("\n", LICENSE), APP_NAME, JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void onClear() {
@@ -1570,10 +1571,6 @@ class SampleFrame extends JFrame implements EWrapper {
         m_TWS.add(msg);
     }
 
-	public void fundamentalData(int reqId, String data) {
-		String msg = EWrapperMsgGenerator.fundamentalData(reqId, data);
-		m_tickers.add(msg);
-	}
 	public void deltaNeutralValidation(int reqId, DeltaNeutralContract deltaNeutralContract) {
 		String msg = EWrapperMsgGenerator.deltaNeutralValidation(reqId, deltaNeutralContract);
 		m_TWS.add(msg);
@@ -2107,7 +2104,6 @@ class SampleFrame extends JFrame implements EWrapper {
     @Override public void tickNewsProtoBuf(TickNewsProto.TickNews tickNewsProto) { }
     @Override public void scannerParametersProtoBuf(ScannerParametersProto.ScannerParameters scannerParametersProto) { }
     @Override public void scannerDataProtoBuf(ScannerDataProto.ScannerData scannerDataProto) { }
-    @Override public void fundamentalsDataProtoBuf(FundamentalsDataProto.FundamentalsData fundamentalsDataProto) { }
     @Override public void pnlProtoBuf(PnLProto.PnL pnlProto) { }
     @Override public void pnlSingleProtoBuf(PnLSingleProto.PnLSingle pnlSingleProto) { }
     @Override public void receiveFAProtoBuf(ReceiveFAProto.ReceiveFA receiveFAProto) { }

@@ -1,13 +1,27 @@
-/* Copyright (C) 2025 Interactive Brokers LLC. All rights reserved. This code is subject to the terms
- * and conditions of the IB API Non-Commercial License or the IB API Commercial License, as applicable. */
+/*
+ * Java TWS API Client
+ *
+ * Copyright (C) 2013-2026  Interactive Brokers LLC
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package com.ib.client;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.ib.client.Types.SecType;
 import com.ib.client.Types.WhatToShow;
@@ -24,7 +38,6 @@ import com.ib.client.protobuf.CancelAccountUpdatesMultiProto;
 import com.ib.client.protobuf.CancelCalculateImpliedVolatilityProto;
 import com.ib.client.protobuf.CancelCalculateOptionPriceProto;
 import com.ib.client.protobuf.CancelContractDataProto;
-import com.ib.client.protobuf.CancelFundamentalsDataProto;
 import com.ib.client.protobuf.CancelHeadTimestampProto;
 import com.ib.client.protobuf.CancelHistogramDataProto;
 import com.ib.client.protobuf.CancelHistoricalDataProto;
@@ -52,7 +65,6 @@ import com.ib.client.protobuf.ExerciseOptionsRequestProto;
 import com.ib.client.protobuf.FAReplaceProto;
 import com.ib.client.protobuf.FARequestProto;
 import com.ib.client.protobuf.FamilyCodesRequestProto;
-import com.ib.client.protobuf.FundamentalsDataRequestProto;
 import com.ib.client.protobuf.GlobalCancelRequestProto;
 import com.ib.client.protobuf.HeadTimestampRequestProto;
 import com.ib.client.protobuf.HistogramDataRequestProto;
@@ -142,7 +154,6 @@ public abstract class EClient {
 	// 37 = can receive clearingAccount and clearingIntent for Order objects
 	// 38 = can receive multiplier and primaryExchange in portfolio updates
 	//    ; can receive cumQty and avgPrice in execution
-	//    ; can receive fundamental data
 	//    ; can receive deltaNeutralContract for Contract objects
 	//    ; can receive reqId and end marker in contractDetails/bondContractDetails
  	//    ; can receive ScaleInitComponentSize and ScaleSubsComponentSize for Order objects
@@ -186,93 +197,6 @@ public abstract class EClient {
     protected static final int CLIENT_VERSION = 66;
     protected static final int MIN_SERVER_VER_SUPPORTED = 38; //all supported server versions are listed below
     
-    // outgoing msg id's
-    private static final int REQ_MKT_DATA = 1;
-    private static final int CANCEL_MKT_DATA = 2;
-    protected static final int PLACE_ORDER = 3;
-    private static final int CANCEL_ORDER = 4;
-    private static final int REQ_OPEN_ORDERS = 5;
-    private static final int REQ_ACCOUNT_DATA = 6;
-    private static final int REQ_EXECUTIONS = 7;
-    private static final int REQ_IDS = 8;
-    private static final int REQ_CONTRACT_DATA = 9;
-    private static final int REQ_MKT_DEPTH = 10;
-    private static final int CANCEL_MKT_DEPTH = 11;
-    private static final int REQ_NEWS_BULLETINS = 12;
-    private static final int CANCEL_NEWS_BULLETINS = 13;
-    private static final int SET_SERVER_LOGLEVEL = 14;
-    private static final int REQ_AUTO_OPEN_ORDERS = 15;
-    private static final int REQ_ALL_OPEN_ORDERS = 16;
-    private static final int REQ_MANAGED_ACCTS = 17;
-    private static final int REQ_FA = 18;
-    private static final int REPLACE_FA = 19;
-    private static final int REQ_HISTORICAL_DATA = 20;
-    private static final int EXERCISE_OPTIONS = 21;
-    private static final int REQ_SCANNER_SUBSCRIPTION = 22;
-    private static final int CANCEL_SCANNER_SUBSCRIPTION = 23;
-    private static final int REQ_SCANNER_PARAMETERS = 24;
-    private static final int CANCEL_HISTORICAL_DATA = 25;
-    private static final int REQ_CURRENT_TIME = 49;
-    private static final int REQ_REAL_TIME_BARS = 50;
-    private static final int CANCEL_REAL_TIME_BARS = 51;
-    private static final int REQ_FUNDAMENTAL_DATA = 52;
-    private static final int CANCEL_FUNDAMENTAL_DATA = 53;
-    private static final int REQ_CALC_IMPLIED_VOLAT = 54;
-    private static final int REQ_CALC_OPTION_PRICE = 55;
-    private static final int CANCEL_CALC_IMPLIED_VOLAT = 56;
-    private static final int CANCEL_CALC_OPTION_PRICE = 57;
-    private static final int REQ_GLOBAL_CANCEL = 58;
-    private static final int REQ_MARKET_DATA_TYPE = 59;
-    private static final int REQ_POSITIONS = 61;
-    private static final int REQ_ACCOUNT_SUMMARY = 62;
-    private static final int CANCEL_ACCOUNT_SUMMARY = 63;
-    private static final int CANCEL_POSITIONS = 64;
-    private static final int VERIFY_REQUEST = 65;
-    private static final int VERIFY_MESSAGE = 66;
-    private static final int QUERY_DISPLAY_GROUPS = 67;
-    private static final int SUBSCRIBE_TO_GROUP_EVENTS = 68;
-    private static final int UPDATE_DISPLAY_GROUP = 69;
-    private static final int UNSUBSCRIBE_FROM_GROUP_EVENTS = 70;
-    private static final int START_API = 71;
-    private static final int VERIFY_AND_AUTH_REQUEST = 72;
-    private static final int VERIFY_AND_AUTH_MESSAGE = 73;
-    private static final int REQ_POSITIONS_MULTI = 74;
-    private static final int CANCEL_POSITIONS_MULTI = 75;
-    private static final int REQ_ACCOUNT_UPDATES_MULTI = 76;
-    private static final int CANCEL_ACCOUNT_UPDATES_MULTI = 77;
-    private static final int REQ_SEC_DEF_OPT_PARAMS     = 78;
-    private static final int REQ_SOFT_DOLLAR_TIERS     = 79;
-    private static final int REQ_FAMILY_CODES = 80;
-    private static final int REQ_MATCHING_SYMBOLS = 81;
-    private static final int REQ_MKT_DEPTH_EXCHANGES = 82;
-    private static final int REQ_SMART_COMPONENTS = 83;
-    private static final int REQ_NEWS_ARTICLE = 84;
-    private static final int REQ_NEWS_PROVIDERS = 85;
-    private static final int REQ_HISTORICAL_NEWS = 86;
-  	private static final int REQ_HEAD_TIMESTAMP = 87;
-  	private static final int REQ_HISTOGRAM_DATA = 88;
-    private static final int CANCEL_HISTOGRAM_DATA = 89;
-    private static final int CANCEL_HEAD_TIMESTAMP = 90;
-    private static final int REQ_MARKET_RULE = 91;
-    private static final int REQ_PNL = 92;
-    private static final int CANCEL_PNL = 93;
-    private static final int REQ_PNL_SINGLE = 94;
-    private static final int CANCEL_PNL_SINGLE = 95;
-    private static final int REQ_HISTORICAL_TICKS = 96;
-    private static final int REQ_TICK_BY_TICK_DATA = 97;
-    private static final int CANCEL_TICK_BY_TICK_DATA = 98;
-    private static final int REQ_COMPLETED_ORDERS = 99;
-    private static final int REQ_WSH_META_DATA = 100;
-    private static final int CANCEL_WSH_META_DATA = 101;
-    private static final int REQ_WSH_EVENT_DATA = 102;
-    private static final int CANCEL_WSH_EVENT_DATA = 103;
-    private static final int REQ_USER_INFO = 104;
-    private static final int REQ_CURRENT_TIME_IN_MILLIS = 105;
-    private static final int CANCEL_CONTRACT_DATA = 106;
-    private static final int CANCEL_HISTORICAL_TICKS = 107;
-	private static final int REQ_CONFIG = 108;
-	private static final int UPDATE_CONFIG = 109;
-
 	private static final int MIN_SERVER_VER_REAL_TIME_BARS = 34;
 	private static final int MIN_SERVER_VER_SCALE_ORDERS = 35;
 	private static final int MIN_SERVER_VER_SNAPSHOT_MKT_DATA = 35;
@@ -280,7 +204,6 @@ public abstract class EClient {
 	private static final int MIN_SERVER_VER_WHAT_IF_ORDERS = 36;
 	private static final int MIN_SERVER_VER_CONTRACT_CONID = 37;
 	private static final int MIN_SERVER_VER_PTA_ORDERS = 39;
-	private static final int MIN_SERVER_VER_FUNDAMENTAL_DATA = 40;
 	private static final int MIN_SERVER_VER_DELTA_NEUTRAL = 40;
 	private static final int MIN_SERVER_VER_CONTRACT_DATA_CHAIN = 40;
 	private static final int MIN_SERVER_VER_SCALE_ORDERS2 = 40;
@@ -438,93 +361,14 @@ public abstract class EClient {
     protected static final int MIN_SERVER_VER_UPDATE_CONFIG = 221;
     protected static final int MIN_SERVER_VER_FRACTIONAL_LAST_SIZE = 222;
     protected static final int MIN_SERVER_VER_HEDGE_MAX_SIZE = 223;
+    protected static final int MIN_SERVER_VER_USE_PRECISION_FROM_SEC_DEF = 224;
+    protected static final int MIN_SERVER_VER_ODD_LOT_BID_ASK_QUOTES = 225;
+    protected static final int UNIFIED_VERSION_COND_ORDER_WITH_OVERNIGHT_PARAM = 226;
 
     public static final int MIN_VERSION = 100; // envelope encoding, applicable to useV100Plus mode only
-    public static final int MAX_VERSION = MIN_SERVER_VER_HEDGE_MAX_SIZE; // ditto
+    public static final int MAX_VERSION = UNIFIED_VERSION_COND_ORDER_WITH_OVERNIGHT_PARAM; // ditto
     
     public static final int PROTOBUF_MSG_ID = 200;
-    public static final Map<Integer, Integer> PROTOBUF_MSG_IDS = new HashMap<Integer, Integer>();
-    static {
-        PROTOBUF_MSG_IDS.put(REQ_EXECUTIONS, MIN_SERVER_VER_PROTOBUF);
-        PROTOBUF_MSG_IDS.put(PLACE_ORDER, MIN_SERVER_VER_PROTOBUF_PLACE_ORDER);
-        PROTOBUF_MSG_IDS.put(CANCEL_ORDER, MIN_SERVER_VER_PROTOBUF_PLACE_ORDER);
-        PROTOBUF_MSG_IDS.put(REQ_GLOBAL_CANCEL, MIN_SERVER_VER_PROTOBUF_PLACE_ORDER);
-        PROTOBUF_MSG_IDS.put(REQ_ALL_OPEN_ORDERS, MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER);
-        PROTOBUF_MSG_IDS.put(REQ_AUTO_OPEN_ORDERS, MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER);
-        PROTOBUF_MSG_IDS.put(REQ_COMPLETED_ORDERS, MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER);
-        PROTOBUF_MSG_IDS.put(REQ_OPEN_ORDERS, MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER);
-        PROTOBUF_MSG_IDS.put(REQ_CONTRACT_DATA, MIN_SERVER_VER_PROTOBUF_CONTRACT_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_MKT_DATA, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_MKT_DATA, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_MKT_DEPTH, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_MKT_DEPTH, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_MARKET_DATA_TYPE, MIN_SERVER_VER_PROTOBUF_MARKET_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_ACCOUNT_DATA, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(REQ_MANAGED_ACCTS, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(REQ_POSITIONS, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(CANCEL_POSITIONS, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(REQ_ACCOUNT_SUMMARY, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(CANCEL_ACCOUNT_SUMMARY, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(REQ_POSITIONS_MULTI, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(CANCEL_POSITIONS_MULTI, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(REQ_ACCOUNT_UPDATES_MULTI, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(CANCEL_ACCOUNT_UPDATES_MULTI, MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS);
-        PROTOBUF_MSG_IDS.put(REQ_HISTORICAL_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_HISTORICAL_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_REAL_TIME_BARS, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_REAL_TIME_BARS, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_HEAD_TIMESTAMP, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_HEAD_TIMESTAMP, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_HISTOGRAM_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_HISTOGRAM_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_HISTORICAL_TICKS, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_TICK_BY_TICK_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_TICK_BY_TICK_DATA, MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_NEWS_BULLETINS, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_NEWS_BULLETINS, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_NEWS_ARTICLE, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_NEWS_PROVIDERS, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_HISTORICAL_NEWS, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_WSH_META_DATA, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_WSH_META_DATA, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_WSH_EVENT_DATA, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_WSH_EVENT_DATA, MIN_SERVER_VER_PROTOBUF_NEWS_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_SCANNER_PARAMETERS, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_SCANNER_SUBSCRIPTION, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_SCANNER_SUBSCRIPTION, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_FUNDAMENTAL_DATA, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_FUNDAMENTAL_DATA, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_PNL, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_PNL, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_PNL_SINGLE, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
-        PROTOBUF_MSG_IDS.put(CANCEL_PNL_SINGLE, MIN_SERVER_VER_PROTOBUF_SCAN_DATA);
-        PROTOBUF_MSG_IDS.put(REQ_FA, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
-        PROTOBUF_MSG_IDS.put(REPLACE_FA, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
-        PROTOBUF_MSG_IDS.put(EXERCISE_OPTIONS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
-        PROTOBUF_MSG_IDS.put(REQ_CALC_IMPLIED_VOLAT, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
-        PROTOBUF_MSG_IDS.put(CANCEL_CALC_IMPLIED_VOLAT, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
-        PROTOBUF_MSG_IDS.put(REQ_CALC_OPTION_PRICE, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
-        PROTOBUF_MSG_IDS.put(CANCEL_CALC_OPTION_PRICE, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1);
-        PROTOBUF_MSG_IDS.put(REQ_SEC_DEF_OPT_PARAMS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
-        PROTOBUF_MSG_IDS.put(REQ_SOFT_DOLLAR_TIERS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
-        PROTOBUF_MSG_IDS.put(REQ_FAMILY_CODES, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
-        PROTOBUF_MSG_IDS.put(REQ_MATCHING_SYMBOLS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
-        PROTOBUF_MSG_IDS.put(REQ_SMART_COMPONENTS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
-        PROTOBUF_MSG_IDS.put(REQ_MARKET_RULE, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
-        PROTOBUF_MSG_IDS.put(REQ_USER_INFO, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2);
-        PROTOBUF_MSG_IDS.put(REQ_IDS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(REQ_CURRENT_TIME, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(REQ_CURRENT_TIME_IN_MILLIS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(START_API, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(SET_SERVER_LOGLEVEL, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(VERIFY_REQUEST, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(VERIFY_MESSAGE, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(QUERY_DISPLAY_GROUPS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(SUBSCRIBE_TO_GROUP_EVENTS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(UPDATE_DISPLAY_GROUP, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(UNSUBSCRIBE_FROM_GROUP_EVENTS, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-        PROTOBUF_MSG_IDS.put(REQ_MKT_DEPTH_EXCHANGES, MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3);
-    }
 
     protected EReaderSignal m_signal;
     protected EWrapper m_eWrapper;    // msg handler
@@ -542,9 +386,30 @@ public abstract class EClient {
 		return m_useV100Plus;
 	}
 	
-    private boolean useProtoBuf(int msgId) {
-        Integer unifiedVersion = PROTOBUF_MSG_IDS.get(msgId);
-        return unifiedVersion != null && unifiedVersion.intValue() <= serverVersion();
+    private static int getServerVersionForMessage(OutgoingMsgId msgId) {
+        return switch (msgId) {
+            case REQ_EXECUTIONS -> MIN_SERVER_VER_PROTOBUF;
+            case PLACE_ORDER, CANCEL_ORDER, REQ_GLOBAL_CANCEL -> MIN_SERVER_VER_PROTOBUF_PLACE_ORDER;
+            case REQ_ALL_OPEN_ORDERS, REQ_AUTO_OPEN_ORDERS, REQ_OPEN_ORDERS, REQ_COMPLETED_ORDERS -> MIN_SERVER_VER_PROTOBUF_COMPLETED_ORDER;
+            case REQ_CONTRACT_DATA -> MIN_SERVER_VER_PROTOBUF_CONTRACT_DATA;
+            case REQ_MKT_DATA, CANCEL_MKT_DATA, REQ_MKT_DEPTH, CANCEL_MKT_DEPTH, REQ_MARKET_DATA_TYPE -> MIN_SERVER_VER_PROTOBUF_MARKET_DATA;
+            case REQ_ACCOUNT_DATA, REQ_MANAGED_ACCTS, REQ_POSITIONS, CANCEL_POSITIONS, REQ_ACCOUNT_SUMMARY, CANCEL_ACCOUNT_SUMMARY,
+                    REQ_POSITIONS_MULTI, CANCEL_POSITIONS_MULTI, REQ_ACCOUNT_UPDATES_MULTI, CANCEL_ACCOUNT_UPDATES_MULTI -> MIN_SERVER_VER_PROTOBUF_ACCOUNTS_POSITIONS;
+            case REQ_HISTORICAL_DATA, CANCEL_HISTORICAL_DATA, REQ_REAL_TIME_BARS, CANCEL_REAL_TIME_BARS, REQ_HEAD_TIMESTAMP, CANCEL_HEAD_TIMESTAMP,
+                    REQ_HISTOGRAM_DATA, CANCEL_HISTOGRAM_DATA, REQ_HISTORICAL_TICKS, REQ_TICK_BY_TICK_DATA, CANCEL_TICK_BY_TICK_DATA -> MIN_SERVER_VER_PROTOBUF_HISTORICAL_DATA;
+            case REQ_NEWS_BULLETINS, CANCEL_NEWS_BULLETINS, REQ_NEWS_ARTICLE, REQ_NEWS_PROVIDERS, REQ_HISTORICAL_NEWS,
+                    REQ_WSH_META_DATA, CANCEL_WSH_META_DATA, REQ_WSH_EVENT_DATA, CANCEL_WSH_EVENT_DATA -> MIN_SERVER_VER_PROTOBUF_NEWS_DATA;
+            case REQ_SCANNER_PARAMETERS, REQ_SCANNER_SUBSCRIPTION, CANCEL_SCANNER_SUBSCRIPTION, REQ_PNL, CANCEL_PNL, REQ_PNL_SINGLE, CANCEL_PNL_SINGLE -> MIN_SERVER_VER_PROTOBUF_SCAN_DATA;
+            case REQ_FA, REPLACE_FA, EXERCISE_OPTIONS, REQ_CALC_IMPLIED_VOLAT, CANCEL_CALC_IMPLIED_VOLAT, REQ_CALC_OPTION_PRICE, CANCEL_CALC_OPTION_PRICE -> MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_1;
+            case REQ_SEC_DEF_OPT_PARAMS, REQ_SOFT_DOLLAR_TIERS, REQ_FAMILY_CODES, REQ_MATCHING_SYMBOLS, REQ_SMART_COMPONENTS, REQ_MARKET_RULE, REQ_USER_INFO -> MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_2;
+            case REQ_IDS, REQ_CURRENT_TIME, REQ_CURRENT_TIME_IN_MILLIS, START_API, SET_SERVER_LOGLEVEL, VERIFY_REQUEST, VERIFY_MESSAGE,
+                    QUERY_DISPLAY_GROUPS, SUBSCRIBE_TO_GROUP_EVENTS, UPDATE_DISPLAY_GROUP, UNSUBSCRIBE_FROM_GROUP_EVENTS, REQ_MKT_DEPTH_EXCHANGES -> MIN_SERVER_VER_PROTOBUF_REST_MESSAGES_3;
+            default -> Integer.MAX_VALUE; // unknown id, not supported
+        };
+    }
+
+    private boolean useProtoBuf(OutgoingMsgId msgId) {
+        return getServerVersionForMessage(msgId) <= serverVersion();
     }
 
     public int serverVersion()          { return m_serverVersion;   }
@@ -620,7 +485,7 @@ public abstract class EClient {
     public abstract void eDisconnect();
     
     public synchronized void startAPI() {
-        if (useProtoBuf(START_API)) {
+        if (useProtoBuf(OutgoingMsgId.START_API)) {
             startAPIProtoBuf(EClientUtils.createStartApiRequestProto(m_clientId, m_optionalCapabilities));
             return;
         }
@@ -636,7 +501,7 @@ public abstract class EClient {
         try {
         	Builder b = prepareBuffer(); 
         	
-            sendMsgId(b, START_API);
+            sendMsgId(b, OutgoingMsgId.START_API);
             b.send(VERSION);
             b.send(m_clientId);
             
@@ -668,7 +533,7 @@ public abstract class EClient {
         // send start api msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, START_API + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.START_API.id() + PROTOBUF_MSG_ID);
 
             // send start api request
             byte[] byteArray = startApiRequestProto.toByteArray();
@@ -682,7 +547,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelScannerSubscription( int tickerId) {
-        if (useProtoBuf(CANCEL_SCANNER_SUBSCRIPTION)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_SCANNER_SUBSCRIPTION)) {
             cancelScannerSubscriptionProtoBuf(EClientUtils.createCancelScannerSubscriptionProto(tickerId));
             return;
         }
@@ -705,7 +570,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_SCANNER_SUBSCRIPTION);
+            sendMsgId(b, OutgoingMsgId.CANCEL_SCANNER_SUBSCRIPTION);
             b.send( VERSION);
             b.send( tickerId);
             
@@ -733,7 +598,7 @@ public abstract class EClient {
         // send cancel scanner subscription msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_SCANNER_SUBSCRIPTION + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_SCANNER_SUBSCRIPTION.id() + PROTOBUF_MSG_ID);
 
             // send cancel scanner subscription
             byte[] byteArray = cancelScannerSubscriptionProto.toByteArray();
@@ -747,7 +612,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqScannerParameters() {
-        if (useProtoBuf(REQ_SCANNER_PARAMETERS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_SCANNER_PARAMETERS)) {
             reqScannerParametersProtoBuf(EClientUtils.createScannerParametersRequestProto());
             return;
         }
@@ -769,7 +634,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_SCANNER_PARAMETERS);
+            sendMsgId(b, OutgoingMsgId.REQ_SCANNER_PARAMETERS);
             b.send(VERSION);
 
             closeAndSend(b);
@@ -795,7 +660,7 @@ public abstract class EClient {
         // send req scanner parameters msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_SCANNER_PARAMETERS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_SCANNER_PARAMETERS.id() + PROTOBUF_MSG_ID);
 
             // send scanner parameters request
             byte[] byteArray = scannerParametersRequestProto.toByteArray();
@@ -813,7 +678,7 @@ public abstract class EClient {
             List<TagValue> scannerSubscriptionOptions, 
             List<TagValue> scannerSubscriptionFilterOptions) {
         
-        if (useProtoBuf(REQ_SCANNER_SUBSCRIPTION)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_SCANNER_SUBSCRIPTION)) {
             reqScannerSubscriptionProtoBuf(EClientUtils.createScannerSubscriptionRequestProto(tickerId, subscription, scannerSubscriptionOptions, scannerSubscriptionFilterOptions));
             return;
         }
@@ -843,7 +708,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer();
 
-            sendMsgId(b, REQ_SCANNER_SUBSCRIPTION);
+            sendMsgId(b, OutgoingMsgId.REQ_SCANNER_SUBSCRIPTION);
             
             if (m_serverVersion < MIN_SERVER_VER_SCANNER_GENERIC_OPTS) {
                 b.send(VERSION);
@@ -915,7 +780,7 @@ public abstract class EClient {
         // send req scanner subscription msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_SCANNER_SUBSCRIPTION + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_SCANNER_SUBSCRIPTION.id() + PROTOBUF_MSG_ID);
 
             // send scanner subscription request
             byte[] byteArray = scannerSubscriptionRequestProto.toByteArray();
@@ -933,7 +798,7 @@ public abstract class EClient {
 
     public synchronized void reqMktData(int tickerId, Contract contract,
     		String genericTickList, boolean snapshot, boolean regulatorySnapshot, List<TagValue> mktDataOptions) {
-        if (useProtoBuf(REQ_MKT_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_MKT_DATA)) {
             reqMarketDataProtoBuf(EClientUtils.createMarketDataRequestProto(tickerId, contract, genericTickList, snapshot, regulatorySnapshot, mktDataOptions));
             return;
         }
@@ -979,7 +844,7 @@ public abstract class EClient {
             // send req mkt data msg
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_MKT_DATA);
+            sendMsgId(b, OutgoingMsgId.REQ_MKT_DATA);
             b.send(VERSION);
             b.send(tickerId);
 
@@ -1098,7 +963,7 @@ public abstract class EClient {
         // send req market data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_MKT_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_MKT_DATA.id() + PROTOBUF_MSG_ID);
 
             // send market data request
             byte[] byteArray = marketDataRequestProto.toByteArray();
@@ -1115,7 +980,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelHistoricalData( int tickerId ) {
-        if (useProtoBuf(CANCEL_HISTORICAL_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_HISTORICAL_DATA)) {
             cancelHistoricalDataProtoBuf(EClientUtils.createCancelHistoricalDataProto(tickerId));
             return;
         }
@@ -1138,7 +1003,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_HISTORICAL_DATA);
+            sendMsgId(b, OutgoingMsgId.CANCEL_HISTORICAL_DATA);
             b.send( VERSION);
             b.send( tickerId);
 
@@ -1166,7 +1031,7 @@ public abstract class EClient {
         // send cancel historical data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_HISTORICAL_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_HISTORICAL_DATA.id() + PROTOBUF_MSG_ID);
 
             // send cancel historical data
             byte[] byteArray = cancelHistoricalDataProto.toByteArray();
@@ -1180,7 +1045,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelRealTimeBars(int tickerId) {
-        if (useProtoBuf(CANCEL_REAL_TIME_BARS)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_REAL_TIME_BARS)) {
             cancelRealTimeBarsProtoBuf(EClientUtils.createCancelRealTimeBarsProto(tickerId));
             return;
         }
@@ -1203,7 +1068,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_REAL_TIME_BARS);
+            sendMsgId(b, OutgoingMsgId.CANCEL_REAL_TIME_BARS);
             b.send( VERSION);
             b.send( tickerId);
 
@@ -1231,7 +1096,7 @@ public abstract class EClient {
         // send cancel real time bars msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_REAL_TIME_BARS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_REAL_TIME_BARS.id() + PROTOBUF_MSG_ID);
 
             // send cancel real time bars
             byte[] byteArray = cancelRealTimeBarsProto.toByteArray();
@@ -1249,7 +1114,7 @@ public abstract class EClient {
                                                 String endDateTime, String durationStr,
                                                 String barSizeSetting, String whatToShow,
                                                 int useRTH, int formatDate, boolean keepUpToDate, List<TagValue> chartOptions) {
-        if (useProtoBuf(REQ_HISTORICAL_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_HISTORICAL_DATA)) {
             reqHistoricalDataProtoBuf(EClientUtils.createHistoricalDataRequestProto(tickerId, contract, endDateTime, durationStr, barSizeSetting, whatToShow, useRTH != 0, formatDate, keepUpToDate, chartOptions));
             return;
         }
@@ -1287,7 +1152,7 @@ public abstract class EClient {
 
           Builder b = prepareBuffer(); 
 
-          sendMsgId(b, REQ_HISTORICAL_DATA);
+          sendMsgId(b, OutgoingMsgId.REQ_HISTORICAL_DATA);
           
           if (m_serverVersion < MIN_SERVER_VER_SYNT_REALTIME_BARS) {
               b.send(VERSION);
@@ -1389,7 +1254,7 @@ public abstract class EClient {
         // send req historical data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_HISTORICAL_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_HISTORICAL_DATA.id() + PROTOBUF_MSG_ID);
     
             // send historical data request
             byte[] byteArray = historicalDataRequestProto.toByteArray();
@@ -1409,7 +1274,7 @@ public abstract class EClient {
     public synchronized void reqHeadTimestamp(int tickerId, Contract contract,
                                                 String whatToShow, int useRTH, int formatDate) {
 
-        if (useProtoBuf(REQ_HEAD_TIMESTAMP)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_HEAD_TIMESTAMP)) {
             reqHeadTimestampProtoBuf(EClientUtils.createHeadTimestampRequestProto(tickerId, contract, whatToShow, useRTH != 0, formatDate));
             return;
         }
@@ -1429,7 +1294,7 @@ public abstract class EClient {
 
     		Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_HEAD_TIMESTAMP);
+            sendMsgId(b, OutgoingMsgId.REQ_HEAD_TIMESTAMP);
     		b.send(tickerId);
     		b.send(contract);
     		b.send(useRTH);
@@ -1463,7 +1328,7 @@ public abstract class EClient {
         // send req head timestamp msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_HEAD_TIMESTAMP + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_HEAD_TIMESTAMP.id() + PROTOBUF_MSG_ID);
 
             // send head timestamp request
             byte[] byteArray = headTimestampRequestProto.toByteArray();
@@ -1480,7 +1345,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelHeadTimestamp(int tickerId) {
-        if (useProtoBuf(CANCEL_HEAD_TIMESTAMP)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_HEAD_TIMESTAMP)) {
             cancelHeadTimestampProtoBuf(EClientUtils.createCancelHeadTimestampProto(tickerId));
             return;
         }
@@ -1500,7 +1365,7 @@ public abstract class EClient {
 
     		Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_HEAD_TIMESTAMP);
+            sendMsgId(b, OutgoingMsgId.CANCEL_HEAD_TIMESTAMP);
     		b.send(tickerId);
     		closeAndSend(b);
     	}
@@ -1526,7 +1391,7 @@ public abstract class EClient {
         // send cancel head timestamp msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_HEAD_TIMESTAMP + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_HEAD_TIMESTAMP.id() + PROTOBUF_MSG_ID);
 
             // send cancel head timestamp
             byte[] byteArray = cancelHeadTimestampProto.toByteArray();
@@ -1540,7 +1405,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqRealTimeBars(int tickerId, Contract contract, int barSize, String whatToShow, boolean useRTH, List<TagValue> realTimeBarsOptions) {
-        if (useProtoBuf(REQ_REAL_TIME_BARS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_REAL_TIME_BARS)) {
             reqRealTimeBarsProtoBuf(EClientUtils.createRealTimeBarsRequestProto(tickerId, contract, barSize, whatToShow, useRTH, realTimeBarsOptions));
             return;
         }
@@ -1571,7 +1436,7 @@ public abstract class EClient {
             // send req mkt data msg
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_REAL_TIME_BARS);
+            sendMsgId(b, OutgoingMsgId.REQ_REAL_TIME_BARS);
             b.send(VERSION);
             b.send(tickerId);
 
@@ -1631,7 +1496,7 @@ public abstract class EClient {
         // send req real time bars msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_REAL_TIME_BARS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_REAL_TIME_BARS.id() + PROTOBUF_MSG_ID);
 
             // send real time bars request
             byte[] byteArray = realTimeBarsRequestProto.toByteArray();
@@ -1648,7 +1513,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqContractDetails(int reqId, Contract contract) {
-        if (useProtoBuf(REQ_CONTRACT_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_CONTRACT_DATA)) {
             reqContractDataProtoBuf(EClientUtils.createContractDataRequestProto(reqId, contract));
             return;
         }
@@ -1703,7 +1568,7 @@ public abstract class EClient {
             // send req mkt data msg
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_CONTRACT_DATA);
+            sendMsgId(b, OutgoingMsgId.REQ_CONTRACT_DATA);
             b.send( VERSION);
 
             if (m_serverVersion >= MIN_SERVER_VER_CONTRACT_DATA_CHAIN) {
@@ -1779,7 +1644,7 @@ public abstract class EClient {
         // send req contract data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_CONTRACT_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_CONTRACT_DATA.id() + PROTOBUF_MSG_ID);
 
             // send contract data request
             byte[] byteArray = contractDataRequestProto.toByteArray();
@@ -1796,7 +1661,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqMktDepth( int tickerId, Contract contract, int numRows, boolean isSmartDepth, List<TagValue> mktDepthOptions) {
-        if (useProtoBuf(REQ_MKT_DEPTH)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_MKT_DEPTH)) {
             reqMarketDepthProtoBuf(EClientUtils.createMarketDepthRequestProto(tickerId, contract, numRows, isSmartDepth, mktDepthOptions));
             return;
         }
@@ -1840,7 +1705,7 @@ public abstract class EClient {
             // send req mkt data msg
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_MKT_DEPTH);
+            sendMsgId(b, OutgoingMsgId.REQ_MKT_DEPTH);
             b.send(VERSION);
             b.send(tickerId);
 
@@ -1910,7 +1775,7 @@ public abstract class EClient {
         // send req market depth msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_MKT_DEPTH + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_MKT_DEPTH.id() + PROTOBUF_MSG_ID);
 
             // send market depth request
             byte[] byteArray = marketDepthRequestProto.toByteArray();
@@ -1927,7 +1792,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelMktData( int tickerId) {
-        if (useProtoBuf(CANCEL_MKT_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_MKT_DATA)) {
             cancelMarketDataProtoBuf(EClientUtils.createCancelMarketDataProto(tickerId));
             return;
         }
@@ -1944,7 +1809,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_MKT_DATA);
+            sendMsgId(b, OutgoingMsgId.CANCEL_MKT_DATA);
             b.send( VERSION);
             b.send( tickerId);
 
@@ -1971,7 +1836,7 @@ public abstract class EClient {
         // send cancel market data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_MKT_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_MKT_DATA.id() + PROTOBUF_MSG_ID);
 
             // send cancel market data
             byte[] byteArray = cancelMarketDataProto.toByteArray();
@@ -1988,7 +1853,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelMktDepth( int tickerId, boolean isSmartDepth) {
-        if (useProtoBuf(CANCEL_MKT_DEPTH)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_MKT_DEPTH)) {
             cancelMarketDepthProtoBuf(EClientUtils.createCancelMarketDepthProto(tickerId, isSmartDepth));
             return;
         }
@@ -2019,7 +1884,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_MKT_DEPTH);
+            sendMsgId(b, OutgoingMsgId.CANCEL_MKT_DEPTH);
             b.send( VERSION);
             b.send( tickerId);
             
@@ -2050,7 +1915,7 @@ public abstract class EClient {
         // send cancel market depth msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_MKT_DEPTH + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_MKT_DEPTH.id() + PROTOBUF_MSG_ID);
 
             // send cancel market depth
             byte[] byteArray = cancelMarketDepthProto.toByteArray();
@@ -2070,7 +1935,7 @@ public abstract class EClient {
                                               int exerciseAction, int exerciseQuantity,
                                               String account, int override, String manualOrderTime, 
                                               String customerAccount, boolean professionalCustomer) {
-        if (useProtoBuf(EXERCISE_OPTIONS)) {
+        if (useProtoBuf(OutgoingMsgId.EXERCISE_OPTIONS)) {
             exerciseOptionsProtoBuf(EClientUtils.createExerciseOptionsRequestProto(tickerId, contract, exerciseAction, exerciseQuantity, account, override != 0, manualOrderTime, customerAccount, professionalCustomer));
             return;
         }
@@ -2120,7 +1985,7 @@ public abstract class EClient {
             
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, EXERCISE_OPTIONS);
+            sendMsgId(b, OutgoingMsgId.EXERCISE_OPTIONS);
             b.send(VERSION);
             b.send(tickerId);
 
@@ -2181,7 +2046,7 @@ public abstract class EClient {
         // send exercise options msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, EXERCISE_OPTIONS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.EXERCISE_OPTIONS.id() + PROTOBUF_MSG_ID);
 
             // send exercise options request
             byte[] byteArray = exerciseOptionsRequestProto.toByteArray();
@@ -2228,7 +2093,7 @@ public abstract class EClient {
         
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, PLACE_ORDER + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.PLACE_ORDER.id() + PROTOBUF_MSG_ID);
 
             byte[] byteArray = placeOrderRequestProto.toByteArray();
             b.sendByteArray(byteArray);
@@ -2245,7 +2110,7 @@ public abstract class EClient {
 
     public synchronized void placeOrder(int id, Contract contract, Order order) {
         try {
-	        if (useProtoBuf(PLACE_ORDER)) {
+	        if (useProtoBuf(OutgoingMsgId.PLACE_ORDER)) {
 	            placeOrderProtoBuf(EClientUtils.createPlaceOrderRequestProto(id, contract, order));
 	            return;
 	        }
@@ -2616,7 +2481,7 @@ public abstract class EClient {
 	        // send place order msg
             final Builder b = prepareBuffer(); 
 
-            sendMsgId(b, PLACE_ORDER);
+            sendMsgId(b, OutgoingMsgId.PLACE_ORDER);
             
             if (m_serverVersion < MIN_SERVER_VER_ORDER_CONTAINER) {
                 b.send( VERSION);
@@ -3151,6 +3016,12 @@ public abstract class EClient {
             }
         }
 
+        if (m_serverVersion < UNIFIED_VERSION_COND_ORDER_WITH_OVERNIGHT_PARAM) {
+            if (order.hasConditionsIncludeOvernight()) {
+                return "conditionsIncludeOvernight";
+            }
+        }
+
         return null;
     }
 
@@ -3173,7 +3044,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqAccountUpdates(boolean subscribe, String acctCode) {
-        if (useProtoBuf(REQ_ACCOUNT_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_ACCOUNT_DATA)) {
             reqAccountUpdatesProtoBuf(EClientUtils.createAccountDataRequestProto(subscribe, acctCode));
             return;
         }
@@ -3190,7 +3061,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_ACCOUNT_DATA);
+            sendMsgId(b, OutgoingMsgId.REQ_ACCOUNT_DATA);
             b.send( VERSION);
             b.send( subscribe);
 
@@ -3223,7 +3094,7 @@ public abstract class EClient {
         // send account data request msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_ACCOUNT_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_ACCOUNT_DATA.id() + PROTOBUF_MSG_ID);
 
             // send account data request
             byte[] byteArray = accountDataRequestProto.toByteArray();
@@ -3255,7 +3126,7 @@ public abstract class EClient {
         // send req executions msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_EXECUTIONS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_EXECUTIONS.id() + PROTOBUF_MSG_ID);
 
             // send execution request
             byte[] byteArray = executionRequestProto.toByteArray();
@@ -3273,7 +3144,7 @@ public abstract class EClient {
 
     
     public synchronized void reqExecutions(int reqId, ExecutionFilter filter) {
-        if (useProtoBuf(REQ_EXECUTIONS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_EXECUTIONS)) {
             reqExecutionsProtoBuf(EClientUtils.createExecutionRequestProto(reqId, filter));
             return;
         }
@@ -3297,7 +3168,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_EXECUTIONS);
+            sendMsgId(b, OutgoingMsgId.REQ_EXECUTIONS);
             b.send( VERSION);
 
             if (m_serverVersion >= MIN_SERVER_VER_EXECUTION_DATA_CHAIN) {
@@ -3354,7 +3225,7 @@ public abstract class EClient {
 
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_ORDER + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_ORDER.id() + PROTOBUF_MSG_ID);
 
             byte[] byteArray = cancelOrderRequestProto.toByteArray();
             b.sendByteArray(byteArray);
@@ -3370,7 +3241,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelOrder( int id, OrderCancel orderCancel) {
-        if (useProtoBuf(CANCEL_ORDER)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_ORDER)) {
             cancelOrderProtoBuf(EClientUtils.createCancelOrderRequestProto(id, orderCancel));
             return;
         }
@@ -3401,7 +3272,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_ORDER);
+            sendMsgId(b, OutgoingMsgId.CANCEL_ORDER);
             if (m_serverVersion < MIN_SERVER_VER_CME_TAGGING_FIELDS) {
                 b.send( VERSION);
             }
@@ -3434,7 +3305,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqOpenOrders() {
-        if (useProtoBuf(REQ_OPEN_ORDERS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_OPEN_ORDERS)) {
             reqOpenOrdersProtoBuf(EClientUtils.createOpenOrdersRequestProto());
             return;
         }
@@ -3451,7 +3322,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_OPEN_ORDERS);
+            sendMsgId(b, OutgoingMsgId.REQ_OPEN_ORDERS);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -3472,7 +3343,7 @@ public abstract class EClient {
         // send req open orders msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_OPEN_ORDERS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_OPEN_ORDERS.id() + PROTOBUF_MSG_ID);
 
             // send open orders request
             byte[] byteArray = openOrdersRequest.toByteArray();
@@ -3486,7 +3357,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqIds( int numIds) {
-        if (useProtoBuf(REQ_IDS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_IDS)) {
             reqIdsProtoBuf(EClientUtils.createIdsRequestProto(numIds));
             return;
         }
@@ -3502,7 +3373,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_IDS);
+            sendMsgId(b, OutgoingMsgId.REQ_IDS);
             b.send( VERSION);
             b.send( numIds);
 
@@ -3528,7 +3399,7 @@ public abstract class EClient {
         // send req ids msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_IDS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_IDS.id() + PROTOBUF_MSG_ID);
 
             // send ids request
             byte[] byteArray = idsRequestProto.toByteArray();
@@ -3542,7 +3413,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqNewsBulletins( boolean allMsgs) {
-        if (useProtoBuf(REQ_NEWS_BULLETINS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_NEWS_BULLETINS)) {
             reqNewsBulletinsProtoBuf(EClientUtils.createNewsBulletinsRequestProto(allMsgs));
             return;
         }
@@ -3558,7 +3429,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_NEWS_BULLETINS);
+            sendMsgId(b, OutgoingMsgId.REQ_NEWS_BULLETINS);
             b.send( VERSION);
             b.send( allMsgs);
 
@@ -3584,7 +3455,7 @@ public abstract class EClient {
         // send req news bulletins msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_NEWS_BULLETINS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_NEWS_BULLETINS.id() + PROTOBUF_MSG_ID);
 
             // send news bulletins request
             byte[] byteArray = newsBulletinsRequestProto.toByteArray();
@@ -3598,7 +3469,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelNewsBulletins() {
-        if (useProtoBuf(CANCEL_NEWS_BULLETINS)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_NEWS_BULLETINS)) {
             cancelNewsBulletinsProtoBuf(EClientUtils.createCancelNewsBulletinsProto());
             return;
         }
@@ -3615,7 +3486,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_NEWS_BULLETINS);
+            sendMsgId(b, OutgoingMsgId.CANCEL_NEWS_BULLETINS);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -3640,7 +3511,7 @@ public abstract class EClient {
         // send cancel news bulletins msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_NEWS_BULLETINS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_NEWS_BULLETINS.id() + PROTOBUF_MSG_ID);
 
             // send cancel news bulletins
             byte[] byteArray = cancelNewsBulletinsProto.toByteArray();
@@ -3654,7 +3525,7 @@ public abstract class EClient {
     }
 
     public synchronized void setServerLogLevel(int logLevel) {
-        if (useProtoBuf(SET_SERVER_LOGLEVEL)) {
+        if (useProtoBuf(OutgoingMsgId.SET_SERVER_LOGLEVEL)) {
             setServerLogLevelProtoBuf(EClientUtils.createSetServerLogLevelRequestProto(logLevel));
             return;
         }
@@ -3671,7 +3542,7 @@ public abstract class EClient {
                 try {
                     Builder b = prepareBuffer(); 
 
-                    sendMsgId(b, SET_SERVER_LOGLEVEL);
+                    sendMsgId(b, OutgoingMsgId.SET_SERVER_LOGLEVEL);
                     b.send( VERSION);
                     b.send( logLevel);
 
@@ -3697,7 +3568,7 @@ public abstract class EClient {
         // send set server log level msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, SET_SERVER_LOGLEVEL + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.SET_SERVER_LOGLEVEL.id() + PROTOBUF_MSG_ID);
 
             // send set server log level request
             byte[] byteArray = setServerLogLevelRequestProto.toByteArray();
@@ -3711,7 +3582,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqAutoOpenOrders(boolean bAutoBind) {
-        if (useProtoBuf(REQ_AUTO_OPEN_ORDERS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_AUTO_OPEN_ORDERS)) {
             reqAutoOpenOrdersProtoBuf(EClientUtils.createAutoOpenOrdersRequestProto(bAutoBind));
             return;
         }
@@ -3728,7 +3599,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_AUTO_OPEN_ORDERS);
+            sendMsgId(b, OutgoingMsgId.REQ_AUTO_OPEN_ORDERS);
             b.send( VERSION);
             b.send( bAutoBind);
 
@@ -3750,7 +3621,7 @@ public abstract class EClient {
         // send req auto open orders msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_AUTO_OPEN_ORDERS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_AUTO_OPEN_ORDERS.id() + PROTOBUF_MSG_ID);
 
             // send auto open orders request
             byte[] byteArray = autoOpenOrdersRequest.toByteArray();
@@ -3764,7 +3635,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqAllOpenOrders() {
-        if (useProtoBuf(REQ_ALL_OPEN_ORDERS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_ALL_OPEN_ORDERS)) {
             reqAllOpenOrdersProtoBuf(EClientUtils.createAllOpenOrdersRequestProto());
             return;
         }
@@ -3781,7 +3652,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_ALL_OPEN_ORDERS);
+            sendMsgId(b, OutgoingMsgId.REQ_ALL_OPEN_ORDERS);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -3802,7 +3673,7 @@ public abstract class EClient {
         // send req all open orders msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_ALL_OPEN_ORDERS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_ALL_OPEN_ORDERS.id() + PROTOBUF_MSG_ID);
 
             // send all open orders request
             byte[] byteArray = allOpenOrdersRequest.toByteArray();
@@ -3816,7 +3687,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqManagedAccts() {
-        if (useProtoBuf(REQ_MANAGED_ACCTS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_MANAGED_ACCTS)) {
             reqManagedAcctsProtoBuf(EClientUtils.createManagedAccountsRequestProto());
             return;
         }
@@ -3833,7 +3704,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_MANAGED_ACCTS);
+            sendMsgId(b, OutgoingMsgId.REQ_MANAGED_ACCTS);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -3858,7 +3729,7 @@ public abstract class EClient {
         // send req managed accts msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_MANAGED_ACCTS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_MANAGED_ACCTS.id() + PROTOBUF_MSG_ID);
 
             // send managed accounts request
             byte[] byteArray = managedAccountsRequestProto.toByteArray();
@@ -3876,7 +3747,7 @@ public abstract class EClient {
     }
 
     public synchronized void requestFA( int faDataType ) {
-        if (useProtoBuf(REQ_FA)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_FA)) {
             reqFAProtoBuf(EClientUtils.createFARequestProto(faDataType));
             return;
         }
@@ -3898,7 +3769,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_FA);
+            sendMsgId(b, OutgoingMsgId.REQ_FA);
             b.send( VERSION);
             b.send( faDataType);
 
@@ -3924,7 +3795,7 @@ public abstract class EClient {
         // send req FA msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_FA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_FA.id() + PROTOBUF_MSG_ID);
 
             // send FA request
             byte[] byteArray = faRequestProto.toByteArray();
@@ -3942,7 +3813,7 @@ public abstract class EClient {
     }
 
     public synchronized void replaceFA( int reqId, int faDataType, String xml ) {
-        if (useProtoBuf(REPLACE_FA)) {
+        if (useProtoBuf(OutgoingMsgId.REPLACE_FA)) {
             replaceFAProtoBuf(EClientUtils.createFAReplaceProto(reqId, faDataType, xml));
             return;
         }
@@ -3964,7 +3835,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REPLACE_FA);
+            sendMsgId(b, OutgoingMsgId.REPLACE_FA);
             b.send( VERSION);
             b.send( faDataType);
             b.send( xml);
@@ -3999,7 +3870,7 @@ public abstract class EClient {
         // send replace FA msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REPLACE_FA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REPLACE_FA.id() + PROTOBUF_MSG_ID);
 
             // send FA replace
             byte[] byteArray = faReplaceProto.toByteArray();
@@ -4016,7 +3887,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqCurrentTime() {
-        if (useProtoBuf(REQ_CURRENT_TIME)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_CURRENT_TIME)) {
             reqCurrentTimeProtoBuf(EClientUtils.createCurrentTimeRequestProto());
             return;
         }
@@ -4039,7 +3910,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_CURRENT_TIME);
+            sendMsgId(b, OutgoingMsgId.REQ_CURRENT_TIME);
             b.send( VERSION);
 
             closeAndSend(b);
@@ -4064,7 +3935,7 @@ public abstract class EClient {
         // send req current time msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_CURRENT_TIME + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_CURRENT_TIME.id() + PROTOBUF_MSG_ID);
 
             // send current time request
             byte[] byteArray = currentTimeRequestProto.toByteArray();
@@ -4077,177 +3948,12 @@ public abstract class EClient {
         }
     }
 
-    public synchronized void reqFundamentalData(int reqId, Contract contract, String reportType,
-            //reserved for future use, must be blank
-            List<TagValue> fundamentalDataOptions) {
-
-        if (useProtoBuf(REQ_FUNDAMENTAL_DATA)) {
-            reqFundamentalsDataProtoBuf(EClientUtils.createFundamentalsDataRequestProto(reqId, contract, reportType, fundamentalDataOptions));
-            return;
-        }
-
-        // not connected?
-        if( !isConnected()) {
-            notConnected();
-            return;
-        }
-
-        if( m_serverVersion < MIN_SERVER_VER_FUNDAMENTAL_DATA) {
-        	error( reqId, EClientErrors.UPDATE_TWS,
-        			"  It does not support fundamental data requests.");
-        	return;
-        }
-
-        if( m_serverVersion < MIN_SERVER_VER_TRADING_CLASS) {
-            if( contract.conid() > 0) {
-                  error(reqId, EClientErrors.UPDATE_TWS,
-                      "  It does not support conId parameter in reqFundamentalData.");
-                  return;
-            }
-        }
-
-        final int VERSION = 2;
-
-        try {
-            // send req fund data msg
-            Builder b = prepareBuffer(); 
-
-            sendMsgId(b, REQ_FUNDAMENTAL_DATA);
-            b.send(VERSION);
-            b.send(reqId);
-
-            // send contract fields
-            if(m_serverVersion >= MIN_SERVER_VER_TRADING_CLASS) {
-                b.send(contract.conid());
-            }
-            
-            b.send(contract.symbol());
-            b.send(contract.getSecType());
-            b.send(contract.exchange());
-            b.send(contract.primaryExch());
-            b.send(contract.currency());
-            b.send(contract.localSymbol());
-
-            b.send(reportType);
-            
-            if (m_serverVersion >= MIN_SERVER_VER_LINKING) {
-                b.send(fundamentalDataOptions);
-            }
-
-            closeAndSend(b);
-        }
-        catch(EClientException e) {
-            error(reqId, e.error(), e.text());
-        }
-        catch(Exception e) {
-            error(reqId, EClientErrors.FAIL_SEND_REQFUNDDATA, e.toString());
-            close();
-        }
-    }
-
-    public synchronized void reqFundamentalsDataProtoBuf(FundamentalsDataRequestProto.FundamentalsDataRequest fundamentalsDataRequestProto) {
-        if (fundamentalsDataRequestProto == null) {
-            return;
-        }
-
-        // not connected?
-        if (!isConnected()) {
-            notConnected();
-            return;
-        }
-
-        int reqId = fundamentalsDataRequestProto.hasReqId() ? fundamentalsDataRequestProto.getReqId() : EClientErrors.NO_VALID_ID;
-
-        // send req fundamental data msg
-        try {
-            Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_FUNDAMENTAL_DATA + PROTOBUF_MSG_ID);
-
-            // send fundamental data request
-            byte[] byteArray = fundamentalsDataRequestProto.toByteArray();
-            b.sendByteArray(byteArray);
-            closeAndSend(b);
-        }
-        catch(EClientException e) {
-            error(reqId, e.error(), e.text());
-        }
-        catch(Exception e) {
-            error(reqId, EClientErrors.FAIL_SEND_REQFUNDDATA, e.toString());
-            close();
-        }
-    }
-
-    public synchronized void cancelFundamentalData(int reqId) {
-        if (useProtoBuf(CANCEL_FUNDAMENTAL_DATA)) {
-            cancelFundamentalsDataProtoBuf(EClientUtils.createCancelFundamentalsDataProto(reqId));
-            return;
-        }
-
-        // not connected?
-        if( !isConnected()) {
-            notConnected();
-            return;
-        }
-
-        if( m_serverVersion < MIN_SERVER_VER_FUNDAMENTAL_DATA) {
-        	error( reqId, EClientErrors.UPDATE_TWS,
-        			"  It does not support fundamental data requests.");
-        	return;
-        }
-
-        final int VERSION = 1;
-
-        try {
-            // send cancel fundamental data msg
-            Builder b = prepareBuffer(); 
-
-            sendMsgId(b, CANCEL_FUNDAMENTAL_DATA);
-            b.send( VERSION);
-            b.send( reqId);
-
-            closeAndSend(b);
-       }
-        catch( Exception e) {
-            error( reqId, EClientErrors.FAIL_SEND_CANFUNDDATA, e.toString());
-            close();
-        }
-    }
-
-    public synchronized void cancelFundamentalsDataProtoBuf(CancelFundamentalsDataProto.CancelFundamentalsData cancelFundamentalsDataProto) {
-        if (cancelFundamentalsDataProto == null) {
-            return;
-        }
-
-        // not connected?
-        if (!isConnected()) {
-            notConnected();
-            return;
-        }
-
-        int reqId = cancelFundamentalsDataProto.hasReqId() ? cancelFundamentalsDataProto.getReqId() : EClientErrors.NO_VALID_ID;
-
-        // send cancel fundamental data msg
-        try {
-            Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_FUNDAMENTAL_DATA + PROTOBUF_MSG_ID);
-
-            // send cancel fundamental data
-            byte[] byteArray = cancelFundamentalsDataProto.toByteArray();
-            b.sendByteArray(byteArray);
-            closeAndSend(b);
-        }
-        catch(Exception e) {
-            error(reqId, EClientErrors.FAIL_SEND_CANFUNDDATA, e.toString());
-            close();
-        }
-    }
-
     public synchronized void calculateImpliedVolatility(int reqId, Contract contract,
             double optionPrice, double underPrice,
             //reserved for future use, must be blank
             List<TagValue> impliedVolatilityOptions) {
 
-        if (useProtoBuf(REQ_CALC_IMPLIED_VOLAT)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_CALC_IMPLIED_VOLAT)) {
             calculateImpliedVolatilityProtoBuf(EClientUtils.createCalculateImpliedVolatilityRequestProto(reqId, contract, optionPrice, underPrice, impliedVolatilityOptions));
             return;
         }
@@ -4278,7 +3984,7 @@ public abstract class EClient {
             // send calculate implied volatility msg
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_CALC_IMPLIED_VOLAT);
+            sendMsgId(b, OutgoingMsgId.REQ_CALC_IMPLIED_VOLAT);
             b.send(VERSION);
             b.send(reqId);
 
@@ -4333,7 +4039,7 @@ public abstract class EClient {
         // send calculate implied volatility msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_CALC_IMPLIED_VOLAT + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_CALC_IMPLIED_VOLAT.id() + PROTOBUF_MSG_ID);
 
             // send calculate implied volatility request
             byte[] byteArray = calculateImpliedVolatilityRequestProto.toByteArray();
@@ -4350,7 +4056,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelCalculateImpliedVolatility(int reqId) {
-        if (useProtoBuf(CANCEL_CALC_IMPLIED_VOLAT)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_CALC_IMPLIED_VOLAT)) {
             cancelCalculateImpliedVolatilityProtoBuf(EClientUtils.createCancelCalculateImpliedVolatilityProto(reqId));
             return;
         }
@@ -4373,7 +4079,7 @@ public abstract class EClient {
             // send cancel calculate implied volatility msg
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_CALC_IMPLIED_VOLAT);
+            sendMsgId(b, OutgoingMsgId.CANCEL_CALC_IMPLIED_VOLAT);
             b.send( VERSION);
             b.send( reqId);
 
@@ -4401,7 +4107,7 @@ public abstract class EClient {
         // send cancel calculate implied volatility msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_CALC_IMPLIED_VOLAT + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_CALC_IMPLIED_VOLAT.id() + PROTOBUF_MSG_ID);
 
             // send cancel calculate implied volatility
             byte[] byteArray = cancelCalculateImpliedVolatilityProto.toByteArray();
@@ -4419,7 +4125,7 @@ public abstract class EClient {
             //reserved for future use, must be blank
             List<TagValue> optionPriceOptions) {
 
-        if (useProtoBuf(REQ_CALC_OPTION_PRICE)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_CALC_OPTION_PRICE)) {
             calculateOptionPriceProtoBuf(EClientUtils.createCalculateOptionPriceRequestProto(reqId, contract, volatility, underPrice, optionPriceOptions));
             return;
         }
@@ -4450,7 +4156,7 @@ public abstract class EClient {
             // send calculate option price msg
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_CALC_OPTION_PRICE);
+            sendMsgId(b, OutgoingMsgId.REQ_CALC_OPTION_PRICE);
             b.send(VERSION);
             b.send(reqId);
 
@@ -4505,7 +4211,7 @@ public abstract class EClient {
         // send calculate option price msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_CALC_OPTION_PRICE + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_CALC_OPTION_PRICE.id() + PROTOBUF_MSG_ID);
 
             // send calculate option price request
             byte[] byteArray = calculateOptionPriceRequestProto.toByteArray();
@@ -4522,7 +4228,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelCalculateOptionPrice(int reqId) {
-        if (useProtoBuf(CANCEL_CALC_OPTION_PRICE)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_CALC_OPTION_PRICE)) {
             cancelCalculateOptionPriceProtoBuf(EClientUtils.createCancelCalculateOptionPriceProto(reqId));
             return;
         }
@@ -4545,7 +4251,7 @@ public abstract class EClient {
             // send cancel calculate option price msg
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_CALC_OPTION_PRICE);
+            sendMsgId(b, OutgoingMsgId.CANCEL_CALC_OPTION_PRICE);
             b.send( VERSION);
             b.send( reqId);
 
@@ -4573,7 +4279,7 @@ public abstract class EClient {
         // send cancel calculate option price msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_CALC_OPTION_PRICE + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_CALC_OPTION_PRICE.id() + PROTOBUF_MSG_ID);
 
             // send cancel calculate option price
             byte[] byteArray = cancelCalculateOptionPriceProto.toByteArray();
@@ -4599,7 +4305,7 @@ public abstract class EClient {
 
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_GLOBAL_CANCEL + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_GLOBAL_CANCEL.id() + PROTOBUF_MSG_ID);
 
             byte[] byteArray = globalCancelRequestProto.toByteArray();
             b.sendByteArray(byteArray);
@@ -4612,7 +4318,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqGlobalCancel(OrderCancel orderCancel) {
-        if (useProtoBuf(REQ_GLOBAL_CANCEL)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_GLOBAL_CANCEL)) {
             reqGlobalCancelProtoBuf(EClientUtils.createGlobalCancelRequestProto(orderCancel));
             return;
         }
@@ -4642,7 +4348,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_GLOBAL_CANCEL);
+            sendMsgId(b, OutgoingMsgId.REQ_GLOBAL_CANCEL);
             if (m_serverVersion < MIN_SERVER_VER_CME_TAGGING_FIELDS) {
                 b.send( VERSION);
             }
@@ -4661,7 +4367,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqMarketDataType(int marketDataType) {
-        if (useProtoBuf(REQ_MARKET_DATA_TYPE)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_MARKET_DATA_TYPE)) {
             reqMarketDataTypeProtoBuf(EClientUtils.createMarketDataTypeRequestProto(marketDataType));
             return;
         }
@@ -4684,7 +4390,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_MARKET_DATA_TYPE);
+            sendMsgId(b, OutgoingMsgId.REQ_MARKET_DATA_TYPE);
             b.send( VERSION);
             b.send( marketDataType);
 
@@ -4709,7 +4415,7 @@ public abstract class EClient {
         // send req market data type msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_MARKET_DATA_TYPE + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_MARKET_DATA_TYPE.id() + PROTOBUF_MSG_ID);
 
             // send market data type request
             byte[] byteArray = marketDataTypeRequestProto.toByteArray();
@@ -4726,7 +4432,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqPositions() {
-        if (useProtoBuf(REQ_POSITIONS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_POSITIONS)) {
             reqPositionsProtoBuf(EClientUtils.createPositionsRequestProto());
             return;
         }
@@ -4748,7 +4454,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_POSITIONS);
+            sendMsgId(b, OutgoingMsgId.REQ_POSITIONS);
             b.send( VERSION);
             closeAndSend(b);
         }
@@ -4772,7 +4478,7 @@ public abstract class EClient {
         // send req positions msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, REQ_POSITIONS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_POSITIONS.id() + PROTOBUF_MSG_ID);
 
             // send positions request
             byte[] byteArray = positionsRequestProto.toByteArray();
@@ -4786,7 +4492,7 @@ public abstract class EClient {
     }
 
 	public synchronized void reqSecDefOptParams(int reqId, String underlyingSymbol, String futFopExchange, String underlyingSecType, int underlyingConId) {
-        if (useProtoBuf(REQ_SEC_DEF_OPT_PARAMS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_SEC_DEF_OPT_PARAMS)) {
             reqSecDefOptParamsProtoBuf(EClientUtils.createSecDefOptParamsRequestProto(reqId, underlyingSymbol, futFopExchange, underlyingSecType, underlyingConId));
             return;
         }
@@ -4806,7 +4512,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_SEC_DEF_OPT_PARAMS);
+            sendMsgId(b, OutgoingMsgId.REQ_SEC_DEF_OPT_PARAMS);
             b.send(reqId);
             b.send(underlyingSymbol); 
             b.send(futFopExchange);
@@ -4839,7 +4545,7 @@ public abstract class EClient {
         // send req security definition option parameters msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_SEC_DEF_OPT_PARAMS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_SEC_DEF_OPT_PARAMS.id() + PROTOBUF_MSG_ID);
 
             // send security definition option parameters request
             byte[] byteArray = secDefOptParamsRequestProto.toByteArray();
@@ -4856,7 +4562,7 @@ public abstract class EClient {
     }
 
 	public synchronized void reqSoftDollarTiers(int reqId) {
-        if (useProtoBuf(REQ_SOFT_DOLLAR_TIERS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_SOFT_DOLLAR_TIERS)) {
             reqSoftDollarTiersProtoBuf(EClientUtils.createSoftDollarTiersRequestProto(reqId));
             return;
         }
@@ -4875,7 +4581,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
         
         try {
-            sendMsgId(b, REQ_SOFT_DOLLAR_TIERS);
+            sendMsgId(b, OutgoingMsgId.REQ_SOFT_DOLLAR_TIERS);
             b.send(reqId);
             closeAndSend(b);
         }
@@ -4901,7 +4607,7 @@ public abstract class EClient {
         // send req soft dollar tiers msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_SOFT_DOLLAR_TIERS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_SOFT_DOLLAR_TIERS.id() + PROTOBUF_MSG_ID);
 
             // send soft dollar tiers request
             byte[] byteArray = softDollarTiersRequestProto.toByteArray();
@@ -4918,7 +4624,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelPositions() {
-        if (useProtoBuf(CANCEL_POSITIONS)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_POSITIONS)) {
             cancelPositionsProtoBuf(EClientUtils.createCancelPositionsRequestProto());
             return;
         }
@@ -4940,7 +4646,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, CANCEL_POSITIONS);
+            sendMsgId(b, OutgoingMsgId.CANCEL_POSITIONS);
             b.send( VERSION);
             closeAndSend(b);
         }
@@ -4964,7 +4670,7 @@ public abstract class EClient {
         // send cancel positions msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, CANCEL_POSITIONS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_POSITIONS.id() + PROTOBUF_MSG_ID);
 
             // send cancel positions request
             byte[] byteArray = cancelPositionsProto.toByteArray();
@@ -4978,7 +4684,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqPositionsMulti( int reqId, String account, String modelCode) {
-        if (useProtoBuf(REQ_POSITIONS_MULTI)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_POSITIONS_MULTI)) {
             reqPositionsMultiProtoBuf(EClientUtils.createPositionsMultiRequestProto(reqId, account, modelCode));
             return;
         }
@@ -5000,7 +4706,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_POSITIONS_MULTI);
+            sendMsgId(b, OutgoingMsgId.REQ_POSITIONS_MULTI);
             b.send( VERSION);
             b.send( reqId);
             b.send( account);
@@ -5032,7 +4738,7 @@ public abstract class EClient {
         // send positions multi request msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, REQ_POSITIONS_MULTI + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_POSITIONS_MULTI.id() + PROTOBUF_MSG_ID);
 
             // send positions multi request
             byte[] byteArray = positionsMultiRequestProto.toByteArray();
@@ -5049,7 +4755,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelPositionsMulti( int reqId) {
-        if (useProtoBuf(CANCEL_POSITIONS_MULTI)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_POSITIONS_MULTI)) {
             cancelPositionsMultiProtoBuf(EClientUtils.createCancelPositionsMultiRequestProto(reqId));
             return;
         }
@@ -5071,7 +4777,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, CANCEL_POSITIONS_MULTI);
+            sendMsgId(b, OutgoingMsgId.CANCEL_POSITIONS_MULTI);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -5098,7 +4804,7 @@ public abstract class EClient {
         // send cancel positions multi msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, CANCEL_POSITIONS_MULTI + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_POSITIONS_MULTI.id() + PROTOBUF_MSG_ID);
 
             // send cancel positions multi
             byte[] byteArray = cancelPositionsMultiProto.toByteArray();
@@ -5112,7 +4818,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelAccountUpdatesMulti( int reqId) {
-        if (useProtoBuf(CANCEL_ACCOUNT_UPDATES_MULTI)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_ACCOUNT_UPDATES_MULTI)) {
             cancelAccountUpdatesMultiProtoBuf(EClientUtils.createCancelAccountUpdatesMultiRequestProto(reqId));
             return;
         }
@@ -5134,7 +4840,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, CANCEL_ACCOUNT_UPDATES_MULTI);
+            sendMsgId(b, OutgoingMsgId.CANCEL_ACCOUNT_UPDATES_MULTI);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -5161,7 +4867,7 @@ public abstract class EClient {
         // send cancel account updates multi msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, CANCEL_ACCOUNT_UPDATES_MULTI + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_ACCOUNT_UPDATES_MULTI.id() + PROTOBUF_MSG_ID);
 
             // send cancel account updates multi
             byte[] byteArray = cancelAccountUpdatesMultiProto.toByteArray();
@@ -5175,7 +4881,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqAccountUpdatesMulti( int reqId, String account, String modelCode, boolean ledgerAndNLV) {
-        if (useProtoBuf(REQ_ACCOUNT_UPDATES_MULTI)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_ACCOUNT_UPDATES_MULTI)) {
             reqAccountUpdatesMultiProtoBuf(EClientUtils.createAccountUpdatesMultiRequestProto(reqId, account, modelCode, ledgerAndNLV));
             return;
         }
@@ -5197,7 +4903,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_ACCOUNT_UPDATES_MULTI);
+            sendMsgId(b, OutgoingMsgId.REQ_ACCOUNT_UPDATES_MULTI);
             b.send( VERSION);
             b.send( reqId);
             b.send( account);
@@ -5230,7 +4936,7 @@ public abstract class EClient {
         // send account updates multi request msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, REQ_ACCOUNT_UPDATES_MULTI + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_ACCOUNT_UPDATES_MULTI.id() + PROTOBUF_MSG_ID);
 
             // send account updates multi request
             byte[] byteArray = accountUpdatesMultiRequestProto.toByteArray();
@@ -5247,7 +4953,7 @@ public abstract class EClient {
     }
     
     public synchronized void reqAccountSummary( int reqId, String group, String tags) {
-        if (useProtoBuf(REQ_ACCOUNT_SUMMARY)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_ACCOUNT_SUMMARY)) {
             reqAccountSummaryProtoBuf(EClientUtils.createAccountSummaryRequestProto(reqId, group, tags));
             return;
         }
@@ -5269,7 +4975,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_ACCOUNT_SUMMARY);
+            sendMsgId(b, OutgoingMsgId.REQ_ACCOUNT_SUMMARY);
             b.send( VERSION);
             b.send( reqId);
             b.send( group);
@@ -5301,7 +5007,7 @@ public abstract class EClient {
         // send account summary request msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, REQ_ACCOUNT_SUMMARY + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_ACCOUNT_SUMMARY.id() + PROTOBUF_MSG_ID);
 
             // send account summary request
             byte[] byteArray = accountSummaryRequestProto.toByteArray();
@@ -5318,7 +5024,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelAccountSummary( int reqId) {
-        if (useProtoBuf(CANCEL_ACCOUNT_SUMMARY)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_ACCOUNT_SUMMARY)) {
             cancelAccountSummaryProtoBuf(EClientUtils.createCancelAccountSummaryRequestProto(reqId));
             return;
         }
@@ -5340,7 +5046,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, CANCEL_ACCOUNT_SUMMARY);
+            sendMsgId(b, OutgoingMsgId.CANCEL_ACCOUNT_SUMMARY);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -5367,7 +5073,7 @@ public abstract class EClient {
         // send cancel account summary msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, CANCEL_ACCOUNT_SUMMARY + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_ACCOUNT_SUMMARY.id() + PROTOBUF_MSG_ID);
 
             // send cancel account summary
             byte[] byteArray = cancelAccountSummaryProto.toByteArray();
@@ -5381,7 +5087,7 @@ public abstract class EClient {
     }
 
     public synchronized void verifyRequest( String apiName, String apiVersion) {
-        if (useProtoBuf(VERIFY_REQUEST)) {
+        if (useProtoBuf(OutgoingMsgId.VERIFY_REQUEST)) {
             verifyRequestProtoBuf(EClientUtils.createVerifyRequestProto(apiName, apiVersion));
             return;
         }
@@ -5408,7 +5114,7 @@ public abstract class EClient {
 
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, VERIFY_REQUEST);
+            sendMsgId(b, OutgoingMsgId.VERIFY_REQUEST);
             b.send( VERSION);
             b.send( apiName);
             b.send( apiVersion);
@@ -5442,7 +5148,7 @@ public abstract class EClient {
         // send verify request msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, VERIFY_REQUEST + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.VERIFY_REQUEST.id() + PROTOBUF_MSG_ID);
 
             // send verify request
             byte[] byteArray = verifyRequestProto.toByteArray();
@@ -5456,7 +5162,7 @@ public abstract class EClient {
     }
 
     public synchronized void verifyMessage( String apiData) {
-        if (useProtoBuf(VERIFY_MESSAGE)) {
+        if (useProtoBuf(OutgoingMsgId.VERIFY_MESSAGE)) {
             verifyMessageProtoBuf(EClientUtils.createVerifyMessageRequestProto(apiData));
             return;
         }
@@ -5478,7 +5184,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, VERIFY_MESSAGE);
+            sendMsgId(b, OutgoingMsgId.VERIFY_MESSAGE);
             b.send( VERSION);
             b.send( apiData);
             closeAndSend(b);
@@ -5506,7 +5212,7 @@ public abstract class EClient {
         // send verify message msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, VERIFY_MESSAGE + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.VERIFY_MESSAGE.id() + PROTOBUF_MSG_ID);
 
             // send verify message request
             byte[] byteArray = verifyMessageRequestProto.toByteArray();
@@ -5543,7 +5249,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, VERIFY_AND_AUTH_REQUEST);
+            sendMsgId(b, OutgoingMsgId.VERIFY_AND_AUTH_REQUEST);
             b.send( VERSION);
             b.send( apiName);
             b.send( apiVersion);
@@ -5577,7 +5283,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, VERIFY_AND_AUTH_MESSAGE);
+            sendMsgId(b, OutgoingMsgId.VERIFY_AND_AUTH_MESSAGE);
             b.send( VERSION);
             b.send( apiData);
             b.send( xyzResponse);
@@ -5593,7 +5299,7 @@ public abstract class EClient {
     }
 
     public synchronized void queryDisplayGroups( int reqId) {
-        if (useProtoBuf(QUERY_DISPLAY_GROUPS)) {
+        if (useProtoBuf(OutgoingMsgId.QUERY_DISPLAY_GROUPS)) {
             queryDisplayGroupsProtoBuf(EClientUtils.createQueryDisplayGroupsRequestProto(reqId));
             return;
         }
@@ -5615,7 +5321,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, QUERY_DISPLAY_GROUPS);
+            sendMsgId(b, OutgoingMsgId.QUERY_DISPLAY_GROUPS);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -5643,7 +5349,7 @@ public abstract class EClient {
         // send query display groups msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, QUERY_DISPLAY_GROUPS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.QUERY_DISPLAY_GROUPS.id() + PROTOBUF_MSG_ID);
 
             // send query display groups request
             byte[] byteArray = queryDisplayGroupsRequestProto.toByteArray();
@@ -5657,7 +5363,7 @@ public abstract class EClient {
     }
 
     public synchronized void subscribeToGroupEvents( int reqId, int groupId) {
-        if (useProtoBuf(SUBSCRIBE_TO_GROUP_EVENTS)) {
+        if (useProtoBuf(OutgoingMsgId.SUBSCRIBE_TO_GROUP_EVENTS)) {
             subscribeToGroupEventsProtoBuf(EClientUtils.createSubscribeToGroupEventsRequestProto(reqId, groupId));
             return;
         }
@@ -5679,7 +5385,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, SUBSCRIBE_TO_GROUP_EVENTS);
+            sendMsgId(b, OutgoingMsgId.SUBSCRIBE_TO_GROUP_EVENTS);
             b.send( VERSION);
             b.send( reqId);
             b.send( groupId);
@@ -5707,7 +5413,7 @@ public abstract class EClient {
         // send subscribe to group events msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, SUBSCRIBE_TO_GROUP_EVENTS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.SUBSCRIBE_TO_GROUP_EVENTS.id() + PROTOBUF_MSG_ID);
 
             // send subscribe to group events request
             byte[] byteArray = subscribeToGroupEventsRequestProto.toByteArray();
@@ -5721,7 +5427,7 @@ public abstract class EClient {
     }
 
     public synchronized void updateDisplayGroup( int reqId, String contractInfo) {
-        if (useProtoBuf(UPDATE_DISPLAY_GROUP)) {
+        if (useProtoBuf(OutgoingMsgId.UPDATE_DISPLAY_GROUP)) {
             updateDisplayGroupProtoBuf(EClientUtils.createUpdateDisplayGroupRequestProto(reqId, contractInfo));
             return;
         }
@@ -5743,7 +5449,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, UPDATE_DISPLAY_GROUP);
+            sendMsgId(b, OutgoingMsgId.UPDATE_DISPLAY_GROUP);
             b.send( VERSION);
             b.send( reqId);
             b.send( contractInfo);
@@ -5774,7 +5480,7 @@ public abstract class EClient {
         // send update display group msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, UPDATE_DISPLAY_GROUP + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.UPDATE_DISPLAY_GROUP.id() + PROTOBUF_MSG_ID);
 
             // send update display group request
             byte[] byteArray = updateDisplayGroupRequestProto.toByteArray();
@@ -5788,7 +5494,7 @@ public abstract class EClient {
     }
 
     public synchronized void unsubscribeFromGroupEvents( int reqId) {
-        if (useProtoBuf(UNSUBSCRIBE_FROM_GROUP_EVENTS)) {
+        if (useProtoBuf(OutgoingMsgId.UNSUBSCRIBE_FROM_GROUP_EVENTS)) {
             unsubscribeFromGroupEventsProtoBuf(EClientUtils.createUnsubscribeFromGroupEventsRequestProto(reqId));
             return;
         }
@@ -5810,7 +5516,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, UNSUBSCRIBE_FROM_GROUP_EVENTS);
+            sendMsgId(b, OutgoingMsgId.UNSUBSCRIBE_FROM_GROUP_EVENTS);
             b.send( VERSION);
             b.send( reqId);
             closeAndSend(b);
@@ -5837,7 +5543,7 @@ public abstract class EClient {
         // send unsubscribe from group events msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, UNSUBSCRIBE_FROM_GROUP_EVENTS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.UNSUBSCRIBE_FROM_GROUP_EVENTS.id() + PROTOBUF_MSG_ID);
 
             // send unsubscribe from group events request
             byte[] byteArray = unsubscribeFromGroupEventsRequestProto.toByteArray();
@@ -5851,7 +5557,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqMatchingSymbols( int reqId, String pattern) {
-        if (useProtoBuf(REQ_MATCHING_SYMBOLS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_MATCHING_SYMBOLS)) {
             reqMatchingSymbolsProtoBuf(EClientUtils.createMatchingSymbolsRequestProto(reqId, pattern));
             return;
         }
@@ -5871,7 +5577,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_MATCHING_SYMBOLS);
+            sendMsgId(b, OutgoingMsgId.REQ_MATCHING_SYMBOLS);
             b.send( reqId);
             b.send( pattern);
             closeAndSend(b);
@@ -5901,7 +5607,7 @@ public abstract class EClient {
         // send req matching symbols msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_MATCHING_SYMBOLS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_MATCHING_SYMBOLS.id() + PROTOBUF_MSG_ID);
 
             // send matching symbols request
             byte[] byteArray = matchingSymbolsRequestProto.toByteArray();
@@ -5918,7 +5624,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqFamilyCodes() {
-        if (useProtoBuf(REQ_FAMILY_CODES)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_FAMILY_CODES)) {
             reqFamilyCodesProtoBuf(EClientUtils.createFamilyCodesRequestProto());
             return;
         }
@@ -5938,7 +5644,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_FAMILY_CODES);
+            sendMsgId(b, OutgoingMsgId.REQ_FAMILY_CODES);
             closeAndSend(b);
         }
         catch (IOException e) {
@@ -5961,7 +5667,7 @@ public abstract class EClient {
         // send req family codes msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_FAMILY_CODES + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_FAMILY_CODES.id() + PROTOBUF_MSG_ID);
 
             // send family codes request
             byte[] byteArray = familyCodesRequestProto.toByteArray();
@@ -5975,7 +5681,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqMktDepthExchanges() {
-        if (useProtoBuf(REQ_MKT_DEPTH_EXCHANGES)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_MKT_DEPTH_EXCHANGES)) {
             reqMarketDepthExchangesProtoBuf(EClientUtils.createMarketDepthExchangesRequestProto());
             return;
         }
@@ -5995,7 +5701,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_MKT_DEPTH_EXCHANGES);
+            sendMsgId(b, OutgoingMsgId.REQ_MKT_DEPTH_EXCHANGES);
             closeAndSend(b);
         }
         catch (IOException e) {
@@ -6018,7 +5724,7 @@ public abstract class EClient {
         // send req market depth exchanges msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_MKT_DEPTH_EXCHANGES + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_MKT_DEPTH_EXCHANGES.id() + PROTOBUF_MSG_ID);
 
             // send market depth exchanges request
             byte[] byteArray = marketDepthExchangesRequestProto.toByteArray();
@@ -6032,7 +5738,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqSmartComponents(int reqId, String bboExchange) {
-        if (useProtoBuf(REQ_SMART_COMPONENTS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_SMART_COMPONENTS)) {
             reqSmartComponentsProtoBuf(EClientUtils.createSmartComponentsRequestProto(reqId, bboExchange));
             return;
         }
@@ -6052,7 +5758,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
         
         try {
-            sendMsgId(b, REQ_SMART_COMPONENTS);
+            sendMsgId(b, OutgoingMsgId.REQ_SMART_COMPONENTS);
             b.send(reqId);
             b.send(bboExchange);
             closeAndSend(b);
@@ -6082,7 +5788,7 @@ public abstract class EClient {
         // send req smart components msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_SMART_COMPONENTS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_SMART_COMPONENTS.id() + PROTOBUF_MSG_ID);
 
             // send smart components request
             byte[] byteArray = smartComponentsRequestProto.toByteArray();
@@ -6099,7 +5805,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqNewsProviders() {
-        if (useProtoBuf(REQ_NEWS_PROVIDERS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_NEWS_PROVIDERS)) {
             reqNewsProvidersProtoBuf(EClientUtils.createNewsProvidersRequestProto());
             return;
         }
@@ -6119,7 +5825,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_NEWS_PROVIDERS);
+            sendMsgId(b, OutgoingMsgId.REQ_NEWS_PROVIDERS);
             closeAndSend(b);
         }
         catch (IOException e) {
@@ -6142,7 +5848,7 @@ public abstract class EClient {
         // send req news providers msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_NEWS_PROVIDERS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_NEWS_PROVIDERS.id() + PROTOBUF_MSG_ID);
 
             // send news providers request
             byte[] byteArray = newsProvidersRequestProto.toByteArray();
@@ -6156,7 +5862,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqNewsArticle(int requestId, String providerCode, String articleId, List<TagValue> newsArticleOptions) {
-        if (useProtoBuf(REQ_NEWS_ARTICLE)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_NEWS_ARTICLE)) {
             reqNewsArticleProtoBuf(EClientUtils.createNewsArticleRequestProto(requestId, providerCode, articleId, newsArticleOptions));
             return;
         }
@@ -6176,7 +5882,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_NEWS_ARTICLE);
+            sendMsgId(b, OutgoingMsgId.REQ_NEWS_ARTICLE);
             b.send(requestId);
             b.send(providerCode);
             b.send(articleId);
@@ -6213,7 +5919,7 @@ public abstract class EClient {
         // send req news article msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_NEWS_ARTICLE + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_NEWS_ARTICLE.id() + PROTOBUF_MSG_ID);
 
             // send news article request
             byte[] byteArray = newsArticleRequestProto.toByteArray();
@@ -6232,7 +5938,7 @@ public abstract class EClient {
     public synchronized void reqHistoricalNews( int requestId, int conId, String providerCodes, 
             String startDateTime, String endDateTime, int totalResults, List<TagValue> historicalNewsOptions) {
 
-        if (useProtoBuf(REQ_HISTORICAL_NEWS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_HISTORICAL_NEWS)) {
             reqHistoricalNewsProtoBuf(EClientUtils.createHistoricalNewsRequestProto(requestId, conId, providerCodes, startDateTime, endDateTime, totalResults, historicalNewsOptions));
             return;
         }
@@ -6252,7 +5958,7 @@ public abstract class EClient {
         Builder b = prepareBuffer();
 
         try {
-            sendMsgId(b, REQ_HISTORICAL_NEWS);
+            sendMsgId(b, OutgoingMsgId.REQ_HISTORICAL_NEWS);
             b.send(requestId);
             b.send(conId);
             b.send(providerCodes);
@@ -6292,7 +5998,7 @@ public abstract class EClient {
         // send req historical news msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_HISTORICAL_NEWS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_HISTORICAL_NEWS.id() + PROTOBUF_MSG_ID);
 
             // send historical news request
             byte[] byteArray = historicalNewsRequestProto.toByteArray();
@@ -6310,7 +6016,7 @@ public abstract class EClient {
 
     public synchronized void reqHistogramData(int tickerId, Contract contract,
     		boolean useRTH, String timePeriod) {
-        if (useProtoBuf(REQ_HISTOGRAM_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_HISTOGRAM_DATA)) {
             reqHistogramDataProtoBuf(EClientUtils.createHistogramDataRequestProto(tickerId, contract, useRTH, timePeriod));
             return;
         }
@@ -6330,7 +6036,7 @@ public abstract class EClient {
 
     		Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_HISTOGRAM_DATA);
+            sendMsgId(b, OutgoingMsgId.REQ_HISTOGRAM_DATA);
     		b.send(tickerId);
     		b.send(contract);
     		b.send(useRTH ? 1 : 0);
@@ -6363,7 +6069,7 @@ public abstract class EClient {
         // send req histogram data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_HISTOGRAM_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_HISTOGRAM_DATA.id() + PROTOBUF_MSG_ID);
 
             // send histogram data request
             byte[] byteArray = histogramDataRequestProto.toByteArray();
@@ -6380,7 +6086,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelHistogramData( int tickerId ) {
-        if (useProtoBuf(CANCEL_HISTOGRAM_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_HISTOGRAM_DATA)) {
             cancelHistogramDataProtoBuf(EClientUtils.createCancelHistogramDataProto(tickerId));
             return;
         }
@@ -6401,7 +6107,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_HISTOGRAM_DATA);
+            sendMsgId(b, OutgoingMsgId.CANCEL_HISTOGRAM_DATA);
             b.send(tickerId);
 
             closeAndSend(b);
@@ -6428,7 +6134,7 @@ public abstract class EClient {
         // send cancel histogram data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_HISTOGRAM_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_HISTOGRAM_DATA.id() + PROTOBUF_MSG_ID);
 
             // send cancel histogram data
             byte[] byteArray = cancelHistogramDataProto.toByteArray();
@@ -6442,7 +6148,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqMarketRule( int marketRuleId) {
-        if (useProtoBuf(REQ_MARKET_RULE)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_MARKET_RULE)) {
             reqMarketRuleProtoBuf(EClientUtils.createMarketRuleRequestProto(marketRuleId));
             return;
         }
@@ -6463,7 +6169,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_MARKET_RULE);
+            sendMsgId(b, OutgoingMsgId.REQ_MARKET_RULE);
             b.send(marketRuleId);
 
             closeAndSend(b);
@@ -6488,7 +6194,7 @@ public abstract class EClient {
         // send req market rule msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_MARKET_RULE + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_MARKET_RULE.id() + PROTOBUF_MSG_ID);
 
             // send market rule request
             byte[] byteArray = marketRuleRequestProto.toByteArray();
@@ -6502,7 +6208,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqPnL(int reqId, String account, String modelCode) {
-        if (useProtoBuf(REQ_PNL)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_PNL)) {
             reqPnLProtoBuf(EClientUtils.createPnLRequestProto(reqId, account, modelCode));
             return;
         }
@@ -6521,7 +6227,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_PNL);
+            sendMsgId(b, OutgoingMsgId.REQ_PNL);
             b.send(reqId);
             b.send(account);
             b.send(modelCode);
@@ -6553,7 +6259,7 @@ public abstract class EClient {
         // send req pnl msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_PNL + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_PNL.id() + PROTOBUF_MSG_ID);
 
             // send pnl request
             byte[] byteArray = pnlRequestProto.toByteArray();
@@ -6570,7 +6276,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelPnL(int reqId) {
-        if (useProtoBuf(CANCEL_PNL)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_PNL)) {
             cancelPnLProtoBuf(EClientUtils.createCancelPnLProto(reqId));
             return;
         }
@@ -6589,7 +6295,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_PNL);
+            sendMsgId(b, OutgoingMsgId.CANCEL_PNL);
             b.send(reqId);
 
             closeAndSend(b);
@@ -6616,7 +6322,7 @@ public abstract class EClient {
         // send cancel pnl msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_PNL + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_PNL.id() + PROTOBUF_MSG_ID);
 
             // send cancel pnl
             byte[] byteArray = cancelPnLProto.toByteArray();
@@ -6630,7 +6336,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqPnLSingle(int reqId, String account, String modelCode, int conId) {
-        if (useProtoBuf(REQ_PNL_SINGLE)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_PNL_SINGLE)) {
             reqPnLSingleProtoBuf(EClientUtils.createPnLSingleRequestProto(reqId, account, modelCode, conId));
             return;
         }
@@ -6649,7 +6355,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_PNL_SINGLE);
+            sendMsgId(b, OutgoingMsgId.REQ_PNL_SINGLE);
             b.send(reqId);
             b.send(account);
             b.send(modelCode);
@@ -6682,7 +6388,7 @@ public abstract class EClient {
         // send req pnl single msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_PNL_SINGLE + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_PNL_SINGLE.id() + PROTOBUF_MSG_ID);
 
             // send pnl single request
             byte[] byteArray = pnlSingleRequestProto.toByteArray();
@@ -6699,7 +6405,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelPnLSingle(int reqId) {
-        if (useProtoBuf(CANCEL_PNL_SINGLE)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_PNL_SINGLE)) {
             cancelPnLSingleProtoBuf(EClientUtils.createCancelPnLSingleProto(reqId));
             return;
         }
@@ -6718,7 +6424,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_PNL_SINGLE);
+            sendMsgId(b, OutgoingMsgId.CANCEL_PNL_SINGLE);
             b.send(reqId);
 
             closeAndSend(b);
@@ -6744,7 +6450,7 @@ public abstract class EClient {
         // send cancel pnl single msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_PNL_SINGLE + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_PNL_SINGLE.id() + PROTOBUF_MSG_ID);
 
             // send cancel pnl single
             byte[] byteArray = cancelPnLSingleProto.toByteArray();
@@ -6760,7 +6466,7 @@ public abstract class EClient {
     public synchronized void reqHistoricalTicks(int reqId, Contract contract, String startDateTime,
             String endDateTime, int numberOfTicks, String whatToShow, int useRth, boolean ignoreSize,
             List<TagValue> miscOptions) {
-        if (useProtoBuf(REQ_HISTORICAL_TICKS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_HISTORICAL_TICKS)) {
             reqHistoricalTicksProtoBuf(EClientUtils.createHistoricalTicksRequestProto(reqId, contract, startDateTime, endDateTime, numberOfTicks, whatToShow, useRth != 0, ignoreSize, miscOptions));
             return;
         }
@@ -6779,7 +6485,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_HISTORICAL_TICKS);
+            sendMsgId(b, OutgoingMsgId.REQ_HISTORICAL_TICKS);
             b.send(reqId);
             b.send(contract);
             b.send(startDateTime);
@@ -6817,7 +6523,7 @@ public abstract class EClient {
         // send req historical ticks msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_HISTORICAL_TICKS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_HISTORICAL_TICKS.id() + PROTOBUF_MSG_ID);
 
             // send historical ticks request
             byte[] byteArray = historicalTicksRequestProto.toByteArray();
@@ -6834,7 +6540,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqTickByTickData(int reqId, Contract contract, String tickType, int numberOfTicks, boolean ignoreSize) {
-        if (useProtoBuf(REQ_TICK_BY_TICK_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_TICK_BY_TICK_DATA)) {
             reqTickByTickDataProtoBuf(EClientUtils.createTickByTickRequestProto(reqId, contract, tickType, numberOfTicks, ignoreSize));
             return;
         }
@@ -6862,7 +6568,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_TICK_BY_TICK_DATA);
+            sendMsgId(b, OutgoingMsgId.REQ_TICK_BY_TICK_DATA);
             b.send(reqId);
             b.send(contract.conid());
             b.send(contract.symbol());
@@ -6909,7 +6615,7 @@ public abstract class EClient {
         // send req tick-by-tick data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_TICK_BY_TICK_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_TICK_BY_TICK_DATA.id() + PROTOBUF_MSG_ID);
 
             // send tick-by-tick request
             byte[] byteArray = tickByTickRequestProto.toByteArray();
@@ -6926,7 +6632,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelTickByTickData(int reqId) {
-        if (useProtoBuf(CANCEL_TICK_BY_TICK_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_TICK_BY_TICK_DATA)) {
             cancelTickByTickDataProtoBuf(EClientUtils.createCancelTickByTickProto(reqId));
             return;
         }
@@ -6946,7 +6652,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_TICK_BY_TICK_DATA);
+            sendMsgId(b, OutgoingMsgId.CANCEL_TICK_BY_TICK_DATA);
             b.send(reqId);
 
             closeAndSend(b);
@@ -6974,7 +6680,7 @@ public abstract class EClient {
         // send cancel tick-by-tick data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_TICK_BY_TICK_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_TICK_BY_TICK_DATA.id() + PROTOBUF_MSG_ID);
 
             // send cancel tick-by-tick data
             byte[] byteArray = cancelTickByTickProto.toByteArray();
@@ -6988,7 +6694,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqCompletedOrders(boolean apiOnly) {
-        if (useProtoBuf(REQ_COMPLETED_ORDERS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_COMPLETED_ORDERS)) {
             reqCompletedOrdersProtoBuf(EClientUtils.createCompletedOrdersRequestProto(apiOnly));
             return;
         }
@@ -7008,7 +6714,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_COMPLETED_ORDERS);
+            sendMsgId(b, OutgoingMsgId.REQ_COMPLETED_ORDERS);
             b.send(apiOnly);
 
             closeAndSend(b);
@@ -7030,7 +6736,7 @@ public abstract class EClient {
         // send req completed orders msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_COMPLETED_ORDERS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_COMPLETED_ORDERS.id() + PROTOBUF_MSG_ID);
 
             // send completed orders request
             byte[] byteArray = completedOrdersRequest.toByteArray();
@@ -7045,7 +6751,7 @@ public abstract class EClient {
     
     
     public synchronized void reqWshMetaData(int reqId) {
-        if (useProtoBuf(REQ_WSH_META_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_WSH_META_DATA)) {
             reqWshMetaDataProtoBuf(EClientUtils.createWshMetaDataRequestProto(reqId));
             return;
         }
@@ -7065,7 +6771,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_WSH_META_DATA);
+            sendMsgId(b, OutgoingMsgId.REQ_WSH_META_DATA);
             b.send(reqId);
 
             closeAndSend(b);
@@ -7093,7 +6799,7 @@ public abstract class EClient {
         // send req WSH meta data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_WSH_META_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_WSH_META_DATA.id() + PROTOBUF_MSG_ID);
 
             // send WSH meta data request
             byte[] byteArray = wshMetaDataRequestProto.toByteArray();
@@ -7107,7 +6813,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelWshMetaData(int reqId) {
-        if (useProtoBuf(CANCEL_WSH_META_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_WSH_META_DATA)) {
             cancelWshMetaDataProtoBuf(EClientUtils.createCancelWshMetaDataProto(reqId));
             return;
         }
@@ -7127,7 +6833,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_WSH_META_DATA);
+            sendMsgId(b, OutgoingMsgId.CANCEL_WSH_META_DATA);
             b.send(reqId);
 
             closeAndSend(b);
@@ -7155,7 +6861,7 @@ public abstract class EClient {
         // send cancel WSH meta data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_WSH_META_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_WSH_META_DATA.id() + PROTOBUF_MSG_ID);
 
             // send cancel WSH meta data
             byte[] byteArray = cancelWshMetaDataProto.toByteArray();
@@ -7169,7 +6875,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqWshEventData(int reqId, WshEventData wshEventData) {
-        if (useProtoBuf(REQ_WSH_EVENT_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_WSH_EVENT_DATA)) {
             reqWshEventDataProtoBuf(EClientUtils.createWshEventDataRequestProto(reqId, wshEventData));
             return;
         }
@@ -7203,7 +6909,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_WSH_EVENT_DATA);
+            sendMsgId(b, OutgoingMsgId.REQ_WSH_EVENT_DATA);
             b.send(reqId);
             b.send(wshEventData.conId());
 
@@ -7248,7 +6954,7 @@ public abstract class EClient {
         // send req WSH event data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_WSH_EVENT_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_WSH_EVENT_DATA.id() + PROTOBUF_MSG_ID);
 
             // send WSH event data request
             byte[] byteArray = wshEventDataRequestProto.toByteArray();
@@ -7262,7 +6968,7 @@ public abstract class EClient {
     }
 
     public synchronized void cancelWshEventData(int reqId) {
-        if (useProtoBuf(CANCEL_WSH_EVENT_DATA)) {
+        if (useProtoBuf(OutgoingMsgId.CANCEL_WSH_EVENT_DATA)) {
             cancelWshEventDataProtoBuf(EClientUtils.createCancelWshEventDataProto(reqId));
             return;
         }
@@ -7282,7 +6988,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, CANCEL_WSH_EVENT_DATA);
+            sendMsgId(b, OutgoingMsgId.CANCEL_WSH_EVENT_DATA);
             b.send(reqId);
 
             closeAndSend(b);
@@ -7310,7 +7016,7 @@ public abstract class EClient {
         // send cancel WSH event data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_WSH_EVENT_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_WSH_EVENT_DATA.id() + PROTOBUF_MSG_ID);
 
             // send cancel WSH event data
             byte[] byteArray = cancelWshEventDataProto.toByteArray();
@@ -7324,7 +7030,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqUserInfo(int reqId) {
-        if (useProtoBuf(REQ_USER_INFO)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_USER_INFO)) {
             reqUserInfoProtoBuf(EClientUtils.createUserInfoRequestProto(reqId));
             return;
         }
@@ -7343,7 +7049,7 @@ public abstract class EClient {
         try {
             Builder b = prepareBuffer(); 
 
-            sendMsgId(b, REQ_USER_INFO);
+            sendMsgId(b, OutgoingMsgId.REQ_USER_INFO);
             b.send(reqId);
 
             closeAndSend(b);
@@ -7370,7 +7076,7 @@ public abstract class EClient {
         // send req user info msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_USER_INFO + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_USER_INFO.id() + PROTOBUF_MSG_ID);
 
             // send user info request
             byte[] byteArray = userInfoRequestProto.toByteArray();
@@ -7384,7 +7090,7 @@ public abstract class EClient {
     }
 
     public synchronized void reqCurrentTimeInMillis() {
-        if (useProtoBuf(REQ_CURRENT_TIME_IN_MILLIS)) {
+        if (useProtoBuf(OutgoingMsgId.REQ_CURRENT_TIME_IN_MILLIS)) {
             reqCurrentTimeInMillisProtoBuf(EClientUtils.createCurrentTimeInMillisRequestProto());
             return;
         }
@@ -7402,7 +7108,7 @@ public abstract class EClient {
 
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_CURRENT_TIME_IN_MILLIS);
+            sendMsgId(b, OutgoingMsgId.REQ_CURRENT_TIME_IN_MILLIS);
             closeAndSend(b);
         }
         catch( Exception e) {
@@ -7425,7 +7131,7 @@ public abstract class EClient {
         // send req current time in millis msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, REQ_CURRENT_TIME_IN_MILLIS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_CURRENT_TIME_IN_MILLIS.id() + PROTOBUF_MSG_ID);
 
             // send current time in millis request
             byte[] byteArray = currentTimeInMillisRequestProto.toByteArray();
@@ -7463,7 +7169,7 @@ public abstract class EClient {
         // send cancel contract data msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_CONTRACT_DATA + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_CONTRACT_DATA.id() + PROTOBUF_MSG_ID);
 
             // send cancel contract data
             byte[] byteArray = cancelContractDataProto.toByteArray();
@@ -7501,7 +7207,7 @@ public abstract class EClient {
         // send cancel historical ticks msg
         try {
             Builder b = prepareBuffer(); 
-            sendMsgId(b, CANCEL_HISTORICAL_TICKS + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.CANCEL_HISTORICAL_TICKS.id() + PROTOBUF_MSG_ID);
 
             // send cancel historical ticks
             byte[] byteArray = cancelHistoricalTicksProto.toByteArray();
@@ -7535,7 +7241,7 @@ public abstract class EClient {
         // send req config msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, REQ_CONFIG + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.REQ_CONFIG.id() + PROTOBUF_MSG_ID);
 
             // send config request
             byte[] byteArray = configRequestProto.toByteArray();
@@ -7568,7 +7274,7 @@ public abstract class EClient {
         // send update config request msg
         try {
             Builder b = prepareBuffer();
-            sendMsgId(b, UPDATE_CONFIG + PROTOBUF_MSG_ID);
+            sendMsgId(b, OutgoingMsgId.UPDATE_CONFIG.id() + PROTOBUF_MSG_ID);
 
             // send update config request
             byte[] byteArray = updateConfigRequestProto.toByteArray();
@@ -7667,6 +7373,10 @@ public abstract class EClient {
             sendMsg(new EMessage(builder));
         }
 	}
+
+    private void sendMsgId(Builder b, OutgoingMsgId msgId) throws IOException {
+        sendMsgId(b, msgId.id());
+    }
 
     private void sendMsgId(Builder b, int msgId) throws IOException {
         if (m_serverVersion >= MIN_SERVER_VER_PROTOBUF) {
