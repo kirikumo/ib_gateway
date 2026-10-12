@@ -9,6 +9,7 @@ import com.ib.client.TickType;
 
 public class TopMktDataHandlerTickTest {
 	private TopMktDataHandler handler() {
+		// Test double. Skips contract-detail lookup.
 		IBContract c = new IBContract() {
 			@Override
 			public String shownName() {

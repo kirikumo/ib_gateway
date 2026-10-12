@@ -42,6 +42,11 @@ public class IBApiController {
 	public IBApiController(IConnectionHandler handler, ILogger inLogger, ILogger outLogger) {
 		_api = new ResilientApiController(handler, inLogger, outLogger);
 	}
+
+	/** The connect thread builds a new controller. The listener is static so non-enum statuses are still delivered. */
+	public static void setRawOrderStatusListener(RawOrderStatusListener listener) {
+		ResilientApiController.rawOrderStatusListener = listener;
+	}
 	private static final Field REQ_ID_FIELD;
 	private static final Field CLIENT_FIELD;
 	static {

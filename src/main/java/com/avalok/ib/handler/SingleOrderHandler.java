@@ -100,7 +100,7 @@ public class SingleOrderHandler implements IOrderHandler, IOrderCancelHandler {
 				break;
 			case 399: // Order error: check them by message
 				if (errorMsg.contains("Warning: your order will not be placed at the exchange until "))
-					break; // 盤前 warning，單仍有效
+					break; // Pre-market warning; the order is still live.
 				log(_order);
 				err("<-- broadcast unknown error for order [" + _order.omsClientOID() + "]\norder id [" + orderId + "]:" + errorCode + "," + errorMsg);
 				_ibController.ack(j);

@@ -33,6 +33,14 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 	public static final ContractDetailsHandler instance = new ContractDetailsHandler();
 	private ContractDetailsHandler() {}
 
+	public interface RmDetailsListener {
+		void onContract(Contract contract);
+	}
+	private static volatile RmDetailsListener rmDetailsListener;
+	public static void setRmDetailsListener(RmDetailsListener listener) {
+		rmDetailsListener = listener;
+	}
+
 	public static boolean fillIBContract(IBContract ibc) {
 		Collection<IBContract> contracts = KNOWN_CONTRACTS.values();
 		IBContract result = null;
@@ -152,6 +160,8 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 			JSONObject json = writeDetail("IBGateway:Contract:"+shortName, detail);
 			KNOWN_CONTRACTS.put(shortName, ibc);
 			KNOWN_CONTRACT_DETAILS.put(shortName, json);
+			RmDetailsListener listener = rmDetailsListener;
+			if (listener != null && c != null) listener.onContract(c);
 //			if (ibc.exchange().equals( "SMART")) {
 //				String fixShortName = shortName.replace("SMART", ibc.primaryExch());
 //				log("Fix shortName: " + shortName + " -> " + fixShortName);
@@ -297,7 +307,7 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		Redis.setex(key, 300, JSON.toJSONString(array));
 	}
 
-	/** IB 數量規則原值；未填或 invalid 為 null，避免 longValue 把小數切成 0。 */
+	/** Raw IB size. Null when missing or invalid, so longValue does not turn a fraction into 0. */
 	static Object jsonSize(Decimal d) {
 		if (!Decimal.isValid(d))
 			return null;

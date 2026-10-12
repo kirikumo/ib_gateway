@@ -18,6 +18,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.IBContract;
 import com.avalok.ib.IBOrder;
 import com.avalok.ib.GatewayController;
+import com.avalok.ib.rm.RmOrderFeed;
 import com.ib.controller.ApiController.ICompletedOrdersHandler;
 import com.ib.controller.ApiController.ILiveOrderHandler;
 import com.ib.controller.ApiController.ITradeReportHandler;
@@ -52,10 +53,35 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	protected static ConcurrentHashMap<String, String> KNOWN_EXCHANGES = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, JSONObject> result = new ConcurrentHashMap<>();
 	private static final int MAX_TRADE_RESULT_SIZE = 10000;
+	private RmOrderFeed rmFeed;
+	private final ConcurrentHashMap<String, PendingComm> pendingComm = new ConcurrentHashMap<>();
 
     public AllOrderHandler(GatewayController ibController) {
 		_ibController = ibController;
 		_twsName = ibController.name();
+	}
+
+	public void setRmOrderFeed(RmOrderFeed feed) {
+		rmFeed = feed;
+		if (feed != null) feed.setAccounts(() -> _ibController.accountList());
+		ContractDetailsHandler.setRmDetailsListener(c -> {
+			if (rmFeed != null) rmFeed.onContractUpdated(c);
+		});
+	}
+
+	public void onRawOrderStatus(int orderId, String status, Decimal filled, Decimal remaining, double avgFillPrice, long permId) {
+		IBOrder o = null;
+		if (_processingOrder != null && _processingPermId != null && _processingPermId == permId)
+			o = _processingOrder;
+		if (o == null && orderId != 0) o = _allOrders.byId(orderId);
+		if (o == null && permId != 0) o = _allOrders.byPermId(permId);
+		if (o == null) return;
+		rmLive(o, status, filled, remaining, avgFillPrice);
+	}
+
+	private void rmLive(IBOrder o, String ibStatus, Decimal filled, Decimal remaining, double avg) {
+		if (rmFeed == null || o == null || o.order == null) return;
+		rmFeed.onLive(o.contract, o.order, ibStatus, filled, remaining, avg);
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -88,7 +114,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		cacheAliveOrderId(o);
 	}
 	
-	/** SMART 路由用 primaryExch 當 OMS 交易所，避免寫進 URANUS:SMART:... */
+	/** SMART routes use primaryExch as the OMS exchange so the key is not URANUS:SMART:... */
 	private static String omsExchange(IBContract ibc) {
 		String ex = ibc.exchange();
 		if (ex == null) return null;
@@ -217,6 +243,13 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 //		});
 
 		log("<-- tradeReport() " + tradeKey + " " + ibc.shownName() + execution.cumQty() + "@" + execution.price());
+		if (rmFeed != null && execution.permId() != 0) {
+			String ref = execution.orderRef();
+			if (ref == null || ref.isEmpty()) ref = "tws:" + execution.permId();
+			rmFeed.onExecution(ref, execution.cumQty(), execution.avgPrice());
+			PendingComm pending = pendingComm.remove(tradeKey);
+			if (pending != null) rmFeed.onCommission(ref, pending.amount, pending.currency);
+		}
 		persistTrade(tradeKey, j);
 	}
 	public void tradeReportEnd() {
@@ -235,6 +268,18 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
         j.put("realizedPNL", commissionReport.realizedPNL());
         j.put("yield", commissionReport.yield());
         j.put("yieldRedemptionDate", commissionReport.yieldRedemptionDate());
+		if (rmFeed != null) {
+			String ref = j.getString("orderRef");
+			Long perm = j.getLong("permId");
+			if ((ref == null || ref.isEmpty()) && perm != null && perm != 0L) ref = "tws:" + perm;
+			if (perm != null && perm == 0L) {
+				// permId 0 has no stable orderRef
+			} else if (ref != null && !ref.isEmpty()) {
+				rmFeed.onCommission(ref, commissionReport.commissionAndFees(), commissionReport.currency());
+			} else {
+				pendingComm.put(tradeKey, new PendingComm(commissionReport.commissionAndFees(), commissionReport.currency()));
+			}
+		}
 		persistTrade(tradeKey, j);
     }
 
@@ -267,6 +312,11 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		o.setCompleted();
 		log("<-- completedOrder:\n" + o);
 		writeToCacheAndOMS(o);
+		if (rmFeed != null && orderState != null) {
+			String st = orderState.getStatus();
+			if (st == null || st.isEmpty()) st = orderState.completedStatus();
+			rmFeed.onCompleted(contract, order, st);
+		}
 		_recvCompletedOrder.add(o);
 	}
 
@@ -277,6 +327,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		_recvCompletedOrder.clear();
 		_deadOrderInit = true;
 		if (!_omsInit && _aliveOrderInit) initOMS();
+		if (rmFeed != null) rmFeed.onCompletedEnded();
 	}
 	
 	////////////////////////////////////////////////////////////////
@@ -303,6 +354,9 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		// Don't record this order now, not enough detail yet.
 		// leave job to orderStatus()
 		cacheAliveOrderId(o);
+		if (rmFeed != null)
+			rmFeed.onLive(contract, order, orderState == null ? null : orderState.getStatus(),
+					order.filledQuantity(), Decimal.INVALID, 0d);
 	}
 
 	private void cacheAliveOrderId(IBOrder o) {
@@ -332,7 +386,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			Decimal remaining, double avgFillPrice,
 			long permId, int parentId, double lastFillPrice,
 			int clientId, String whyHeld, double mktCapPrice) {
-		// 需同時有 _processingOrder，避免 openOrderEnd 後殘留 _processingPermId 導致 NPE
+		// Also require _processingOrder. A leftover _processingPermId after openOrderEnd would NPE.
 		if (_processingOrder != null && _processingPermId != null && _processingPermId == permId) {
 			log("<-- orderStatus() _processingOrder orderId " + orderId + " permId " + permId);
 			if (_processingOrder.orderId() == 0) {
@@ -343,6 +397,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			_processingOrder.setStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
 			_recvOpenOrders.add(_processingOrder);
 			writeToCacheAndOMS(_processingOrder);
+			rmLive(_processingOrder, status.name(), filled, remaining, avgFillPrice);
 		} else {
 			log("<-- orderStatus() search _allOrders orderId " + orderId + " permId " + permId);
 			IBOrder o = orderId != 0 ? _allOrders.byId(orderId) : null;
@@ -355,6 +410,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			o.setStatus(orderId, status, filled, remaining, avgFillPrice, permId, parentId, lastFillPrice, clientId, whyHeld, mktCapPrice);
 
 			writeToCacheAndOMS(o);
+			rmLive(o, status.name(), filled, remaining, avgFillPrice);
 		}
 	}
 
@@ -389,21 +445,23 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		boolean printMsg = true;
 		// mark order status.
 		switch(errorCode) {
-		case 161: // Cancel attempted when order is not in a cancellable state — 單仍活著
+		case 161: // Cancel attempted when order is not in a cancellable state. The order is still live.
 			log(o);
 			err("<-- Not cancellable " + errorMsg);
 			break;
 		case 201: // code:201, msg:Order rejected - reason:
 			o.setRejected(errorMsg);
 			writeToCacheAndOMS(o);
+			rmLive(o, "Rejected", o.order.filledQuantity(), Decimal.INVALID, 0d);
 			break;
 		case 202: // code:202, msg:Order Canceled - reason:
 			o.setCancelled(errorMsg);
 			writeToCacheAndOMS(o);
+			rmLive(o, "Cancelled", o.order.filledQuantity(), Decimal.INVALID, 0d);
 			break;
 		case 399: // Order error: check them by message
 			if (errorMsg.contains("Warning: your order will not be placed at the exchange until "))
-				break; // 盤前 warning，單仍有效
+				break; // Pre-market warning; the order is still live.
 			log(o);
 			err("<-- broadcast error for order [" + o.omsClientOID() + "]\norder id [" + orderId + "]:" + errorCode + "," + errorMsg);
 			_ibController.ack(j);
@@ -412,14 +470,17 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		case 10147: // OrderId 51 that needs to be cancelled is not found.
 			o.setCancelled(errorMsg);
 			writeToCacheAndOMS(o);
+			rmLive(o, "Cancelled", o.order.filledQuantity(), Decimal.INVALID, 0d);
 			break;
 		case 10148: // OrderId 51 that needs to be cancelled cannot be cancelled, state: Cancelled.
 			o.setCancelled(errorMsg);
 			writeToCacheAndOMS(o);
+			rmLive(o, "Cancelled", o.order.filledQuantity(), Decimal.INVALID, 0d);
 			break;
 		case 10198: // Order bound is rejected: No such order
 			o.setCancelled(errorMsg);
 			writeToCacheAndOMS(o);
+			rmLive(o, "Cancelled", o.order.filledQuantity(), Decimal.INVALID, 0d);
 			break;
 		default:
 			log(o);
@@ -454,6 +515,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		_aliveOrderInit = true;
 //		if (!_omsInit && _deadOrderInit) initOMS();
 		if (!_omsInit) initOMS();
+		if (rmFeed != null) rmFeed.onOpenEnded();
 	}
 
 
@@ -473,6 +535,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		_recvCompletedOrder.clear();
 //		_deadOrders = new OrderCache();
 		_allOrders = new OrderCache();
+		pendingComm.clear();
+		if (rmFeed != null) rmFeed.beginReconnect();
 	}
 	/**
 	 * Execute after _aliveOrderInit and _deadOrderInit becomes true.
@@ -516,6 +580,15 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 			}
 		});
 	}
+
+	private static final class PendingComm {
+		final double amount;
+		final String currency;
+		PendingComm(double amount, String currency) {
+			this.amount = amount;
+			this.currency = currency;
+		}
+	}
 }
 
 class OrderCache {
@@ -529,7 +602,7 @@ class OrderCache {
 	void recOrder(IBOrder o) {
 		String omsId = o.omsId();
 		if (omsId != null) _orderByOMSId.put(omsId, o);
-		// GTC openOrder 常先給 orderId=0，不可當 key 否則多單互蓋
+		// GTC openOrder often arrives with orderId 0. Do not key on 0 or orders overwrite each other.
 		if (o.orderId() != 0) _orderById.put(o.orderId(), o);
 		if (o.permId() != 0) _orderByPermId.put(o.permId(), o);
 	}

@@ -33,7 +33,7 @@ public class HistoricalDataHandler implements ApiController.IHistoricalDataHandl
         historyBar.add(j);
     }
 
-    /** 1045 Bar(String) 會把 time() 設成 Long.MAX_VALUE，改從 timeStr 轉 epoch second。 */
+    /** 1045 Bar(String) sets time() to Long.MAX_VALUE. Use timeStr as epoch seconds instead. */
     private static long barEpochSecond(Bar bar) {
         if (bar.time() != Long.MAX_VALUE) return bar.time();
         String timeStr = bar.timeStr();

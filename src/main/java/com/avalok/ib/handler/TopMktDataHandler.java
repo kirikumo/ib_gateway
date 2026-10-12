@@ -169,7 +169,7 @@ public class TopMktDataHandler implements ITopMktDataHandler{
 	public void tickPrice(TickType tickType, double price, TickAttrib attribs) {
 		if (_debug)
 			info(_contract.shownName() + " tickPrice() tickType " + tickType + " price " + price + " attribs " + attribs);
-		// 不用 enum switch，避免 javac 合成 $SwitchMap 內部類（缺檔會打死 IB inbound 執行緒）
+		// Do not switch on the enum. javac's synthetic $SwitchMap class kills the IB inbound thread if the class file is missing.
 		if (tickType == TickType.BID || tickType == TickType.DELAYED_BID) {
 			bidPrice = price;
 			topBids[0].put("p", price);

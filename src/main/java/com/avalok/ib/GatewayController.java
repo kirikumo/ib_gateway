@@ -11,7 +11,14 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.controller.BaseIBController;
+import com.avalok.ib.controller.IBApiController;
 import com.avalok.ib.handler.*;
+import com.avalok.ib.rm.RedisRmStore;
+import com.avalok.ib.rm.RmAccountCycle;
+import com.avalok.ib.rm.RmAccountFeed;
+import com.avalok.ib.rm.RmConnectionPulse;
+import com.avalok.ib.rm.RmOrderFeed;
+import com.avalok.ib.rm.RmStore;
 import com.bitex.util.Redis;
 
 import com.ib.client.*;
@@ -32,7 +39,22 @@ public class GatewayController extends BaseIBController {
 
 	private final String ackChannel;
 
+	private final RmStore rmStore;
+	private final RmAccountFeed rmAccountFeed;
+	private final RmOrderFeed rmOrderFeed;
+	private final RmConnectionPulse rmPulse;
+	private final RmAccountCycle rmAccountCycle;
+
 	public GatewayController() {
+		rmStore = new RedisRmStore();
+		rmAccountFeed = new RmAccountFeed(rmStore);
+		rmOrderFeed = new RmOrderFeed(rmStore);
+		rmPulse = new RmConnectionPulse();
+		rmAccountCycle = new RmAccountCycle();
+		accountMVHandler.setRmFeed(rmAccountFeed);
+		orderCacheHandler.setRmOrderFeed(rmOrderFeed);
+		IBApiController.setRawOrderStatusListener(orderCacheHandler::onRawOrderStatus);
+
 		ContractDetailsHandler.GW_CONTROLLER = this;
 		MarketRuleHandler.GW_CONTROLLER = this;
 //		AccountMVHandler.GW_CONTROLLER = this;
@@ -47,20 +69,12 @@ public class GatewayController extends BaseIBController {
 		// Redis/IBGateway:{name}:status every second.
 		// If this status goes wrong, all other data could not be trusted.
 		long liveStatusInvertal = 1000;
-		final String liveStatusKey = "IBGateway:" + _name + ":status";
 		ackChannel = "IBGateway:" + _name + ":ACK";
 		new Timer("GatewayControllerLiveStatusWriter").scheduleAtFixedRate(new TimerTask() {
 			@Override
 			public void run() {
-				JSONObject j = new JSONObject();
-				j.put("type", "heartbeat");
-				j.put("status", isConnected());
-				j.put("t", System.currentTimeMillis());
-				Redis.setex(liveStatusKey, 2764800, j);
-				Redis.pub(ackChannel, j);
-				if (isRealConnected()) {
-					Redis.setex(name() + "_CONNECTION", 2, "Not None");
-				}
+				String statusJson = rmPulse.tick(System.currentTimeMillis(), isRealConnected(), isConnected(), name(), rmStore);
+				Redis.pub(ackChannel, statusJson);
 			}
 		}, 0, liveStatusInvertal);
 		new Timer("GatewayControllerAccountMVRefresh", true).scheduleAtFixedRate(new TimerTask() {
@@ -271,7 +285,7 @@ public class GatewayController extends BaseIBController {
 		return map.computeIfAbsent(jobKey, k -> ConcurrentHashMap.newKeySet());
 	}
 
-	/** 合約 JSON 的 suggestedSizeIncrement 原值；未填為 0，handler 乘積為 0 時 fallback。 */
+	/** Raw suggestedSizeIncrement from the contract JSON. Missing is 0; callers fall back when the product is 0. */
 	private static double sizeMultiplierOf(JSONObject contractDetail) {
 		if (contractDetail == null || contractDetail.get("suggestedSizeIncrement") == null)
 			return 0;
@@ -470,7 +484,6 @@ public class GatewayController extends BaseIBController {
 	protected AccountMVHandler accountMVHandler = new AccountMVHandler();
 	String focusAccount = "";
 	private static final long ACCOUNT_MV_REFRESH_MS = 30000L;
-	private static final long ACCOUNT_MV_ACCOUNT_DELAY_MS = 3000L;
 	private final AtomicBoolean accountMvCycleRunning = new AtomicBoolean(false);
 
 	public void subscribeAccountMV() {
@@ -503,24 +516,17 @@ public class GatewayController extends BaseIBController {
 	}
 
 	private void runAccountMvCycle(List<String> accounts) {
-		String lastAccount = "";
-		if (accounts != null) {
-			for (String account : accounts) {
-				if (!isConnected() || _apiController == null) {
-					log("Account MV cycle aborted, disconnected");
-					return;
-				}
-				log("--> Req account mv " + account);
-				_apiController.reqAccountUpdates(true, account, accountMVHandler);
-				lastAccount = account;
-				sleep(ACCOUNT_MV_ACCOUNT_DELAY_MS);
+		rmAccountCycle.run(accounts, focusAccount, new RmAccountCycle.Updates() {
+			@Override
+			public void subscribe(boolean on, String account) {
+				if (_apiController != null)
+					_apiController.reqAccountUpdates(on, account, accountMVHandler);
 			}
-		}
-		if (!focusAccount.equals("") && !focusAccount.equals(lastAccount)) {
-			if (!isConnected() || _apiController == null)
-				return;
-			_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
-		}
+			@Override
+			public boolean connected() {
+				return isConnected() && _apiController != null;
+			}
+		}, rmAccountFeed, msg -> log(msg));
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -1004,9 +1010,9 @@ public class GatewayController extends BaseIBController {
 					break;
 				case "UPDATE_FOCUS_ACCOUNT":
 					focusAccount = j.getString("focusAccount");
-					if (_apiController != null && !accountMvCycleRunning.get()) {
-						_apiController.reqAccountUpdates(true, focusAccount, accountMVHandler);
-					}
+					if (focusAccount == null) focusAccount = "";
+					if (!focusAccount.isEmpty())
+						startAccountMvCycle(Collections.singletonList(focusAccount));
 					break;
 				case "FIND_ACCOUNT_SUMMARY":
 					apiReqId = queryAccountSummary();

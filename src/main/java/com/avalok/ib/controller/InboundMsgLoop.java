@@ -5,7 +5,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 /**
- * IB inbound 抽佇列：單筆 callback 的 Error 不得終止迴圈。
+ * Drains the IB inbound queue. An Error from one callback must not stop the loop.
  */
 final class InboundMsgLoop {
 	interface Batch {

@@ -10,12 +10,25 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.alibaba.fastjson.JSONObject;
 import com.avalok.ib.IBContract;
+import com.avalok.ib.rm.RmAccountFeed;
 import com.bitex.util.Redis;
 import com.ib.controller.Position;
 import com.ib.controller.ApiController.IAccountHandler;
 
 
 public class AccountMVHandler implements IAccountHandler {
+
+	/** Test only. Stands in for the old balance Redis write. Production leaves this unset. */
+	@FunctionalInterface
+	public interface BalanceWriter {
+		void write(String key, int ttlSeconds, Object value);
+	}
+
+	private BalanceWriter balanceWriter;
+	private RmAccountFeed rmFeed;
+
+	public void setBalanceWriter(BalanceWriter writer) { balanceWriter = writer; }
+	public void setRmFeed(RmAccountFeed feed) { rmFeed = feed; }
 
 	// Modify _tmpData before _dataInit
 	// Modify _data directly after _dataInit
@@ -27,6 +40,14 @@ public class AccountMVHandler implements IAccountHandler {
 
 	@Override
 	public synchronized void accountValue(String account, String key, String desc1, String desc2) {
+		try {
+		accountValueBody(account, key, desc1, desc2);
+		} finally {
+			if (rmFeed != null) rmFeed.onValue(account, key, desc1, desc2);
+		}
+	}
+
+	private void accountValueBody(String account, String key, String desc1, String desc2) {
 		// Example:
 		// AccountCode null U8620103
 		// AccountOrGroup BASE zwyang
@@ -64,6 +85,14 @@ public class AccountMVHandler implements IAccountHandler {
 
 	@Override
 	public synchronized void updatePortfolio(Position position) {
+		try {
+		updatePortfolioBody(position);
+		} finally {
+			if (rmFeed != null) rmFeed.onPortfolio(position);
+		}
+	}
+
+	private void updatePortfolioBody(Position position) {
 		IBContract ibc = new IBContract(position.contract());
 		if (!ibc_cache.containsKey(ibc.pair())) {
 			ibc_cache.put(ibc.pair(), ibc);
@@ -107,6 +136,7 @@ public class AccountMVHandler implements IAccountHandler {
 			_tmpData = new ConcurrentHashMap<>();
 		}
 		writePosition();
+		if (rmFeed != null) rmFeed.onDownloadEnd(account);
 	}
 
 	protected void writePosition() {
@@ -116,7 +146,8 @@ public class AccountMVHandler implements IAccountHandler {
 			Map<String, JSONObject> pos = _data.get(acc);
 			if (pos == null) continue;
 			log(">>> Redis " + key);
-			Redis.setex(key, 2764800, pos);
+			if (balanceWriter != null) balanceWriter.write(key, 2764800, pos);
+			else Redis.setex(key, 2764800, pos);
 		}
 	}
 

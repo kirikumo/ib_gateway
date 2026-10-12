@@ -26,6 +26,7 @@ public class AccountSummaryHandler implements IAccountSummaryHandler{
         });
     }
 
+    /** Test only. Production uses the no-arg constructor, which writes Redis. */
     AccountSummaryHandler(SummaryWriter writer) {
         this.writer = writer;
     }

@@ -373,7 +373,7 @@ public class IBContract extends Contract {
 				localSymbol(), tradingClass());
 	}
 	
-	/** IB Contract 預設 strike 為 Double.MAX_VALUE，未設定時不可拿來比對。 */
+	/** IB Contract defaults strike to Double.MAX_VALUE. An unset strike must not be compared. */
 	private boolean strikeSpecified() {
 		double s = strike();
 		return s != 0 && s != Double.MAX_VALUE && !Double.isNaN(s) && !Double.isInfinite(s);
@@ -397,7 +397,7 @@ public class IBContract extends Contract {
 			if (fullDate == null || fullDate.startsWith(lastTradeDateOrContractMonth()) == false)
 				return false;
 		}
-		// 僅期權需要比 strike；STK 的 Double.MAX_VALUE 對上 IB 回傳的 0 會永遠 miss
+		// Only options compare strike. A stock's Double.MAX_VALUE never matches IB's 0.
 		if (secType() == SecType.OPT || secType() == SecType.FOP) {
 			if (strikeSpecified() && strike() != fullDetailedContract.strike())
 				return false;
