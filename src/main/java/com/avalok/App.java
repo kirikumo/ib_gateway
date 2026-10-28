@@ -1,5 +1,6 @@
 package com.avalok;
 
+import com.bitex.util.DailyLog;
 import com.bitex.util.ReflectionUtil;
 import static com.bitex.util.DebugUtil.*;
 
@@ -9,6 +10,7 @@ import static com.bitex.util.DebugUtil.*;
  */
 public class App {
 	public static void main( String[] args ) {
+		DailyLog.install();
 		long usedTime = System.currentTimeMillis();
 
 		if (args.length < 1) {

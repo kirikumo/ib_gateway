@@ -19,6 +19,7 @@ import com.avalok.ib.rm.RmAccountFeed;
 import com.avalok.ib.rm.RmConnectionPulse;
 import com.avalok.ib.rm.RmOrderFeed;
 import com.avalok.ib.rm.RmStore;
+import com.bitex.util.DailyLog;
 import com.bitex.util.Redis;
 
 import com.ib.client.*;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 
 public class GatewayController extends BaseIBController {
 	public static void main(String[] args) throws Exception {
+		DailyLog.install();
 		if (Redis.connectivityTest() == false)
 			systemAbort("Seems redis does not work properlly");
 		new GatewayController().listenCommand();

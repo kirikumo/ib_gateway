@@ -1,12 +1,15 @@
 package com.bitex.util;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 import org.apache.commons.lang3.StringUtils;
 
 public class DebugUtil {
-	static final SimpleDateFormat TIME_HEADER = new SimpleDateFormat("MM/dd-HH:mm:ss.SSS");
+	static final DateTimeFormatter TIME_HEADER = DateTimeFormatter.ofPattern("MM/dd-HH:mm:ss.SSS")
+			.withZone(ZoneId.systemDefault());
 	static int MAX_HEAD_LEN = 20;
 	public static void log(Object o) {
 		String head = null;
@@ -26,7 +29,7 @@ public class DebugUtil {
 		head = StringUtils.rightPad(head, MAX_HEAD_LEN);
 		if (head.length() > MAX_HEAD_LEN)
 			head = head.substring(head.length()-MAX_HEAD_LEN);
-		String time_str = TIME_HEADER.format(new Date());
+		String time_str = TIME_HEADER.format(Instant.now());
 		System.out.println(time_str + " " + head + " " + o.toString());
 	}
 	public static void err(Object o) {
