@@ -30,6 +30,8 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 	public static final Map<String, JSONObject> KNOWN_CONTRACT_DETAILS = new ConcurrentHashMap<>();
 	public static GatewayController GW_CONTROLLER = null;
 	public static final Map<String, Long> QUERY_HIS = new ConcurrentHashMap<>();
+	/** Skip IB re-query while a successful detail is younger than this. Longer than the 30s account cycle. */
+	static final long KNOWN_CONTRACT_REFRESH_MS = 24L * 60 * 60 * 1000;
 	public static final ContractDetailsHandler instance = new ContractDetailsHandler();
 	private ContractDetailsHandler() {}
 
@@ -105,10 +107,18 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 	// 	return false;
 	// }
 
+	static boolean cachedFresh(String key, long now) {
+		JSONObject known = KNOWN_CONTRACT_DETAILS.get(key);
+		if (known == null) return false;
+		Long ts = known.getLong("_timestamp");
+		if (ts == null) return false;
+		return now < ts + KNOWN_CONTRACT_REFRESH_MS;
+	}
+
 	protected static void queryDetails(IBContract ibc) {
 		String key = ibc.shownName();
-		log("in queryDetails, key: " + key);
 		if (key == null) key = ibc.toString();
+		if (cachedFresh(key, System.currentTimeMillis())) return;
 		Long lastQueryT = QUERY_HIS.get(key);
 
 		if (lastQueryT == null || lastQueryT + 10_000 < System.currentTimeMillis()) {

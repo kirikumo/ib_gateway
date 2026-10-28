@@ -28,7 +28,10 @@ public class AccountMVHandlerRmTest {
 		store = new MemoryRmStore();
 		feed = new RmAccountFeed(store);
 		handler = new AccountMVHandler();
-		handler.setBalanceWriter((key, ttl, value) -> oldKeys.add(key));
+		handler.setBalanceWriter((key, ttl, value) -> {
+			Assert.assertEquals(2764800, ttl);
+			oldKeys.add(key);
+		});
 		handler.setRmFeed(feed);
 	}
 
@@ -62,9 +65,30 @@ public class AccountMVHandlerRmTest {
 
 		feed.beginRound("DU1");
 		handler.updatePortfolio(position("MSFT", "NASDAQ", 2));
+		Assert.assertEquals(1, oldKeys.size());
+		Assert.assertEquals(balance, store.get(RmKeys.balance("DU1")));
+
+		handler.accountDownloadEnd("DU1");
 		Assert.assertEquals(2, oldKeys.size());
 		Assert.assertEquals("IBGateway:DU1:balance", oldKeys.get(1));
-		Assert.assertEquals(balance, store.get(RmKeys.balance("DU1")));
+	}
+
+	@Test
+	public void otherAccountEndWritesOnlyThatBalance() {
+		feed.beginRound("A");
+		handler.updatePortfolio(position("A", "AAPL", "NASDAQ", 1));
+		handler.accountValue("A", "CashBalance", "20", "EUR");
+		handler.accountDownloadEnd("A");
+		Assert.assertEquals(List.of("IBGateway:A:balance"), oldKeys);
+
+		feed.beginRound("B");
+		handler.updatePortfolio(position("B", "MSFT", "NASDAQ", 2));
+		handler.updatePortfolio(position("B", "IBM", "NYSE", 3));
+		handler.accountValue("B", "CashBalance", "5", "USD");
+		Assert.assertEquals(List.of("IBGateway:A:balance"), oldKeys);
+
+		handler.accountDownloadEnd("B");
+		Assert.assertEquals(List.of("IBGateway:A:balance", "IBGateway:B:balance"), oldKeys);
 	}
 
 	@Test
@@ -81,6 +105,10 @@ public class AccountMVHandlerRmTest {
 	}
 
 	private static Position position(String symbol, String exchange, int conId) {
+		return position("DU1", symbol, exchange, conId);
+	}
+
+	private static Position position(String account, String symbol, String exchange, int conId) {
 		Contract contract = new Contract();
 		contract.symbol(symbol);
 		contract.secType("STK");
@@ -88,6 +116,6 @@ public class AccountMVHandlerRmTest {
 		contract.exchange(exchange);
 		contract.primaryExch(exchange);
 		contract.conid(conId);
-		return new Position(contract, "DU1", Decimal.get(1), 150, 150, 10, 0, 0);
+		return new Position(contract, account, Decimal.get(1), 150, 150, 10, 0, 0);
 	}
 }

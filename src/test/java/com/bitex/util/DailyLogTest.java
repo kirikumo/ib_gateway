@@ -7,8 +7,11 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -186,6 +189,57 @@ public class DailyLogTest {
 		DailyLog.install();
 		System.out.println("again");
 		assertEquals("day28\nagain\n", read("mkdata_gateway", DAY));
+	}
+
+	@Test
+	public void deletedFileIsRecreatedOnNextLine() throws Exception {
+		DailyLog.useGatewayName("mkdata_gateway");
+		DailyLog.install();
+		System.out.println("before-delete");
+		Path file = logFile("mkdata_gateway", DAY);
+		Files.delete(file);
+		assertFalse(Files.exists(file));
+		System.out.println("after-delete");
+		assertEquals("after-delete\n", read("mkdata_gateway", DAY));
+	}
+
+	@Test
+	public void deletedFileStaysGoneUntilTheNextLine() throws Exception {
+		DailyLog.useGatewayName("mkdata_gateway");
+		DailyLog.install();
+		System.out.println("before-delete");
+		Path file = logFile("mkdata_gateway", DAY);
+		Files.delete(file);
+		assertFalse(Files.exists(file));
+	}
+
+	@Test
+	public void replacedFileReceivesTheNextLine() throws Exception {
+		DailyLog.useGatewayName("mkdata_gateway");
+		DailyLog.install();
+		System.out.println("before-delete");
+		Path file = logFile("mkdata_gateway", DAY);
+		Files.delete(file);
+		Files.writeString(file, "other\n");
+		System.out.println("after-replace");
+		String text = read("mkdata_gateway", DAY);
+		assertTrue(text.contains("after-replace"));
+		assertFalse(text.contains("before-delete"));
+	}
+
+	@Test
+	public void truncatingTheSameFileKeepsThatFile() throws Exception {
+		DailyLog.useGatewayName("mkdata_gateway");
+		DailyLog.install();
+		System.out.println("before-truncate");
+		Path file = logFile("mkdata_gateway", DAY);
+		Object key = Files.readAttributes(file, BasicFileAttributes.class).fileKey();
+		try (FileChannel channel = FileChannel.open(file, StandardOpenOption.WRITE)) {
+			channel.truncate(0);
+		}
+		System.out.println("after-truncate");
+		assertEquals(key, Files.readAttributes(file, BasicFileAttributes.class).fileKey());
+		assertEquals("after-truncate\n", read("mkdata_gateway", DAY));
 	}
 
 	@Test

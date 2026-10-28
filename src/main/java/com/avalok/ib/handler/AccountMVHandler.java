@@ -2,10 +2,7 @@ package com.avalok.ib.handler;
 
 import static com.bitex.util.DebugUtil.*;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.alibaba.fastjson.JSONObject;
@@ -67,11 +64,9 @@ public class AccountMVHandler implements IAccountHandler {
 			j.put("balance", desc1);
 			asset = desc2;
 		} else return;
-		info("<-- " + account + " MV " + key + " " + desc1 + " " + desc2);
 		if (_dataInit) {
 			_data.putIfAbsent(account, new ConcurrentHashMap<String, JSONObject>());
 			_data.get(account).put(asset, j);
-			writePosition();
 		} else {
 			_tmpData.putIfAbsent(account, new ConcurrentHashMap<String, JSONObject>());
 			_tmpData.get(account).put(asset, j);
@@ -100,11 +95,6 @@ public class AccountMVHandler implements IAccountHandler {
 
 		ContractDetailsHandler.findDetails(ibc); // Auto query details for instruments in portfolio
 		String account = position.account();
-		info("<-- " + account + " Pos " + ibc.exchange() + "/" +
-				ibc.shownName() + " pos:" + position.position().longValue() +
-				" cost:" + position.averageCost() + " realPnl:" + position.realPnl() +
-				" unrealPnl:" + position.unrealPnl() + " marketPrice:" + position.marketPrice() +
-				" marketValue:" + position.marketValue());
 		JSONObject j = new JSONObject();
 		j.put("type", "position");
 		j.put("contract", ibc.toJSON());
@@ -120,7 +110,6 @@ public class AccountMVHandler implements IAccountHandler {
 		if (_dataInit) {
 			_data.putIfAbsent(account, new ConcurrentHashMap<String, JSONObject>());
 			_data.get(account).put(ibc.shownName(), j);
-			writePosition();
 		} else {
 			_tmpData.putIfAbsent(account, new ConcurrentHashMap<String, JSONObject>());
 			_tmpData.get(account).put(ibc.shownName(), j);
@@ -135,20 +124,17 @@ public class AccountMVHandler implements IAccountHandler {
 			_data = _tmpData;
 			_tmpData = new ConcurrentHashMap<>();
 		}
-		writePosition();
+		writePosition(account);
 		if (rmFeed != null) rmFeed.onDownloadEnd(account);
 	}
 
-	protected void writePosition() {
-		Set<String> accounts = _data.keySet();
-		for (String acc : accounts) {
-			final String key = "IBGateway:" + acc + ":balance";
-			Map<String, JSONObject> pos = _data.get(acc);
-			if (pos == null) continue;
-			log(">>> Redis " + key);
-			if (balanceWriter != null) balanceWriter.write(key, 2764800, pos);
-			else Redis.setex(key, 2764800, pos);
-		}
+	protected void writePosition(String account) {
+		if (account == null) return;
+		Map<String, JSONObject> pos = _data.get(account);
+		if (pos == null) return;
+		final String key = "IBGateway:" + account + ":balance";
+		if (balanceWriter != null) balanceWriter.write(key, 2764800, pos);
+		else Redis.setex(key, 2764800, pos);
 	}
 
 	public Map<String, Map<String, JSONObject>> position() {

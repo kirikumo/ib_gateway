@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
@@ -40,6 +41,7 @@ public final class DailyLog {
 	private static boolean installed;
 	private static String gatewayDirName;
 	private static LocalDate openDate;
+	private static Object openFileKey;
 	private static java.io.BufferedWriter writer;
 
 	private DailyLog() {}
@@ -142,15 +144,18 @@ public final class DailyLog {
 
 	private static void ensureOpen() throws IOException {
 		LocalDate today = today();
-		if (writer != null && today.equals(openDate)) return;
-		closeWriter();
 		Path dir = baseDir.resolve(gatewayDirName);
+		Path path = dir.resolve("ib_gateway." + today + ".log");
+		// A deleted or replaced path still holds the old descriptor.
+		if (writer != null && today.equals(openDate) && sameOpenFile(path)) return;
+		closeWriter();
 		Files.createDirectories(dir);
 		writer = Files.newBufferedWriter(
-				dir.resolve("ib_gateway." + today + ".log"),
+				path,
 				StandardCharsets.UTF_8,
 				StandardOpenOption.CREATE,
 				StandardOpenOption.APPEND);
+		openFileKey = fileKey(path);
 		openDate = today;
 		try {
 			purge(dir, today);
@@ -178,6 +183,23 @@ public final class DailyLog {
 		for (Path path : old) Files.deleteIfExists(path);
 	}
 
+	/** Path missing, or another file now occupies it. A null file key can only prove the path exists. */
+	private static boolean sameOpenFile(Path path) {
+		try {
+			if (!Files.exists(path)) return false;
+			if (openFileKey == null) return true;
+			Object now = fileKey(path);
+			if (now == null) return true;
+			return openFileKey.equals(now);
+		} catch (IOException e) {
+			return false;
+		}
+	}
+
+	private static Object fileKey(Path path) throws IOException {
+		return Files.readAttributes(path, BasicFileAttributes.class).fileKey();
+	}
+
 	private static void closeWriter() {
 		if (writer != null) {
 			try {
@@ -186,6 +208,7 @@ public final class DailyLog {
 			}
 			writer = null;
 		}
+		openFileKey = null;
 		openDate = null;
 	}
 
