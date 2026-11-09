@@ -89,11 +89,20 @@ public class AccountMVHandler implements IAccountHandler {
 
 	private void updatePortfolioBody(Position position) {
 		IBContract ibc = new IBContract(position.contract());
-		if (!ibc_cache.containsKey(ibc.pair())) {
+		// A 1102 portfolio image can omit primaryExch. Borrow the listing so the
+		// row stays on SEHK:... instead of becoming the key "null:...".
+		if (blankExchange(ibc.exchange())) {
+			String exchange = ContractDetailsHandler.knownExchange(ibc.conid());
+			if (exchange != null)
+				ibc.applyExchange(exchange);
+		}
+		if (!blankExchange(ibc.exchange()) && !ibc_cache.containsKey(ibc.pair())) {
 			ibc_cache.put(ibc.pair(), ibc);
 		}
 
 		ContractDetailsHandler.findDetails(ibc); // Auto query details for instruments in portfolio
+		if (blankExchange(ibc.exchange()))
+			return;
 		String account = position.account();
 		JSONObject j = new JSONObject();
 		j.put("type", "position");
@@ -135,6 +144,10 @@ public class AccountMVHandler implements IAccountHandler {
 		final String key = "IBGateway:" + account + ":balance";
 		if (balanceWriter != null) balanceWriter.write(key, 2764800, pos);
 		else Redis.setex(key, 2764800, pos);
+	}
+
+	private static boolean blankExchange(String v) {
+		return v == null || v.isEmpty();
 	}
 
 	public Map<String, Map<String, JSONObject>> position() {

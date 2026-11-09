@@ -281,11 +281,11 @@ public final class RmOrderFeed {
 		if (notEmpty(src.getSecType())) dest.secType(src.getSecType());
 		if (notEmpty(src.currency())) dest.currency(src.currency());
 		if (notEmpty(src.multiplier())) dest.multiplier(src.multiplier());
-		if (RmPair.venue(src.exchange()) != null && RmPair.venue(dest.exchange()) == null)
+		if (RmPair.usableExchange(src.exchange()) != null && RmPair.usableExchange(dest.exchange()) == null)
 			dest.exchange(src.exchange());
 		else if (notEmpty(src.exchange()) && empty(dest.exchange()))
 			dest.exchange(src.exchange());
-		if (RmPair.venue(src.primaryExch()) != null) dest.primaryExch(src.primaryExch());
+		if (RmPair.usableExchange(src.primaryExch()) != null) dest.primaryExch(src.primaryExch());
 		if (notEmpty(src.tradingClass())) dest.tradingClass(src.tradingClass());
 		if (RmPair.ymd(src.lastTradeDate()) != null) dest.lastTradeDate(src.lastTradeDate());
 		if (src.strike() != 0d) dest.strike(src.strike());

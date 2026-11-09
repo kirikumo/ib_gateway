@@ -43,6 +43,30 @@ public class ContractDetailsHandler implements IContractDetailsHandler {
 		rmDetailsListener = listener;
 	}
 
+	/**
+	 * Known exchange for a portfolio contract that arrived without one.
+	 * Same conid only. Skips SMART so the balance key stays off the router.
+	 */
+	public static String knownExchange(int conid) {
+		if (conid == 0) return null;
+		String fromPrimary = null;
+		for (IBContract known : KNOWN_CONTRACTS.values()) {
+			if (known == null || known.conid() != conid) continue;
+			String exch = usableExchange(known.exchange());
+			if (exch != null) return exch;
+			if (fromPrimary == null) fromPrimary = usableExchange(known.primaryExch());
+		}
+		return fromPrimary;
+	}
+
+	/** Non-empty and not SMART. */
+	private static String usableExchange(String v) {
+		if (v == null) return null;
+		String t = v.trim();
+		if (t.isEmpty() || "SMART".equals(t)) return null;
+		return t;
+	}
+
 	public static boolean fillIBContract(IBContract ibc) {
 		Collection<IBContract> contracts = KNOWN_CONTRACTS.values();
 		IBContract result = null;

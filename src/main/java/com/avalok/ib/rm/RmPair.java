@@ -18,7 +18,7 @@ public final class RmPair {
 	}
 
 	/** Non-empty and not SMART. */
-	public static String venue(String v) {
+	public static String usableExchange(String v) {
 		if (v == null) return null;
 		String t = v.trim();
 		if (t.isEmpty() || "SMART".equals(t)) return null;
@@ -67,8 +67,8 @@ public final class RmPair {
 		String sec = secType(c);
 		if (sec == null || "BAG".equals(sec)) return null;
 		String pair = pair(c);
-		String primary = venue(c.primaryExch());
-		String exch = venue(c.exchange());
+		String primary = usableExchange(c.primaryExch());
+		String exch = usableExchange(c.exchange());
 		int conId = c.conid();
 		if (pair != null) {
 			if (primary != null) return primary + ":" + sec + ":" + pair;
@@ -77,16 +77,16 @@ public final class RmPair {
 			return null;
 		}
 		if (conId == 0) return null;
-		String venue = primary != null ? primary : exch;
-		if (venue != null) return venue + ":" + sec + ":conid:" + conId;
+		String exchange = primary != null ? primary : exch;
+		if (exchange != null) return exchange + ":" + sec + ":conid:" + conId;
 		return sec + ":conid:" + conId;
 	}
 
 	/** Order exchange: primary listing. Futures with no primary use the contract exchange. */
 	public static String orderExchange(Contract c) {
-		String primary = venue(c == null ? null : c.primaryExch());
+		String primary = usableExchange(c == null ? null : c.primaryExch());
 		if (primary != null) return primary;
-		if ("FUT".equals(secType(c))) return venue(c.exchange());
+		if ("FUT".equals(secType(c))) return usableExchange(c.exchange());
 		return null;
 	}
 

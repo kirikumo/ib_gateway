@@ -93,6 +93,13 @@ public class IBContract extends Contract {
 	}
 	
 	public boolean isFullDetailed() { return _fullDetailed; }
+
+	/** Portfolio row had no exchange. Set it and rebuild shownName. */
+	public void applyExchange(String exchange) {
+		if (exchange == null || exchange.isEmpty()) return;
+		exchange(exchange);
+		buildFullInfo();
+	}
 	
 	/**
 	 * Parse string like:

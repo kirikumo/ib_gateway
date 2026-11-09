@@ -173,7 +173,7 @@ public final class RmOrderBuilder {
 			row.put("side", side(leg.getAction()));
 			row.put("qty", parentQty.multiply(BigDecimal.valueOf(leg.ratio())));
 			row.put("price", RmPair.usablePrice(rawPrice) ? rawPrice : null);
-			row.put("exchange", known != null ? RmPair.orderExchange(known) : RmPair.venue(leg.exchange()));
+			row.put("exchange", known != null ? RmPair.orderExchange(known) : RmPair.usableExchange(leg.exchange()));
 			row.put("secType", known == null ? null : RmPair.secType(known));
 			row.put("multiplier", known == null ? null : RmPair.multiplierNumber(known));
 			out.add(row);
