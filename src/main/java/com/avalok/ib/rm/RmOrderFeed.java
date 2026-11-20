@@ -19,7 +19,7 @@ import com.ib.client.Types.Right;
 
 /**
  * While connected: open orders HSET then PUBLISH; terminal orders HDEL then PUBLISH.
- * Reconnect waits for both openOrderEnd and completedOrdersEnd, then PUBLISH then HDEL.
+ * Reconnect waits for openOrderEnd, completedOrdersEnd, and the executions report end, then PUBLISH then HDEL.
  */
 public final class RmOrderFeed {
 	private final RmStore store;
@@ -37,6 +37,7 @@ public final class RmOrderFeed {
 	private boolean awaitingReconcile;
 	private boolean openEnded;
 	private boolean completedEnded;
+	private boolean executionsEnded;
 	private boolean reconciled;
 
 	public RmOrderFeed(RmStore store) {
@@ -58,6 +59,7 @@ public final class RmOrderFeed {
 		awaitingReconcile = true;
 		openEnded = false;
 		completedEnded = false;
+		executionsEnded = false;
 		reconciled = false;
 		snapshotRefs.clear();
 		completed.clear();
@@ -140,6 +142,11 @@ public final class RmOrderFeed {
 		tryReconcile();
 	}
 
+	public synchronized void onExecutionsEnded() {
+		executionsEnded = true;
+		tryReconcile();
+	}
+
 	private void write(Live live) {
 		if (live.order == null || live.contract == null || live.ibStatus == null) return;
 		Map<String, Object> doc = RmOrderBuilder.build(
@@ -184,7 +191,7 @@ public final class RmOrderFeed {
 	}
 
 	private void tryReconcile() {
-		if (!openEnded || !completedEnded || reconciled) return;
+		if (!openEnded || !completedEnded || !executionsEnded || reconciled) return;
 		reconciled = true;
 		awaitingReconcile = false;
 		LinkedHashSet<String> accs = new LinkedHashSet<>();

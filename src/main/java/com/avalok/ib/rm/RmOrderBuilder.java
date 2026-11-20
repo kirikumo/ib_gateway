@@ -25,8 +25,16 @@ public final class RmOrderBuilder {
 	public static String orderRef(Order order) {
 		if (order == null || order.permId() == 0) return null;
 		String ref = order.orderRef();
-		if (ref != null && !ref.isEmpty()) return ref;
+		if (ref != null && !ref.isEmpty()) return childOrderRef(order, ref);
 		return "tws:" + order.permId();
+	}
+
+	// Same published key as IBOrder.externalOrderRef. Kept here so this class does not depend on IBOrder.
+	private static String childOrderRef(Order order, String ref) {
+		if (order.parentId() == 0 && order.parentPermId() == 0) return ref;
+		String suffix = "@" + order.permId();
+		if (ref.endsWith(suffix)) return ref;
+		return ref + suffix;
 	}
 
 	public static String mapStatus(String ibStatus) {

@@ -55,9 +55,9 @@
 
 ### 4. 重連對帳獨立於 OMS 初始化
 
-訂單旁路自己等兩個結束信號：這次連線的 `openOrderEnd`，以及 `completedOrdersEnd`。OMS 仍在 `openOrderEnd` 初始化，不改那條路徑。
+訂單旁路自己等三個結束信號：這次連線的 `openOrderEnd`、`completedOrdersEnd`，以及這次 `reqExecutions` 的 `tradeReportEnd`。成交要求在兩個訂單快照都結束之後才發出。OMS 仍在 `openOrderEnd` 初始化，不改那條路徑。
 
-兩個信號都到了，才取出該帳戶 `open` 裡有、但這次未完成單快照沒有的 field。用當日完結單與當日成交對表，先 `PUBLISH` 再 `HDEL`。完結單請求維持現有的 `apiOnly=false`。
+三個信號都到了，才取出該帳戶 `open` 裡有、但這次未完成單快照沒有的 field。用當日完結單與當日成交對表，先 `PUBLISH` 再 `HDEL`。完結單請求維持現有的 `apiOnly=false`。
 
 成交均價與累計量留在這次連線的記憶體，不從 `TradeReport:*` 反查，避免和另一份 JSON 形狀耦合。
 

@@ -93,7 +93,7 @@
 
 | 欄位 | 要求 | 直接可用 |
 |---|---|---|
-| `orderRef` | 同一張 IB 單永遠相同 | 下單請求有 orderRef 就原樣寫回。經這座閘道下的單，這個字串必須是 `uranus_` 或 `api_` 開頭，否則下單失敗。沒有 orderRef 的手動單寫 `tws:` 加十進位 permId。permId 仍是 `0` 時不寫、不推 |
+| `orderRef` | 同一張 IB 單永遠相同 | 下單請求有 orderRef 就原樣寫回。經這座閘道下的單，這個字串必須是 `uranus_` 或 `api_` 開頭，否則下單失敗。沒有 orderRef 的手動單寫 `tws:` 加十進位 permId。permId 仍是 `0` 時不寫、不推。券商生成且 `orderRef` 與母單相同的子單，對外鍵是 `母單orderRef@permId` |
 | `updateTimeMs` | 嚴格變大 | Unix 毫秒。同一毫秒則上一筆加 1 |
 | `account` | 必有 | 與這張單的 IB 帳戶編號相同 |
 | `status` | `new`、`cancelling`、`filled`、`cancelled`、`rejected`、`removed` | 連線期間按狀態表。`removed` 只在重連對帳 |

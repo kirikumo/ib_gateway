@@ -109,6 +109,16 @@ public class RmOrderBuilderTest {
 		Assert.assertEquals("SELL", RmOrderBuilder.build(
 				stk(), sshort, "Submitted", Decimal.ZERO, Decimal.get(1), 0d, true, null, null, null).get("side"));
 
+		Assert.assertEquals("api_scale_1792635490740", RmOrderBuilder.orderRef(order(812216930L, "api_scale_1792635490740", "LMT")));
+		Order child = order(812216931L, "api_scale_1792635490740", "LMT");
+		child.parentId(1);
+		child.parentPermId(812216930L);
+		Assert.assertEquals("api_scale_1792635490740@812216931", RmOrderBuilder.orderRef(child));
+		Assert.assertEquals("api_scale_1792635490740", child.orderRef());
+		Order waiting = order(0, "api_scale_1792635490740", "LMT");
+		waiting.parentId(1);
+		Assert.assertNull(RmOrderBuilder.orderRef(waiting));
+
 		Assert.assertEquals("uranus_keep", RmOrderBuilder.orderRef(order(22, "uranus_keep", "LMT")));
 		Assert.assertEquals("api_keep", RmOrderBuilder.orderRef(order(23, "api_keep", "LMT")));
 		Order manual = order(24, "", "LMT");

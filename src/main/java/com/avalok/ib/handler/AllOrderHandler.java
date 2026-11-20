@@ -206,7 +206,13 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
         j.put("liquidation", execution.liquidation());
         j.put("cumQty", execution.cumQty().longValue());
         j.put("avgPrice", execution.avgPrice());
-        j.put("orderRef", execution.orderRef());
+
+        IBOrder execOrder = findExecOrder(execution);
+        String published = execOrder == null ? null : execOrder.orderRef();
+        if (published != null)
+            j.put("orderRef", published);
+        else
+            j.put("orderRef", execution.orderRef());
         j.put("evRule", execution.evRule());
         j.put("evMultiplier", execution.evMultiplier());
         j.put("modelCode", execution.modelCode());
@@ -244,7 +250,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 
 		log("<-- tradeReport() " + tradeKey + " " + ibc.shownName() + execution.cumQty() + "@" + execution.price());
 		if (rmFeed != null && execution.permId() != 0) {
-			String ref = execution.orderRef();
+			String ref = j.getString("orderRef");
 			if (ref == null || ref.isEmpty()) ref = "tws:" + execution.permId();
 			rmFeed.onExecution(ref, execution.cumQty(), execution.avgPrice());
 			PendingComm pending = pendingComm.remove(tradeKey);
@@ -255,6 +261,8 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	public void tradeReportEnd() {
 		flushTrades();
 		log("<-- tradeReportEnd");
+		// A report end from before this connection asked for executions must not reconcile.
+		if (_execRequested && rmFeed != null) rmFeed.onExecutionsEnded();
 	}
 
 	public void commissionAndFeesReport(String tradeKey, CommissionAndFeesReport commissionReport) {
@@ -282,6 +290,15 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		}
 		persistTrade(tradeKey, j);
     }
+
+	private IBOrder findExecOrder(Execution execution) {
+		if (execution.permId() == 0) return null;
+		IBOrder execOrder = _allOrders.byPermId(execution.permId());
+		if (execOrder == null && _processingOrder != null
+				&& _processingPermId != null && _processingPermId == execution.permId())
+			execOrder = _processingOrder;
+		return execOrder;
+	}
 
 	private void persistTrade(String tradeKey, JSONObject j) {
 		String acctNumber = j.getString("acctNumber");
@@ -328,6 +345,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 		_deadOrderInit = true;
 		if (!_omsInit && _aliveOrderInit) initOMS();
 		if (rmFeed != null) rmFeed.onCompletedEnded();
+		requestExecutionsAfterSnapshots();
 	}
 	
 	////////////////////////////////////////////////////////////////
@@ -516,6 +534,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 //		if (!_omsInit && _deadOrderInit) initOMS();
 		if (!_omsInit) initOMS();
 		if (rmFeed != null) rmFeed.onOpenEnded();
+		requestExecutionsAfterSnapshots();
 	}
 
 
@@ -536,6 +555,7 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 //		_deadOrders = new OrderCache();
 		_allOrders = new OrderCache();
 		pendingComm.clear();
+		_execRequested = false;
 		if (rmFeed != null) rmFeed.beginReconnect();
 	}
 	/**
@@ -546,6 +566,15 @@ public class AllOrderHandler implements ILiveOrderHandler,ICompletedOrdersHandle
 	private boolean _aliveOrderInit = false;
 	private boolean _deadOrderInit = false;
 	private boolean _omsInit = false;
+	private boolean _execRequested = false;
+
+	/** One reqExecutions after both snapshots. resetStatus clears the flag. */
+	private void requestExecutionsAfterSnapshots() {
+		if (!_aliveOrderInit || !_deadOrderInit || _execRequested) return;
+		_execRequested = true;
+		_ibController.requestExecutions();
+	}
+
 	private void initOMS() {
 		if (_omsInit) {
 			err("Should not call initOMS() when _omsInit is true");

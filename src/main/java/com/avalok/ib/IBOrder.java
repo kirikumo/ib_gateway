@@ -124,6 +124,8 @@ public class IBOrder {
 			}
 		}
 
+		setParams(oj);
+
 		toBePlaced = true;
 	}
 	/**
@@ -144,11 +146,70 @@ public class IBOrder {
 			warn("Fixing IB zero totalQuantity bug, fuck me -> " + order.totalQuantity().toString());
 		}
 	}
-	
-	
+
+	public boolean isChildOrder() {
+		return order != null && (order.parentId() != 0 || order.parentPermId() != 0);
+	}
+
+	// Published id. The IB field stays the broker string so placeOrder does not send the suffix.
+	private String externalOrderRef() {
+		if (order == null) return null;
+		String ref = order.orderRef();
+		if (!isChildOrder() || ref == null || ref.isEmpty()) return ref;
+		long permId = order.permId();
+		if (permId == 0) return null;
+		String suffix = "@" + permId;
+		if (ref.endsWith(suffix)) return ref;
+		return ref + suffix;
+	}
+
+	public void setParams(JSONObject changeInfo) {
+		if (changeInfo == null || order == null) return;
+		if (changeInfo.containsKey("p")) {
+			order.lmtPrice(changeInfo.getDoubleValue("p"));
+		}
+		if (changeInfo.containsKey("s")) {
+			order.totalQuantity(Decimal.get(changeInfo.getDoubleValue("s")));
+		}
+		if (changeInfo.containsKey("scaleInitLevelSize")) {
+			order.scaleInitLevelSize(changeInfo.getIntValue("scaleInitLevelSize"));
+		}
+		if (changeInfo.containsKey("scaleSubsLevelSize")) {
+			order.scaleSubsLevelSize(changeInfo.getIntValue("scaleSubsLevelSize"));
+		}
+		if (changeInfo.containsKey("scalePriceIncrement")) {
+			order.scalePriceIncrement(changeInfo.getDoubleValue("scalePriceIncrement"));
+		}
+		if (changeInfo.containsKey("scalePriceAdjustValue")) {
+			order.scalePriceAdjustValue(changeInfo.getDoubleValue("scalePriceAdjustValue"));
+		}
+		if (changeInfo.containsKey("scalePriceAdjustInterval")) {
+			order.scalePriceAdjustInterval(changeInfo.getIntValue("scalePriceAdjustInterval"));
+		}
+		if (changeInfo.containsKey("scaleProfitOffset")) {
+			order.scaleProfitOffset(changeInfo.getDoubleValue("scaleProfitOffset"));
+		}
+		if (changeInfo.containsKey("scaleAutoReset")) {
+			order.scaleAutoReset(changeInfo.getBooleanValue("scaleAutoReset"));
+		}
+		if (changeInfo.containsKey("scaleInitPosition")) {
+			order.scaleInitPosition(changeInfo.getIntValue("scaleInitPosition"));
+		}
+		if (changeInfo.containsKey("scaleInitFillQty")) {
+			order.scaleInitFillQty(changeInfo.getIntValue("scaleInitFillQty"));
+		}
+		if (changeInfo.containsKey("scaleRandomPercent")) {
+			order.scaleRandomPercent(changeInfo.getBooleanValue("scaleRandomPercent"));
+		}
+		if (changeInfo.containsKey("scaleTable")) {
+			order.scaleTable(changeInfo.getString("scaleTable"));
+		}
+	}
+
 	public int orderId() { return order.orderId(); }
 	public long permId() { return order.permId(); }
 	public String account() { return order.account(); }
+	public String orderRef() { return externalOrderRef(); }
 	
 	// Updated from AllOrderHandler.orderStatus();
 	Double filled = 0.0, remaining = 0.0, avgFillPrice = 0.0, lastFillPrice = 0.0, mktCapPrice = 0.0;
@@ -291,12 +352,21 @@ public class IBOrder {
 		JSONObject j = new JSONObject();
 		
 		j.put("permId", ""+order.permId());
-		j.put("orderRef", order.orderRef());
+		String publishedRef = externalOrderRef();
+		if (!isChildOrder() || publishedRef != null)
+			j.put("orderRef", publishedRef);
 		
 		j.put("client_oid", omsClientOID());
 		String omsId = omsId();
 		if (omsId != null)
 			j.put("i", omsId);
+
+		if (isChildOrder()) {
+			if (order.parentId() != 0)
+				j.put("parentId", order.parentId());
+			if (order.parentPermId() != 0)
+				j.put("parentPermId", "" + order.parentPermId());
+		}
 		
 		j.put("pair", contract.pair());
 		if (order.action() == Action.BUY)
@@ -334,6 +404,31 @@ public class IBOrder {
 			j.put("commission", orderState.commissionAndFees());
 
 		j.put("extMsg", extMsg);
+
+		// ScaleTrader fields
+		if (order.scaleInitLevelSize() != Integer.MAX_VALUE)
+			j.put("scaleInitLevelSize", order.scaleInitLevelSize());
+		if (order.scaleSubsLevelSize() != Integer.MAX_VALUE)
+			j.put("scaleSubsLevelSize", order.scaleSubsLevelSize());
+		if (order.scalePriceIncrement() != Double.MAX_VALUE)
+			j.put("scalePriceIncrement", order.scalePriceIncrement());
+		if (order.scalePriceAdjustValue() != Double.MAX_VALUE)
+			j.put("scalePriceAdjustValue", order.scalePriceAdjustValue());
+		if (order.scalePriceAdjustInterval() != Integer.MAX_VALUE)
+			j.put("scalePriceAdjustInterval", order.scalePriceAdjustInterval());
+		if (order.scaleProfitOffset() != Double.MAX_VALUE)
+			j.put("scaleProfitOffset", order.scaleProfitOffset());
+		if (order.scaleAutoReset())
+			j.put("scaleAutoReset", true);
+		if (order.scaleInitPosition() != Integer.MAX_VALUE)
+			j.put("scaleInitPosition", order.scaleInitPosition());
+		if (order.scaleInitFillQty() != Integer.MAX_VALUE)
+			j.put("scaleInitFillQty", order.scaleInitFillQty());
+		if (order.scaleRandomPercent())
+			j.put("scaleRandomPercent", true);
+		if (order.scaleTable() != null && !order.scaleTable().isEmpty())
+			j.put("scaleTable", order.scaleTable());
+
 		return j;
 	}
 
@@ -344,6 +439,8 @@ public class IBOrder {
 		} else if (omsAltId() != null){
 			// For those non-API orders.
 			return omsAltId();
+		} else if (isChildOrder() && order.permId() == 0) {
+			return null;
 		} else {
 			err("omsId not found, is this order placed mannually from TWS?\n" + this);
 			return null;
@@ -359,7 +456,7 @@ public class IBOrder {
 	}
 	public String omsClientOID() {
 		// suggest using orderRef to store client_oid+timestamp when created with API
-		String orderRef = order.orderRef();
+		String orderRef = externalOrderRef();
 		if (orderRef != null && orderRef.startsWith("uranus_")) return orderRef;
 		if (orderRef != null && orderRef.startsWith("api_")) return orderRef;
 		return null;

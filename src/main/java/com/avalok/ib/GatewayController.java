@@ -574,7 +574,9 @@ public class GatewayController extends BaseIBController {
 	////////////////////////////////////////////////////////////////
 	protected AllOrderHandler orderCacheHandler = new AllOrderHandler(this);
 
-	protected void subscribeTradeReport() {
+	/** AllOrderHandler calls this once both order snapshots have ended. */
+	public void requestExecutions() {
+		if (_apiController == null) return;
 		_apiController.reqExecutions(new ExecutionFilter(), orderCacheHandler);
 	}
 
@@ -645,12 +647,7 @@ public class GatewayController extends BaseIBController {
 			return 0;
 		}
 
-		if (changeInfo.containsKey("p")) {
-			ibOrder.order.lmtPrice(changeInfo.getDoubleValue("p"));
-		}
-		if (changeInfo.containsKey("s")) {
-			ibOrder.order.totalQuantity(Decimal.get(changeInfo.getDoubleValue("s")));
-		}
+		ibOrder.setParams(changeInfo);
 		placeOrder(ibOrder);
 
 		return _apiController.lastReqId();
@@ -864,7 +861,6 @@ public class GatewayController extends BaseIBController {
 
 		// Then subscribe market data.
 		// if (_apiController == null) _connect();
-		// subscribeTradeReport();
 		// restartMarketData();
 
 		log("_postConnected delay 3 seconds to subscribe MV and refresh orders");
@@ -885,7 +881,7 @@ public class GatewayController extends BaseIBController {
 					}
 					if (isConnected() && accList != null && _apiController != null) {
 						cleanCacheSubPair();
-						subscribeTradeReport();
+						// reqExecutions waits for openOrderEnd and completedOrdersEnd.
 						restartMarketData();
 						subscribeAccountMV();
 						queryAccountSummary();

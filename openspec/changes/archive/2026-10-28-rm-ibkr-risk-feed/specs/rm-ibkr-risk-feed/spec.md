@@ -78,12 +78,16 @@
 - **THEN** 系統 MUST 再推一筆較新的 `updateTimeMs`，且 `open` MUST NOT 再出現該 field
 
 ### Requirement: 重連對帳
-重連後，系統 MUST 等未完成單快照結束，且當日完結單結束，才處理仍留在 `open`、但新的未完成單快照裡已經沒有的 `orderRef`。完結單請求 MUST 包含 TWS 送出的單。完結單與成交回報都只涵蓋當日；成交回報只涵蓋當日午夜之後。
+重連後，系統 MUST 等未完成單快照結束、當日完結單結束，以及這次當日成交回報結束，才處理仍留在 `open`、但新的未完成單快照裡已經沒有的 `orderRef`。完結單請求 MUST 包含 TWS 送出的單。完結單與成交回報都只涵蓋當日；成交回報只涵蓋當日午夜之後。
 
 對得上當日完結單 `Filled` 時 MUST 推 `filled`：`filledQty` 優先用完結單，其次當日成交累計，再其次刪除前的值；`avgPrice` 用成交回報均價，沒有則 `null` 而不是 `0`；`remainedQty` 為 0。對得上 `Cancelled` 或 `ApiCancelled`（含零成交撤銷）時 MUST 推 `cancelled`。對得上 `Rejected` 時 MUST 推 `rejected`。兩者的 `remainedQty` 都是 0。都對不上時 MUST 推 `removed`，並帶上刪除前最後一次的欄位，當時是 `null` 的仍是 `null`。`removed` 的 `filledQty` MUST 是斷線前最後看到的量。重連對帳 MUST 先推送再刪除 hash。從未寫入該 hash 的完結單 MUST NOT 因此被補推。
 
 #### Scenario: 完結單尚未到齊
 - **WHEN** 未完成單快照已結束，但當日完結單尚未結束
+- **THEN** 系統 MUST NOT 把仍留在 `open` 的單推成 `removed`
+
+#### Scenario: 成交回報尚未結束
+- **WHEN** 未完成單與當日完結單都已結束，但這次成交回報尚未結束
 - **THEN** 系統 MUST NOT 把仍留在 `open` 的單推成 `removed`
 
 #### Scenario: 當日拒絕

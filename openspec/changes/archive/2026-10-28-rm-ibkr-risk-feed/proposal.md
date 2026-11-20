@@ -6,7 +6,7 @@
 
 - 新增 `RM:IBKR:{gateway}:connection`、`RM:IBKR:{account}:open`、`RM:IBKR:{account}:order`、`RM:IBKR:{account}:balance`、`RM:IBKR:{account}:summary`。既有鍵的格式與寫入路徑維持不變。
 - 委託用獨立 JSON：小數數量、可為 `null` 的價格、`TRAIL` / `TRAIL LIMIT` 不填可乘價格、`PreCancelled` 留在未完成單。不走 `toOMSJSON()`、`isAlive()`、`IBContract.pair()`。
-- 重連對帳等未完成單快照與當日完結單都到齊，再處理仍留在 `open`、但新快照沒有的 `orderRef`。不補從未進過該 hash 的舊單。
+- 重連對帳等未完成單快照、當日完結單與這次當日成交回報都到齊，再處理仍留在 `open`、但新快照沒有的 `orderRef`。不補從未進過該 hash 的舊單。
 - 餘額與摘要只在該戶這輪 `accountDownloadEnd` 且 `AccountReady` 不是 false 時一起寫。`AccountReady=false` 或影像沒收完則兩個新鍵都不動。
 - 帳戶市值輪詢改為停掉上一戶、訂下一戶、等到該戶 `accountDownloadEnd` 或逾時再換。舊的 `IBGateway:{account}:balance` 仍在每次回呼時照原格式寫。30 秒到了若上一輪還在跑則略過。秒級心跳不負責等待影像。
 

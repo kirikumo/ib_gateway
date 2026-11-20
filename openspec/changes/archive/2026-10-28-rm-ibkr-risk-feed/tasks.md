@@ -10,7 +10,7 @@
 
 ## 3. 重連對帳
 
-- [x] 3.1 對帳屏障等這次連線的 `openOrderEnd` 與 `completedOrdersEnd` 都到齊才處理殘留 field。OMS 仍在 `openOrderEnd` 初始化。驗證：只送達其中一個結束信號時，假 Redis 沒有 `removed`；兩個都到齊後才出現。
+- [x] 3.1 對帳屏障等這次連線的 `openOrderEnd`、`completedOrdersEnd`，以及這次成交回報的 `tradeReportEnd` 都到齊才處理殘留 field。成交要求在兩個訂單快照結束之後。OMS 仍在 `openOrderEnd` 初始化。驗證：只送達其中一個訂單結束信號，或兩個訂單結束但成交尚未結束時，假 Redis 沒有 `removed`；三個都到齊後才出現。
 - [x] 3.2 殘留 field 對當日完結單與當日成交：`Filled`、`Cancelled`（含零成交）、`Rejected`、否則 `removed`。先推送再刪除。從未在 hash 裡的完結單不推。驗證：四種對帳結果的單元測試，以及一張只出現在完結單、不在 hash 的單沒有推送。
 
 ## 4. 餘額與摘要

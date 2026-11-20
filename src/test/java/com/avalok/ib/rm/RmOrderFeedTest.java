@@ -98,6 +98,8 @@ public class RmOrderFeedTest {
 		openFirst.onOpenEnded();
 		Assert.assertFalse(joined(store).contains("removed"));
 		openFirst.onCompletedEnded();
+		Assert.assertFalse(joined(store).contains("removed"));
+		openFirst.onExecutionsEnded();
 		Assert.assertTrue(joined(store).contains("\"status\":\"removed\""));
 
 		MemoryRmStore other = seedRemoved("tws:8");
@@ -105,6 +107,8 @@ public class RmOrderFeedTest {
 		completedFirst.onCompletedEnded();
 		Assert.assertFalse(joined(other).contains("removed"));
 		completedFirst.onOpenEnded();
+		Assert.assertFalse(joined(other).contains("removed"));
+		completedFirst.onExecutionsEnded();
 		Assert.assertTrue(joined(other).contains("\"status\":\"removed\""));
 	}
 
@@ -137,6 +141,8 @@ public class RmOrderFeedTest {
 		feed.onOpenEnded();
 		Assert.assertFalse(joined(store).contains("\"status\":\"removed\""));
 		feed.onCompletedEnded();
+		Assert.assertFalse(joined(store).contains("\"status\":\"removed\""));
+		feed.onExecutionsEnded();
 
 		Map<String, Map<String, Object>> byRef = new LinkedHashMap<>();
 		List<MemoryRmStore.Op> ops = store.snapshot();
